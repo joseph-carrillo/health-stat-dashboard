@@ -23,8 +23,14 @@ Repo: health-stat-dashboard (private)
 ## Data Source
 - Phase 1: FHSIS Excel templates (monthly/quarterly/annual) → PostgreSQL
 - Phase 2 (future): Web form mirroring Excel template → PostgreSQL
-- Excel is input only in Phase 1. Phase 2 replaces the upload with direct web input.
+- Excel is input only in Phase 1. Phase 2 replaces upload with direct web input.
 - Build Phase 1 so it does NOT block Phase 2
+
+## Sensitive Indicators
+- HIV reactive cases
+- Syphilis reactive cases
+- These require extra RBAC restrictions at API level
+- Dashboard shows aggregated totals only for unauthorized roles
 
 ## Current Status
 See progress.md
