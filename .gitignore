@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.*
+venv/
+.venv/
+
+# Node / React
+node_modules/
+dist/
+build/
+.next/
+
+# Docker / Database
+postgres_data/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Health data files — never push to GitHub
+*.xlsx
+*.xls
+*.csv
+
+# Uploads and temp files
+uploads/
+temp/
+tmp/
