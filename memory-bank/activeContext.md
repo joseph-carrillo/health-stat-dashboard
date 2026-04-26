@@ -13,19 +13,12 @@ Month 1 foundation is complete. Next session starts database table creation.
 - All committed to GitHub
 
 ## What Happens Next (Start Here)
-Next session — create the 7 database tables:
+Next session — seed reference data into the database:
 
-Step 1 — Create a SQL schema file
-- File location: backend/app/core/schema.sql
-- Contains CREATE TABLE statements for all 7 tables
-
-Step 2 — Run the SQL in Docker
-- Use DBeaver to execute the SQL
-- Verify all 7 tables appear in DBeaver
-
-Step 3 — Write first parser config
-- File location: backend/app/services/configs/cpab_bcg_hepa.json
-- Config for Child Care Immunization File 1
+Step 1 — Load locations (PSGC codes for NIR)
+Step 2 — Load programs (Child Care, Maternal Care, etc.)
+Step 3 — Load indicators (start with Immunization program)
+Step 4 — Write first parser config JSON for Immunization File 1
 
 ## Key Decisions Already Made
 - Stack: React + FastAPI + PostgreSQL + Docker
