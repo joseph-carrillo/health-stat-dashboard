@@ -1,0 +1,55 @@
+-- =====================================================
+-- SEED DATA: Report Periods for 2026
+-- =====================================================
+
+INSERT INTO report_periods (year, period_type, period_value, label) VALUES
+  -- Monthly (January to December)
+  (2026, 'monthly', 1, 'January 2026'),
+  (2026, 'monthly', 2, 'February 2026'),
+  (2026, 'monthly', 3, 'March 2026'),
+  (2026, 'monthly', 4, 'April 2026'),
+  (2026, 'monthly', 5, 'May 2026'),
+  (2026, 'monthly', 6, 'June 2026'),
+  (2026, 'monthly', 7, 'July 2026'),
+  (2026, 'monthly', 8, 'August 2026'),
+  (2026, 'monthly', 9, 'September 2026'),
+  (2026, 'monthly', 10, 'October 2026'),
+  (2026, 'monthly', 11, 'November 2026'),
+  (2026, 'monthly', 12, 'December 2026'),
+
+  -- Quarterly
+  (2026, 'quarterly', 1, 'Q1 2026'),
+  (2026, 'quarterly', 2, 'Q2 2026'),
+  (2026, 'quarterly', 3, 'Q3 2026'),
+  (2026, 'quarterly', 4, 'Q4 2026'),
+
+  -- Annual
+  (2026, 'annual', NULL, 'Annual 2026'),
+
+  -- Previous year monthly (needed for files with previous year data)
+  (2025, 'monthly', 1, 'January 2025'),
+  (2025, 'monthly', 2, 'February 2025'),
+  (2025, 'monthly', 3, 'March 2025'),
+  (2025, 'monthly', 4, 'April 2025'),
+  (2025, 'monthly', 5, 'May 2025'),
+  (2025, 'monthly', 6, 'June 2025'),
+  (2025, 'monthly', 7, 'July 2025'),
+  (2025, 'monthly', 8, 'August 2025'),
+  (2025, 'monthly', 9, 'September 2025'),
+  (2025, 'monthly', 10, 'October 2025'),
+  (2025, 'monthly', 11, 'November 2025'),
+  (2025, 'monthly', 12, 'December 2025'),
+
+  -- Previous year quarterly
+  (2025, 'quarterly', 1, 'Q1 2025'),
+  (2025, 'quarterly', 2, 'Q2 2025'),
+  (2025, 'quarterly', 3, 'Q3 2025'),
+  (2025, 'quarterly', 4, 'Q4 2025'),
+
+  -- Previous year annual
+  (2025, 'annual', NULL, 'Annual 2025');
+
+-- Verify
+SELECT year, period_type, period_value, label 
+FROM report_periods 
+ORDER BY year, period_type, period_value;
