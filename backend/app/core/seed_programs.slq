@@ -1,0 +1,19 @@
+-- =====================================================
+-- SEED DATA: Programs
+-- =====================================================
+
+INSERT INTO programs (code, name) VALUES
+  ('CHILD_CARE', 'Child Care and Services'),
+  ('MATERNAL_CARE', 'Maternal Care and Services'),
+  ('FAMILY_PLANNING', 'Family Planning Services'),
+  ('NCD', 'Non-Communicable Disease Prevention and Control Services'),
+  ('INFECTIOUS_DISEASE', 'Infectious Disease Prevention and Control Services'),
+  ('ORAL_HEALTH', 'Oral Health Care and Services'),
+  ('GERIATRIC', 'Geriatric Health'),
+  ('MORBIDITY', 'Morbidity'),
+  ('VITAL_STATS', 'Vital Statistics'),
+  ('DEMOGRAPHICS', 'Demographics'),
+  ('WASH', 'Water, Sanitation, and Hygiene (WASH)');
+
+-- Verify
+SELECT id, code, name FROM programs ORDER BY id;
