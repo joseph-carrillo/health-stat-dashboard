@@ -1,6 +1,6 @@
 # progress.md
 
-## Status: Template Analysis Complete — Ready for Schema Design
+## Status: Month 1 In Progress — Foundation Complete
 
 ## Completed
 - Chose Option B architecture (React + FastAPI + PostgreSQL + Docker)
@@ -19,6 +19,12 @@
 - Confirmed parser design (config-driven)
 - Confirmed RBAC design (5 roles)
 - Confirmed conflict handling strategy (Option C — stage and review)
+- Created project folder skeleton (backend + frontend)
+- Created .gitignore
+- Created docker-compose.yml
+- Created backend/main.py entry point
+- PostgreSQL 15 running in Docker (verified)
+- DBeaver connected to local database (verified)
 
 ## Programs Analyzed
 | Program | Files | Status |
@@ -37,32 +43,39 @@
 | TB | 0 | Out of scope |
 
 ## Pending Team Actions (Template Errors to Fix)
-- `envi_sanitation_zod_nir.xlsx` — Fix Qtr3 and Qtr4 structure (extra column, missing rows)
-- `nata_lb_abr_rabr_nir.xlsx` — Add missing ABR <10 column to Q2 sheet
+- `envi_sanitation_zod_nir.xlsx` — Fix Qtr3 and Qtr4 structure
+- `nata_lb_abr_rabr_nir.xlsx` — Add missing ABR <10 column to Q2
 - `morta_mmr_imr_nir.xlsx` — Fix col 33 label (d4 → g4)
-- `2__pre_nutritional_status_bmi_nir.xlsx` — Fix col V label (Low BMI → High BMI) ✅ Done
 - `6__pre_gd_screening_nir.xlsx` — Fix col Z formula (g/h → g/a)
-- `2_3_Vitamin_A_supplementation_nir.xlsx` — Fix col 11 formula (g/h → i/f)
+- `2_3_Vitamin_A_supplementation_nir.xlsx` — Fix col 11 formula
 - `infec_schisto_5-14, 15-19, 20-59, 60above` — Fix Qtr1b col D and Qtr1d col J labels
 
+## Pending Clarifications (Higher Ops)
+- BHW ratio — numerator/denominator convention
+- MAM denominator — children SEEN vs children identified
+- 8ANC denominator — TCL vs Excel tracking formula
+- Cervical cancer — running denominator vs static
+
 ## Parked Items
-- Morbidity file — needs per-LGU and barangay expansion
-- Animal bites file — rate multiplier unclear, parked
-- Filariasis MDA file — wrong locations (other regions), excluded
+- Morbidity — needs per-LGU and barangay expansion
+- Animal bites — rate multiplier unclear
+- Filariasis MDA — wrong locations, excluded
 - NCD HUC barangay rows — missing across multiple files
 
 ## Next Steps
-1. Build project folder skeleton
-2. Set up Docker and PostgreSQL locally
-3. Create database schema (7 tables)
-4. Write first parser config (start with Immunization File 1)
+1. Create database tables (SQL schema)
+2. Run SQL in Docker PostgreSQL
+3. Verify tables in DBeaver
+4. Write first parser config (Immunization File 1)
 5. Build Excel parser service
 6. Build validation engine
 7. Build FastAPI endpoints
 8. Build auth and RBAC
 9. Build frontend (last)
 
-## Schema Update — indicators table
-Add two columns based on technical breakdown file:
-- target_value (decimal) — the 2026 performance target
-- target_year (integer) — the year the target applies to
+## Local Database Credentials (Development Only)
+- Host: localhost
+- Port: 5432
+- Database: doh_nir_dashboard
+- Username: doh_admin
+- Password: doh_password_2026

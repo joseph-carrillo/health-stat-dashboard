@@ -1,48 +1,55 @@
 # activeContext.md
 
 ## Current Session Goal
-Template analysis is complete. Ready to begin building.
+Month 1 foundation is complete. Next session starts database table creation.
 
 ## What Was Just Completed
-- Analyzed all 63 FHSIS Excel templates
-- Cross-referenced 107 official indicators from DOH memorandum
-- Completed fhsis_template_analysis.md — added to project knowledge
-- Updated all memory-bank files to reflect current state
-- Database schema design is finalized (7 tables)
-- Parser design is confirmed (config-driven)
+- Project folder skeleton created and committed to GitHub
+- .gitignore created
+- docker-compose.yml created
+- backend/main.py entry point created
+- PostgreSQL 15 running in Docker — verified
+- DBeaver connected to local database — verified
+- All committed to GitHub
 
 ## What Happens Next (Start Here)
-The next session should begin Month 1 of the build:
+Next session — create the 7 database tables:
 
-Step 1 — Project skeleton
-- Create the full folder structure in the GitHub repo
-- Set up .gitignore
-- Set up docker-compose.yml
+Step 1 — Create a SQL schema file
+- File location: backend/app/core/schema.sql
+- Contains CREATE TABLE statements for all 7 tables
 
-Step 2 — Database
-- Set up PostgreSQL in Docker
-- Create the 7 tables from the schema in architecture.md
-- Verify tables in DBeaver
+Step 2 — Run the SQL in Docker
+- Use DBeaver to execute the SQL
+- Verify all 7 tables appear in DBeaver
 
-Step 3 — First parser config
-- Write the JSON config for Child Care Immunization File 1 (CPAB_BCG_HepaB1)
-- This is the proof of concept for the entire ingestion pipeline
+Step 3 — Write first parser config
+- File location: backend/app/services/configs/cpab_bcg_hepa.json
+- Config for Child Care Immunization File 1
 
 ## Key Decisions Already Made
 - Stack: React + FastAPI + PostgreSQL + Docker
-- 7-table schema: locations, programs, indicators, report_periods, health_data, staging_health_data, reference_populations
+- 7-table schema: locations, programs, indicators, report_periods,
+  health_data, staging_health_data, reference_populations
 - Config-driven parser (one JSON per template)
 - Conflict handling: Option C (stage and review)
 - RBAC: 5 roles (Admin, Data Encoder, Program Manager, ManCom, ExeCom)
 - TB out of scope now, addable later without schema changes
 - Phase 2: web form to replace Excel upload (future)
 
+## Local Database (Development)
+- Host: localhost | Port: 5432
+- Database: doh_nir_dashboard
+- Username: doh_admin | Password: doh_password_2026
+- Start with: docker-compose up -d
+- Stop with: docker-compose down
+
+## Office Desktop Monday Checklist
+1. git pull origin main
+2. Start Docker Desktop
+3. docker-compose up -d
+4. Open DBeaver — connection already saved
+
 ## Critical Reference
 fhsis_template_analysis.md is in project knowledge.
-It contains all template structures, DQC rules, denominators, and formula types.
 Always search it before making any parser or schema decisions.
-
-## How to Start a New Session
-Paste this into a fresh Claude chat inside the project:
-"Template analysis is complete. Read activeContext.md for current status.
-Today we are starting Month 1 of the build — project skeleton and database setup."
