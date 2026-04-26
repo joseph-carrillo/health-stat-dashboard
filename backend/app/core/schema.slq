@@ -1,0 +1,142 @@
+-- =============================================================
+-- DOH-NIR CHD Health Statistics Dashboard
+-- Database Schema v1.0
+-- =============================================================
+
+-- =============================================================
+-- TABLE 1: locations
+-- Stores every geographic unit with its PSGC code
+-- Levels: region, province, city_municipality, barangay
+-- =============================================================
+CREATE TABLE locations (
+    id              SERIAL PRIMARY KEY,
+    psgc            VARCHAR(20) UNIQUE NOT NULL,
+    name            VARCHAR(255) NOT NULL,
+    level           VARCHAR(30) NOT NULL 
+                    CHECK (level IN ('region','province','city_municipality','barangay')),
+    parent_psgc     VARCHAR(20) REFERENCES locations(psgc),
+    is_huc          BOOLEAN DEFAULT FALSE,
+    is_active       BOOLEAN DEFAULT TRUE,
+    created_at      TIMESTAMP DEFAULT NOW()
+);
+
+-- =============================================================
+-- TABLE 2: programs
+-- Health program categories (Child Care, Maternal Care, etc.)
+-- =============================================================
+CREATE TABLE programs (
+    id              SERIAL PRIMARY KEY,
+    code            VARCHAR(50) UNIQUE NOT NULL,
+    name            VARCHAR(255) NOT NULL,
+    is_active       BOOLEAN DEFAULT TRUE,
+    created_at      TIMESTAMP DEFAULT NOW()
+);
+
+-- =============================================================
+-- TABLE 3: indicators
+-- Every measurable data point from every Excel template
+-- =============================================================
+CREATE TABLE indicators (
+    id                  SERIAL PRIMARY KEY,
+    program_id          INTEGER NOT NULL REFERENCES programs(id),
+    code                VARCHAR(100) UNIQUE NOT NULL,
+    name                VARCHAR(500) NOT NULL,
+    unit                VARCHAR(50) DEFAULT 'count',
+    frequency_type      VARCHAR(20) NOT NULL
+                        CHECK (frequency_type IN ('monthly','quarterly','annual')),
+    formula_type        VARCHAR(20) NOT NULL
+                        CHECK (formula_type IN ('percentage','ratio','rate','sum','count')),
+    rate_multiplier     INTEGER DEFAULT 100,
+    denominator_source  VARCHAR(100),
+    is_computed         BOOLEAN DEFAULT FALSE,
+    is_sensitive        BOOLEAN DEFAULT FALSE,
+    is_active           BOOLEAN DEFAULT TRUE,
+    target_value        DECIMAL(10,4),
+    target_year         INTEGER,
+    year_introduced     INTEGER DEFAULT 2026,
+    year_retired        INTEGER,
+    created_at          TIMESTAMP DEFAULT NOW()
+);
+
+-- =============================================================
+-- TABLE 4: report_periods
+-- Tracks what time period each data submission covers
+-- =============================================================
+CREATE TABLE report_periods (
+    id              SERIAL PRIMARY KEY,
+    year            INTEGER NOT NULL,
+    period_type     VARCHAR(20) NOT NULL
+                    CHECK (period_type IN ('monthly','quarterly','annual')),
+    period_value    INTEGER,
+    label           VARCHAR(50) NOT NULL,
+    created_at      TIMESTAMP DEFAULT NOW(),
+    UNIQUE (year, period_type, period_value)
+);
+
+-- =============================================================
+-- TABLE 5: reference_populations
+-- Master population table for cross-validation
+-- =============================================================
+CREATE TABLE reference_populations (
+    id              SERIAL PRIMARY KEY,
+    location_id     INTEGER NOT NULL REFERENCES locations(id),
+    year            INTEGER NOT NULL,
+    age_group       VARCHAR(50) NOT NULL,
+    value           DECIMAL(12,2) NOT NULL,
+    source          VARCHAR(100),
+    created_at      TIMESTAMP DEFAULT NOW(),
+    UNIQUE (location_id, year, age_group)
+);
+
+-- =============================================================
+-- TABLE 6: health_data
+-- Every single data point — the narrow table
+-- One row per indicator per location per period
+-- =============================================================
+CREATE TABLE health_data (
+    id              SERIAL PRIMARY KEY,
+    indicator_id    INTEGER NOT NULL REFERENCES indicators(id),
+    location_id     INTEGER NOT NULL REFERENCES locations(id),
+    period_id       INTEGER NOT NULL REFERENCES report_periods(id),
+    value           DECIMAL(15,4),
+    is_computed     BOOLEAN DEFAULT FALSE,
+    uploaded_by     INTEGER,
+    uploaded_at     TIMESTAMP DEFAULT NOW(),
+    source_file     VARCHAR(255),
+    UNIQUE (indicator_id, location_id, period_id)
+);
+
+-- =============================================================
+-- TABLE 7: staging_health_data
+-- Safe holding area before data commits to health_data
+-- =============================================================
+CREATE TABLE staging_health_data (
+    id                  SERIAL PRIMARY KEY,
+    batch_id            UUID NOT NULL,
+    indicator_id        INTEGER NOT NULL REFERENCES indicators(id),
+    location_id         INTEGER NOT NULL REFERENCES locations(id),
+    period_id           INTEGER NOT NULL REFERENCES report_periods(id),
+    value               DECIMAL(15,4),
+    validation_status   VARCHAR(20) DEFAULT 'pending'
+                        CHECK (validation_status IN ('pending','passed','failed')),
+    validation_notes    TEXT,
+    conflict_status     VARCHAR(20) DEFAULT 'none'
+                        CHECK (conflict_status IN ('none','pending_review','accepted','rejected')),
+    existing_value      DECIMAL(15,4),
+    uploaded_by         INTEGER,
+    uploaded_at         TIMESTAMP DEFAULT NOW(),
+    source_file         VARCHAR(255),
+    approved_by         INTEGER,
+    approved_at         TIMESTAMP
+);
+
+-- =============================================================
+-- INDEXES — speeds up common queries
+-- =============================================================
+CREATE INDEX idx_health_data_indicator ON health_data(indicator_id);
+CREATE INDEX idx_health_data_location  ON health_data(location_id);
+CREATE INDEX idx_health_data_period    ON health_data(period_id);
+CREATE INDEX idx_staging_batch         ON staging_health_data(batch_id);
+CREATE INDEX idx_staging_status        ON staging_health_data(validation_status);
+CREATE INDEX idx_indicators_program    ON indicators(program_id);
+CREATE INDEX idx_indicators_code       ON indicators(code);
