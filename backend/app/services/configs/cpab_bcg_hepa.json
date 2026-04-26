@@ -1,0 +1,202 @@
+{
+  "template_id": "CPAB_BCG_HEPA",
+  "template_version": "2026",
+  "program_code": "CHILD_CARE",
+  "source_file_pattern": "1_CPAB_BCG_HepaB1",
+  "frequency": "monthly",
+  "psgc_column": 0,
+  "location_column": 1,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "sheet_map": {
+    1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr",
+    5: "May", 6: "Jun", 7: "Jul", 8: "Aug",
+    9: "Sep", 10: "Oct", 11: "Nov", 12: "Dec"
+  },
+
+  "aggregation": {
+    "quarterly": {
+      1: [1, 2, 3],
+      2: [4, 5, 6],
+      3: [7, 8, 9],
+      4: [10, 11, 12]
+    },
+    "annual": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+  },
+
+  "columns": [
+    {
+      "index": 2,
+      "indicator_code": "IMMUN_POP_0_11M",
+      "is_computed": false,
+      "year": "current"
+    },
+    {
+      "index": 3,
+      "indicator_code": "CPAB_MALE",
+      "is_computed": false,
+      "year": "current"
+    },
+    {
+      "index": 4,
+      "indicator_code": "CPAB_FEMALE",
+      "is_computed": false,
+      "year": "current"
+    },
+    {
+      "index": 5,
+      "indicator_code": "CPAB_TOTAL",
+      "is_computed": true,
+      "formula": "CPAB_MALE + CPAB_FEMALE",
+      "year": "current"
+    },
+    {
+      "index": 6,
+      "indicator_code": "CPAB_PCT",
+      "is_computed": true,
+      "formula": "CPAB_TOTAL / IMMUN_POP_0_11M * 100",
+      "year": "current"
+    },
+    {
+      "index": 7,
+      "indicator_code": "BCG_24H_MALE",
+      "is_computed": false,
+      "year": "current"
+    },
+    {
+      "index": 8,
+      "indicator_code": "BCG_24H_FEMALE",
+      "is_computed": false,
+      "year": "current"
+    },
+    {
+      "index": 9,
+      "indicator_code": "BCG_24H_TOTAL",
+      "is_computed": true,
+      "formula": "BCG_24H_MALE + BCG_24H_FEMALE",
+      "year": "current"
+    },
+    {
+      "index": 10,
+      "indicator_code": "BCG_24H_PCT",
+      "is_computed": true,
+      "formula": "BCG_24H_TOTAL / IMMUN_POP_0_11M * 100",
+      "year": "current"
+    },
+    {
+      "index": 11,
+      "indicator_code": "BCG_GT24H_MALE",
+      "is_computed": false,
+      "year": "current"
+    },
+    {
+      "index": 12,
+      "indicator_code": "BCG_GT24H_FEMALE",
+      "is_computed": false,
+      "year": "current"
+    },
+    {
+      "index": 13,
+      "indicator_code": "BCG_GT24H_TOTAL",
+      "is_computed": true,
+      "formula": "BCG_GT24H_MALE + BCG_GT24H_FEMALE",
+      "year": "current"
+    },
+    {
+      "index": 14,
+      "indicator_code": "BCG_GT24H_PCT",
+      "is_computed": true,
+      "formula": "BCG_GT24H_TOTAL / IMMUN_POP_0_11M * 100",
+      "year": "current"
+    },
+    {
+      "index": 15,
+      "indicator_code": "HEPAB_24H_MALE",
+      "is_computed": false,
+      "year": "current"
+    },
+    {
+      "index": 16,
+      "indicator_code": "HEPAB_24H_FEMALE",
+      "is_computed": false,
+      "year": "current"
+    },
+    {
+      "index": 17,
+      "indicator_code": "HEPAB_24H_TOTAL",
+      "is_computed": true,
+      "formula": "HEPAB_24H_MALE + HEPAB_24H_FEMALE",
+      "year": "current"
+    },
+    {
+      "index": 18,
+      "indicator_code": "HEPAB_24H_PCT",
+      "is_computed": true,
+      "formula": "HEPAB_24H_TOTAL / IMMUN_POP_0_11M * 100",
+      "year": "current"
+    },
+    {
+      "index": 19,
+      "indicator_code": "HEPAB_GT24H_MALE",
+      "is_computed": false,
+      "year": "current"
+    },
+    {
+      "index": 20,
+      "indicator_code": "HEPAB_GT24H_FEMALE",
+      "is_computed": false,
+      "year": "current"
+    },
+    {
+      "index": 21,
+      "indicator_code": "HEPAB_GT24H_TOTAL",
+      "is_computed": true,
+      "formula": "HEPAB_GT24H_MALE + HEPAB_GT24H_FEMALE",
+      "year": "current"
+    },
+    {
+      "index": 22,
+      "indicator_code": "HEPAB_GT24H_PCT",
+      "is_computed": true,
+      "formula": "HEPAB_GT24H_TOTAL / IMMUN_POP_0_11M * 100",
+      "year": "current"
+    }
+  ],
+
+  "dqc_rules": [
+    {
+      "rule_type": "over_threshold",
+      "indicator_code": "CPAB_PCT",
+      "threshold": 200,
+      "message": "CPAB percentage exceeds 200% of projected population"
+    },
+    {
+      "rule_type": "over_threshold",
+      "indicator_code": "BCG_24H_PCT",
+      "threshold": 200,
+      "message": "BCG within 24h percentage exceeds 200% of projected population"
+    },
+    {
+      "rule_type": "over_threshold",
+      "indicator_code": "BCG_GT24H_PCT",
+      "threshold": 200,
+      "message": "BCG >24h percentage exceeds 200% of projected population"
+    },
+    {
+      "rule_type": "over_threshold",
+      "indicator_code": "HEPAB_24H_PCT",
+      "threshold": 200,
+      "message": "HepaB within 24h percentage exceeds 200% of projected population"
+    },
+    {
+      "rule_type": "over_threshold",
+      "indicator_code": "HEPAB_GT24H_PCT",
+      "threshold": 200,
+      "message": "HepaB >24h percentage exceeds 200% of projected population"
+    }
+  ],
+
+  "notes": "Monthly uploads only. Quarterly and annual views computed by dashboard from stored monthly data. DQC threshold 200% for all percentage indicators."
+}
