@@ -56,3 +56,9 @@ Step 3 — Start frontend
 ## Critical Reference
 fhsis_template_analysis.md is in project knowledge.
 Always search it before making any parser or schema decisions.
+
+## Key Decisions
+- User registration: self-service registration → admin assigns role
+- No manual account creation by admin
+- Users table needs 'status' column: pending/active/inactive
+- Add this when building the registration page
