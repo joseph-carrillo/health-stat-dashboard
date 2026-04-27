@@ -1,6 +1,6 @@
 # progress.md
 
-## Status: Month 1 Complete — Parser Proof of Concept Working
+## Status: Ingestion Pipeline Complete — Ready for API Layer
 
 ## Completed
 - Chose Option B architecture (React + FastAPI + PostgreSQL + Docker)
@@ -16,8 +16,8 @@
 - Confirmed parser design, RBAC, and conflict handling strategy
 - Created project folder skeleton
 - Created .gitignore and docker-compose.yml
-- PostgreSQL 15 running in Docker (verified)
-- DBeaver connected to local database (verified)
+- PostgreSQL 15 running in Docker (verified on both machines)
+- DBeaver connected on both machines
 - All 7 database tables created and verified
 - 128 NIR locations seeded
 - 11 programs seeded (official DOH names)
@@ -25,18 +25,23 @@
 - 43 Immunization indicators seeded
 - First parser config created (cpab_bcg_hepa.json)
 - Excel parser service built (parser.py)
-- First successful parse: 2,667 rows staged, 0 errors, 0 DQC issues
+- Commit approval service built (commit.py)
+- Full pipeline tested end to end:
+  - 2,667 rows parsed from Excel
+  - 2,667 rows staged with 0 errors and 0 DQC issues
+  - 2,667 rows committed to health_data
 
 ## In Progress
-- Building commit approval system (next session)
+- Building FastAPI endpoints (next session)
 
 ## Build Order (Vertical Slice Strategy)
-1. ✅ Parser for File 1 (CPAB/BCG/HepaB)
-2. ⬜ Commit approval system
-3. ⬜ FastAPI endpoints (upload, staging, approve, data)
-4. ⬜ Auth and RBAC
-5. ⬜ Basic frontend for File 1 indicators
-6. ⬜ Expand to remaining 62 files
+1. ✅ Database schema and seed data
+2. ✅ Parser for File 1 (CPAB/BCG/HepaB)
+3. ✅ Commit approval system
+4. ⬜ FastAPI endpoints
+5. ⬜ Auth and RBAC
+6. ⬜ Basic frontend for File 1 indicators
+7. ⬜ Expand to remaining 62 files
 
 ## Pending Team Actions (Template Errors to Fix)
 - `envi_sanitation_zod_nir.xlsx` — Fix Qtr3 and Qtr4 structure

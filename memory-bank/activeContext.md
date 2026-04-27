@@ -1,46 +1,37 @@
 # activeContext.md
 
 ## Current Session Goal
-Completed. Parser proof of concept is working.
+Completed. Full ingestion pipeline is working end to end.
 
 ## What Was Just Completed
-- Project folder skeleton created and committed
-- .gitignore and docker-compose.yml created
-- PostgreSQL running in Docker — verified
-- DBeaver connected — verified
-- All 7 database tables created (schema.sql)
-- 128 NIR locations seeded (seed_locations.sql)
-- 11 programs seeded (seed_programs.sql)
-- 34 report periods seeded (seed_periods.sql)
-- 43 Immunization indicators seeded (seed_indicators.py)
-- First parser config created (cpab_bcg_hepa.json)
-- Excel parser service built (parser.py)
-- First successful parse: 127 locations × 21 indicators = 2,667 rows staged
-- DQC validation working — 0 issues on first run
-- Conflict detection working
+- Office desktop fully set up (database, seed data, parser tested)
+- Commit approval service built (commit.py)
+- Fixed schema — added is_computed to staging_health_data
+- First full pipeline test:
+  - Parser: 2,667 rows staged, 0 errors, 0 DQC issues
+  - Commit: 2,667 rows committed to health_data
+- Full pipeline confirmed working:
+  Excel → Parser → Staging → Approval → health_data
 
 ## What Happens Next (Start Here)
-Build the commit approval system — moves data from staging to health_data.
+Build FastAPI endpoints to expose the data via API.
 
-Step 1 — Write commit service (backend/app/services/commit.py)
-- Approves a batch from staging_health_data
-- Moves approved rows to health_data
-- Handles conflicts (Option C — side by side review)
-- Records audit trail
+Step 1 — Set up FastAPI dependencies
+- Install: fastapi, uvicorn, python-multipart
+- Update backend/main.py with proper app setup
 
-Step 2 — Write first FastAPI endpoint
-- POST /api/upload — receives Excel file + metadata
-- GET /api/staging/{batch_id} — returns staged data for review
+Step 2 — Create API routes
+- POST /api/upload — receives Excel file + metadata, runs parser
+- GET /api/staging/{batch_id} — returns batch summary for review
+- GET /api/staging/{batch_id}/conflicts — returns conflicts
 - POST /api/staging/{batch_id}/approve — approves a batch
-- GET /api/health-data — returns committed data
+- GET /api/health-data — returns committed data with filters
 
-Step 3 — Add auth and RBAC
-Step 4 — Build basic frontend
+Step 3 — Test endpoints using browser or Postman
 
 ## Build Strategy
-Build end-to-end for File 1 (CPAB/BCG/HepaB) first.
-One complete vertical slice before expanding to other files.
-Remaining 62 files follow the same pattern once pipeline is proven.
+Vertical slice for File 1 (CPAB/BCG/HepaB) only.
+One complete feature end to end before expanding to other files.
 
 ## Local Database (Development)
 - Host: localhost | Port: 5432
@@ -49,13 +40,10 @@ Remaining 62 files follow the same pattern once pipeline is proven.
 - Start with: docker-compose up -d
 - Stop with: docker-compose down
 
-## Monday Office Desktop Checklist
+## Daily Checklist (Both Machines)
 1. git pull origin main
-2. Start Docker Desktop
-3. docker-compose up -d
-4. Verify with: docker ps
-5. Open DBeaver — connection already saved
-6. Start new session — paste activeContext.md content
+2. docker-compose up -d
+3. Verify: docker ps
 
 ## Critical Reference
 fhsis_template_analysis.md is in project knowledge.
