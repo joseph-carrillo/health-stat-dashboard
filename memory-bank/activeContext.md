@@ -1,37 +1,44 @@
 # activeContext.md
 
 ## Current Session Goal
-Completed. Full ingestion pipeline is working end to end.
+Completed. Auth layer is working.
 
 ## What Was Just Completed
-- Office desktop fully set up (database, seed data, parser tested)
-- Commit approval service built (commit.py)
-- Fixed schema — added is_computed to staging_health_data
-- First full pipeline test:
-  - Parser: 2,667 rows staged, 0 errors, 0 DQC issues
-  - Commit: 2,667 rows committed to health_data
-- Full pipeline confirmed working:
-  Excel → Parser → Staging → Approval → health_data
+- FastAPI endpoints fully tested via docs page
+- Upload endpoint tested — file uploaded via API successfully
+- Batch summary endpoint tested — shows staged data correctly
+- Approve endpoint tested — 2,667 rows committed via API
+- Auth module created (backend/app/core/auth.py)
+- Users table created in database
+- First admin user created (username: admin)
+- JWT login endpoint working — returns token + permissions
+- bcrypt version fixed (downgraded to 4.0.1 for Python 3.14 compatibility)
 
 ## What Happens Next (Start Here)
-Build FastAPI endpoints to expose the data via API.
+Protect the existing endpoints with authentication.
+Then build the frontend.
 
-Step 1 — Set up FastAPI dependencies
-- Install: fastapi, uvicorn, python-multipart
-- Update backend/main.py with proper app setup
+Step 1 — Add auth protection to endpoints
+- Add get_current_user dependency to upload, approve, health-data endpoints
+- Test that endpoints reject requests without a valid token
+- Test that endpoints accept requests with a valid token
 
-Step 2 — Create API routes
-- POST /api/upload — receives Excel file + metadata, runs parser
-- GET /api/staging/{batch_id} — returns batch summary for review
-- GET /api/staging/{batch_id}/conflicts — returns conflicts
-- POST /api/staging/{batch_id}/approve — approves a batch
-- GET /api/health-data — returns committed data with filters
+Step 2 — Add more users
+- Create users for each role (data_encoder, program_manager, mancom, execom)
+- Test that each role can only do what they are allowed to
 
-Step 3 — Test endpoints using browser or Postman
+Step 3 — Start frontend
+- Set up React app
+- Build login page first
+- Build upload page
+- Build dashboard page
 
-## Build Strategy
-Vertical slice for File 1 (CPAB/BCG/HepaB) only.
-One complete feature end to end before expanding to other files.
+## Key Auth Details
+- Login endpoint: POST /api/login
+- Token type: JWT Bearer
+- Token expiry: 8 hours (one work day)
+- Admin credentials: username=admin, password=Admin@2026!
+- Roles: admin, data_encoder, program_manager, mancom, execom
 
 ## Local Database (Development)
 - Host: localhost | Port: 5432
@@ -40,10 +47,11 @@ One complete feature end to end before expanding to other files.
 - Start with: docker-compose up -d
 - Stop with: docker-compose down
 
-## Daily Checklist (Both Machines)
+## Daily Checklist (Office Desktop)
 1. git pull origin main
 2. docker-compose up -d
-3. Verify: docker ps
+3. uvicorn backend.main:app --reload
+4. Open second terminal for git commands
 
 ## Critical Reference
 fhsis_template_analysis.md is in project knowledge.

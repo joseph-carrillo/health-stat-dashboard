@@ -1,6 +1,6 @@
 # progress.md
 
-## Status: Ingestion Pipeline Complete — Ready for API Layer
+## Status: API + Auth Complete — Ready for Frontend
 
 ## Completed
 - Chose Option B architecture (React + FastAPI + PostgreSQL + Docker)
@@ -12,13 +12,13 @@
 - Analyzed ALL 63 Excel templates across all programs
 - Cross-referenced 107 official indicators from DOH memorandum
 - Completed fhsis_template_analysis.md (in project knowledge)
-- Designed database schema (7 tables)
+- Designed database schema (7 tables + users table)
 - Confirmed parser design, RBAC, and conflict handling strategy
 - Created project folder skeleton
 - Created .gitignore and docker-compose.yml
 - PostgreSQL 15 running in Docker (verified on both machines)
 - DBeaver connected on both machines
-- All 7 database tables created and verified
+- All 7 database tables + users table created
 - 128 NIR locations seeded
 - 11 programs seeded (official DOH names)
 - 34 report periods seeded (2025 + 2026)
@@ -26,22 +26,29 @@
 - First parser config created (cpab_bcg_hepa.json)
 - Excel parser service built (parser.py)
 - Commit approval service built (commit.py)
-- Full pipeline tested end to end:
-  - 2,667 rows parsed from Excel
-  - 2,667 rows staged with 0 errors and 0 DQC issues
-  - 2,667 rows committed to health_data
+- Full pipeline tested: 2,667 rows parsed → staged → committed
+- FastAPI endpoints built and tested (7 endpoints)
+- Auth module built (auth.py)
+- JWT login endpoint working
+- First admin user created
+- Google Auth evaluated — rejected in favor of internal JWT
 
 ## In Progress
-- Building FastAPI endpoints (next session)
+- Adding auth protection to existing endpoints
+- Building frontend
 
 ## Build Order (Vertical Slice Strategy)
 1. ✅ Database schema and seed data
 2. ✅ Parser for File 1 (CPAB/BCG/HepaB)
 3. ✅ Commit approval system
-4. ⬜ FastAPI endpoints
-5. ⬜ Auth and RBAC
-6. ⬜ Basic frontend for File 1 indicators
-7. ⬜ Expand to remaining 62 files
+4. ✅ FastAPI endpoints
+5. ✅ Auth and JWT login
+6. ⬜ Protect endpoints with auth
+7. ⬜ Create users for all roles
+8. ⬜ Frontend — login page
+9. ⬜ Frontend — upload page
+10. ⬜ Frontend — dashboard page
+11. ⬜ Expand to remaining 62 files
 
 ## Pending Team Actions (Template Errors to Fix)
 - `envi_sanitation_zod_nir.xlsx` — Fix Qtr3 and Qtr4 structure
@@ -67,3 +74,8 @@
 - Host: localhost | Port: 5432
 - Database: doh_nir_dashboard
 - Username: doh_admin | Password: doh_password_2026
+
+## API Credentials (Development Only)
+- Admin login: admin / Admin@2026!
+- API docs: http://localhost:8000/docs
+- API base: http://localhost:8000
