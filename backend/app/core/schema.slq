@@ -123,6 +123,7 @@ CREATE TABLE staging_health_data (
     conflict_status     VARCHAR(20) DEFAULT 'none'
                         CHECK (conflict_status IN ('none','pending_review','accepted','rejected')),
     existing_value      DECIMAL(15,4),
+    is_computed         BOOLEAN DEFAULT FALSE,
     uploaded_by         INTEGER,
     uploaded_at         TIMESTAMP DEFAULT NOW(),
     source_file         VARCHAR(255),
