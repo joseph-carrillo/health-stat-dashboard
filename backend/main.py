@@ -5,18 +5,21 @@
 import os
 import shutil
 from pathlib import Path
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from datetime import timedelta
 
 # Import our services
 import sys
 sys.path.append(str(Path(__file__).parent))
 from app.services.parser import parse_file
-from app.services.commit import (
-    get_batch_summary,
-    get_conflicts,
-    resolve_conflict,
-    approve_batch
+from app.core.auth import (
+    authenticate_user,
+    create_access_token,
+    decode_token,
+    get_role_permissions,
+    ACCESS_TOKEN_EXPIRE_MINUTES
 )
 
 # =====================================================
@@ -39,6 +42,7 @@ app.add_middleware(
 
 UPLOAD_DIR = Path(__file__).parent / "data" / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
 
 
 # =====================================================
@@ -52,6 +56,68 @@ def health_check():
         "version": "0.1.0"
     }
 
+# =====================================================
+# ENDPOINT — Login
+# =====================================================
+@app.post("/api/login")
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    """
+    Login with username and password.
+    Returns a JWT token valid for 8 hours.
+    """
+    user = authenticate_user(
+        form_data.username,
+        form_data.password
+    )
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect username or password"
+        )
+
+    access_token = create_access_token(
+        data={
+            "sub": user["username"],
+            "role": user["role"],
+            "program_code": user["program_code"],
+            "user_id": user["id"]
+        },
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "username": user["username"],
+            "full_name": user.get("full_name"),
+            "role": user["role"],
+            "permissions": get_role_permissions(user["role"])
+        }
+    }
+
+
+# =====================================================
+# HELPER — Get Current User from Token
+# =====================================================
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    """
+    Extract and verify the current user from JWT token.
+    Use this as a dependency in protected endpoints.
+    """
+    payload = decode_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired token"
+        )
+    return {
+        "username": payload.get("sub"),
+        "role": payload.get("role"),
+        "program_code": payload.get("program_code"),
+        "user_id": payload.get("user_id"),
+        "permissions": get_role_permissions(payload.get("role"))
+    }
 
 # =====================================================
 # ENDPOINT 2 — Upload and Parse Excel File
