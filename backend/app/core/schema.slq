@@ -131,6 +131,29 @@ CREATE TABLE staging_health_data (
     approved_at         TIMESTAMP
 );
 
+
+-- =====================================================
+-- TABLE 8: users
+-- System users with role-based access control
+-- =====================================================
+CREATE TABLE users (
+    id              SERIAL PRIMARY KEY,
+    username        VARCHAR(100) UNIQUE NOT NULL,
+    hashed_password VARCHAR(255) NOT NULL,
+    full_name       VARCHAR(255),
+    email           VARCHAR(255) UNIQUE,
+    role            VARCHAR(50)
+                    CHECK (role IN ('admin', 'data_encoder',
+                    'program_manager', 'mancom', 'execom')
+                    OR role IS NULL),
+    program_code    VARCHAR(50),
+    is_active       BOOLEAN DEFAULT FALSE,
+    status          VARCHAR(20) DEFAULT 'pending'
+                    CHECK (status IN ('pending', 'active', 'inactive')),
+    created_at      TIMESTAMP DEFAULT NOW(),
+    last_login      TIMESTAMP
+);
+
 -- =============================================================
 -- INDEXES — speeds up common queries
 -- =============================================================
