@@ -1,64 +1,74 @@
 # activeContext.md
 
 ## Current Session Goal
-Completed. Auth layer is working.
+Completed. Frontend login page built with DOH branding.
 
 ## What Was Just Completed
-- FastAPI endpoints fully tested via docs page
-- Upload endpoint tested — file uploaded via API successfully
-- Batch summary endpoint tested — shows staged data correctly
-- Approve endpoint tested — 2,667 rows committed via API
-- Auth module created (backend/app/core/auth.py)
-- Users table created in database
-- First admin user created (username: admin)
-- JWT login endpoint working — returns token + permissions
-- bcrypt version fixed (downgraded to 4.0.1 for Python 3.14 compatibility)
+- Protected all API endpoints with JWT authentication
+- Added require_permission helper for role-based access
+- Built user registration endpoint (POST /api/register)
+- Built admin user management endpoints (GET/POST /api/admin/users)
+- Added users table to schema.sql
+- Fixed role column to allow NULL for pending users
+- React frontend set up with Vite
+- DOH branding applied (DM 2025-0600):
+  - Colors: Deep Navy #1F2A45, Health Blue #0B4BAA, Mint Cream #EEFAF6
+  - Fonts: Montserrat (headings) + Barlow (body)
+  - DOH Seal, Bagong Pilipinas logo, NIR Wordmark added
+- Login page built and displaying correctly
+- Dashboard page created (not yet connected to API)
+- App.jsx routing between Login and Dashboard
 
 ## What Happens Next (Start Here)
-Protect the existing endpoints with authentication.
-Then build the frontend.
+Connect the login form to the API and test full login flow in browser.
 
-Step 1 — Add auth protection to endpoints
-- Add get_current_user dependency to upload, approve, health-data endpoints
-- Test that endpoints reject requests without a valid token
-- Test that endpoints accept requests with a valid token
+Step 1 — Test login in browser
+- Go to http://localhost:5173
+- Login with admin / Admin@2026!
+- Should redirect to Dashboard
 
-Step 2 — Add more users
-- Create users for each role (data_encoder, program_manager, mancom, execom)
-- Test that each role can only do what they are allowed to
+Step 2 — Fix any connection issues between frontend and API
+- API runs on port 8000
+- Frontend runs on port 5173
+- Proxy is configured in vite.config.js
 
-Step 3 — Start frontend
-- Set up React app
-- Build login page first
-- Build upload page
-- Build dashboard page
+Step 3 — Build Dashboard page properly
+- Show CPAB coverage data in table
+- Add month filter
+- Show on-target / near-target / below-target status badges
 
-## Key Auth Details
-- Login endpoint: POST /api/login
-- Token type: JWT Bearer
-- Token expiry: 8 hours (one work day)
-- Admin credentials: username=admin, password=Admin@2026!
-- Roles: admin, data_encoder, program_manager, mancom, execom
+Step 4 — Build Upload page
+- Program selector
+- Sub-program selector
+- File picker
+- Month/year selector
+- Upload button
+- Show batch summary after upload
 
-## Local Database (Development)
+## Daily Startup Checklist
+1. git pull origin main
+2. Start Docker Desktop
+3. docker-compose up -d
+4. uvicorn backend.main:app --reload (Terminal 1)
+5. cd frontend && npm run dev (Terminal 2 or 3)
+6. Open http://localhost:5173
+
+## API and Frontend Ports
+- API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+- Frontend: http://localhost:5173
+
+## Auth Credentials (Development)
+- Admin: username=admin, password=Admin@2026!
+- Test user: username=jsmith, password=Test@2026! (role=program_manager)
+
+## Local Database
 - Host: localhost | Port: 5432
 - Database: doh_nir_dashboard
 - Username: doh_admin | Password: doh_password_2026
-- Start with: docker-compose up -d
-- Stop with: docker-compose down
 
-## Daily Checklist (Office Desktop)
-1. git pull origin main
-2. docker-compose up -d
-3. uvicorn backend.main:app --reload
-4. Open second terminal for git commands
-
-## Critical Reference
-fhsis_template_analysis.md is in project knowledge.
-Always search it before making any parser or schema decisions.
-
-## Key Decisions
-- User registration: self-service registration → admin assigns role
-- No manual account creation by admin
-- Users table needs 'status' column: pending/active/inactive
-- Add this when building the registration page
+## DOH Branding Reference
+- Primary colors: #1F2A45 (Deep Navy), #0B4BAA (Health Blue), #EEFAF6 (Mint Cream)
+- Fonts: Montserrat (headings), Barlow (body)
+- Logo files in: frontend/public/images/
+- Branding memo: DM 2025-0600

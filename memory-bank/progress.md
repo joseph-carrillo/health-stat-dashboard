@@ -1,54 +1,56 @@
 # progress.md
 
-## Status: API + Auth Complete — Ready for Frontend
+## Status: Frontend Started — Login Page Complete
 
 ## Completed
-- Chose Option B architecture (React + FastAPI + PostgreSQL + Docker)
-- Installed all tools on office desktop and personal laptop
-- Created private GitHub repository (health-stat-dashboard)
-- Set up memory-bank folder and Claude Project
-- Attended April 20 stakeholder meeting
-- Conducted survey of ExeCom, ManCom, and Program Managers
-- Analyzed ALL 63 Excel templates across all programs
-- Cross-referenced 107 official indicators from DOH memorandum
-- Completed fhsis_template_analysis.md (in project knowledge)
-- Designed database schema (7 tables + users table)
-- Confirmed parser design, RBAC, and conflict handling strategy
-- Created project folder skeleton
-- Created .gitignore and docker-compose.yml
-- PostgreSQL 15 running in Docker (verified on both machines)
+- Full stack setup (React + FastAPI + PostgreSQL + Docker)
+- All tools installed on office desktop and personal laptop
+- GitHub repo synced on both machines
+- Memory bank and Claude Project set up
+- April 20 stakeholder meeting attended
+- Survey of ExeCom, ManCom, Program Managers conducted
+- All 63 FHSIS Excel templates analyzed
+- 107 official indicators cross-referenced from DOH memorandum
+- fhsis_template_analysis.md completed (in project knowledge)
+- Database schema designed (7 tables + users table)
+- Project folder skeleton created
+- PostgreSQL running in Docker (verified on both machines)
 - DBeaver connected on both machines
-- All 7 database tables + users table created
+- All 7 tables + users table created
 - 128 NIR locations seeded
 - 11 programs seeded (official DOH names)
 - 34 report periods seeded (2025 + 2026)
 - 43 Immunization indicators seeded
-- First parser config created (cpab_bcg_hepa.json)
+- Parser config created (cpab_bcg_hepa.json)
 - Excel parser service built (parser.py)
 - Commit approval service built (commit.py)
 - Full pipeline tested: 2,667 rows parsed → staged → committed
-- FastAPI endpoints built and tested (7 endpoints)
-- Auth module built (auth.py)
-- JWT login endpoint working
-- First admin user created
-- Google Auth evaluated — rejected in favor of internal JWT
+- FastAPI endpoints built and tested (13 endpoints)
+- JWT authentication working
+- User registration system built
+- Admin role assignment working
+- React frontend set up with Vite
+- DOH branding applied (DM 2025-0600)
+- Login page built with official colors, fonts, and logos
+- App.jsx routing between Login and Dashboard
 
 ## In Progress
-- Adding auth protection to existing endpoints
-- Building frontend
+- Connecting login form to API (test full browser flow)
+- Building Dashboard page with real data
 
 ## Build Order (Vertical Slice Strategy)
 1. ✅ Database schema and seed data
 2. ✅ Parser for File 1 (CPAB/BCG/HepaB)
 3. ✅ Commit approval system
-4. ✅ FastAPI endpoints
+4. ✅ FastAPI endpoints (13 total)
 5. ✅ Auth and JWT login
-6. ⬜ Protect endpoints with auth
-7. ⬜ Create users for all roles
-8. ⬜ Frontend — login page
-9. ⬜ Frontend — upload page
-10. ⬜ Frontend — dashboard page
-11. ⬜ Expand to remaining 62 files
+6. ✅ User registration and role management
+7. ✅ React frontend setup with DOH branding
+8. ✅ Login page
+9. ⬜ Test full login flow in browser
+10. ⬜ Dashboard page with real data
+11. ⬜ Upload page
+12. ⬜ Expand to remaining 62 files
 
 ## Pending Team Actions (Template Errors to Fix)
 - `envi_sanitation_zod_nir.xlsx` — Fix Qtr3 and Qtr4 structure
@@ -76,6 +78,6 @@
 - Username: doh_admin | Password: doh_password_2026
 
 ## API Credentials (Development Only)
-- Admin login: admin / Admin@2026!
+- Admin: admin / Admin@2026!
+- Test user: jsmith / Test@2026! (program_manager, CHILD_CARE)
 - API docs: http://localhost:8000/docs
-- API base: http://localhost:8000
