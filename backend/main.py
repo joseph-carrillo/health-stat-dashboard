@@ -119,6 +119,28 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         "permissions": get_role_permissions(payload.get("role"))
     }
 
+
+# =====================================================
+# HELPER — Check Role Permission
+# =====================================================
+def require_permission(permission: str):
+    """
+    Factory function that returns a dependency
+    checking for a specific permission.
+    """
+    def check_permission(
+        current_user: dict = Depends(get_current_user)
+    ):
+        permissions = current_user.get("permissions", {})
+        if not permissions.get(permission):
+            raise HTTPException(
+                status_code=403,
+                detail=f"You do not have permission to do this. "
+                       f"Required: {permission}"
+            )
+        return current_user
+    return check_permission
+
 # =====================================================
 # ENDPOINT 2 — Upload and Parse Excel File
 # =====================================================
@@ -127,7 +149,8 @@ async def upload_file(
     file: UploadFile = File(...),
     template_id: str = "cpab_bcg_hepa",
     year: int = 2026,
-    month: int = 1
+    month: int = 1,
+    current_user: dict = Depends(require_permission("can_upload"))
 ):
     """
     Upload an FHSIS Excel file for parsing.
@@ -171,7 +194,10 @@ async def upload_file(
 # ENDPOINT 3 — Get Batch Summary
 # =====================================================
 @app.get("/api/staging/{batch_id}")
-def get_staging_summary(batch_id: str):
+def get_staging_summary(
+    batch_id: str,
+    current_user: dict = Depends(get_current_user)
+):
     """
     Get a summary of staged data for a batch.
     Call this after upload to review before approving.
@@ -186,7 +212,10 @@ def get_staging_summary(batch_id: str):
 # ENDPOINT 4 — Get Conflicts
 # =====================================================
 @app.get("/api/staging/{batch_id}/conflicts")
-def get_batch_conflicts(batch_id: str):
+def get_batch_conflicts(
+    batch_id: str,
+    current_user: dict = Depends(get_current_user)
+):
     """
     Get all conflicting rows in a batch.
     Shows existing value vs incoming value side by side.
@@ -205,7 +234,8 @@ def get_batch_conflicts(batch_id: str):
 @app.post("/api/staging/conflict/{staging_id}/resolve")
 def resolve_staging_conflict(
     staging_id: int,
-    decision: str
+    decision: str,
+    current_user: dict = Depends(require_permission("can_approve"))
 ):
     """
     Resolve a single conflict.
@@ -229,7 +259,10 @@ def resolve_staging_conflict(
 # ENDPOINT 6 — Approve Batch
 # =====================================================
 @app.post("/api/staging/{batch_id}/approve")
-def approve_staging_batch(batch_id: str):
+def approve_staging_batch(
+    batch_id: str,
+    current_user: dict = Depends(require_permission("can_approve"))
+):
     """
     Approve a batch and commit data to health_data.
     All conflicts must be resolved before approving.
@@ -254,7 +287,8 @@ def get_health_data(
     indicator_code: str = None,
     location_psgc: str = None,
     year: int = 2026,
-    month: int = None
+    month: int = None,
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Get committed health data with optional filters.
