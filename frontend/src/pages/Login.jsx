@@ -49,25 +49,30 @@ export default function Login() {
 
   return (
     <div style={styles.page}>
+
+      {/* This is the watermark — it sits behind everything */}
+      <img
+        src="/images/DOH SEAL - FULL COLOR.png"
+        alt=""
+        style={styles.watermark}
+      />
+
+      {/* This is the white login card on top */}
       <div style={styles.card}>
 
-        {/* 3 Logos in a row */}
         <div style={styles.logoRow}>
           <img src="/images/DOH SEAL - FULL COLOR.png" alt="DOH Seal" style={styles.logo} />
           <img src="/images/bagong-pilipinas-logo.png" alt="Bagong Pilipinas" style={styles.logo} />
           <img src="/images/fhsis_V2_transparent.png" alt="FHSIS NIR" style={styles.logo} />
         </div>
 
-        {/* Agency name lines — no big gap between them */}
         <p style={styles.agency1}>Department of Health</p>
         <p style={styles.agency2}>Negros Island Region Center for Health Development</p>
 
-        {/* System title */}
         <h1 style={styles.title}>
           Field Health Services Information System <br /> Dashboard V2.0
         </h1>
 
-        {/* Login Form */}
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.fieldGroup}>
             <label style={styles.label}>Username</label>
@@ -110,8 +115,6 @@ export default function Login() {
 
         <p style={styles.footer}>
           For access requests, please contact your system administrator.
-          <br />
-          Official use only.
         </p>
 
       </div>
@@ -119,7 +122,6 @@ export default function Login() {
   );
 }
 
-// --- All Styles ---
 const styles = {
   page: {
     minHeight: "100vh",
@@ -129,12 +131,24 @@ const styles = {
     justifyContent: "center",
     fontFamily: "'Barlow', sans-serif",
   },
+  watermark: {
+    position: "fixed",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    width: "420px",
+    opacity: 0.07,
+    pointerEvents: "none",
+    zIndex: 0,
+  },
   card: {
+    position: "relative",
+    zIndex: 1,
     backgroundColor: "#ffffff",
     borderRadius: "12px",
     padding: "40px 40px",
     width: "100%",
-    maxWidth: "460px",       // wide enough so text fits on one line
+    maxWidth: "460px",
     boxShadow: "0 4px 24px rgba(31, 42, 69, 0.12)",
     borderTop: "5px solid #0B4BAA",
   },
@@ -146,29 +160,26 @@ const styles = {
     marginBottom: "12px",
   },
   logo: {
-    height: "100px",
+    height: "80px",
     objectFit: "contain",
   },
-  // "Department of Health" — first line
   agency1: {
     fontFamily: "'Barlow', sans-serif",
     fontSize: "13px",
     fontWeight: "600",
     color: "#5A6A85",
     textAlign: "center",
-    margin: "0 0 2px 0",     // tiny gap below — connects visually to agency2
+    margin: "0 0 2px 0",
   },
-  // "Negros Island Region..." — second line, no gap from agency1
   agency2: {
     fontFamily: "'Barlow', sans-serif",
     fontSize: "13px",
     fontWeight: "600",
     color: "#5A6A85",
     textAlign: "center",
-    margin: "0 0 16px 0",    // normal gap below before the title
-    whiteSpace: "nowrap",    // keep on one line
+    margin: "0 0 16px 0",
+    whiteSpace: "nowrap",
   },
-  // "Field Health Services Information System Dashboard V2.0"
   title: {
     fontFamily: "'Montserrat', sans-serif",
     fontSize: "17px",
@@ -176,7 +187,7 @@ const styles = {
     color: "#1F2A45",
     textAlign: "center",
     margin: "0 0 28px 0",
-    whiteSpace: "nowrap",    // keep on one line
+    lineHeight: "1.4",
   },
   form: {
     display: "flex",
