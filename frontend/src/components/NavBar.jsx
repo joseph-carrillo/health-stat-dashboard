@@ -1,9 +1,8 @@
 // frontend/src/components/Navbar.jsx
-// Top navigation bar — shows different tabs based on role
+// Sidebar navigation — left side of the screen
 
 import { useNavigate, useLocation } from "react-router-dom";
 
-// Read user info from the JWT token saved in localStorage
 function getUser() {
   const token = localStorage.getItem("token");
   if (!token) return {};
@@ -20,73 +19,93 @@ export default function Navbar() {
   const location = useLocation();
   const user = getUser();
 
-  // These tabs show for everyone
-  const baseTabs = [
-    { label: "Home", path: "/home" },
-    { label: "Analytics", path: "/analytics/overview" },
-  ];
-
-  // Management tab — admin only
-  const adminTabs =
-    user.role === "admin"
-      ? [{ label: "Management", path: "/management" }]
-      : [];
-
-  const allTabs = [...baseTabs, ...adminTabs];
-
   function handleLogout() {
     localStorage.removeItem("token");
     localStorage.removeItem("token_type");
     navigate("/");
   }
 
-  // Check if a tab is currently active
   function isActive(path) {
-    return location.pathname.startsWith(path.split("/")[1] === "analytics"
-      ? "/analytics"
-      : path);
+    return location.pathname === path;
   }
 
   return (
-    <div style={styles.wrapper}>
+    <div style={styles.sidebar}>
 
-      {/* Left side — logos and title */}
-      <div style={styles.left}>
-        <img
-          src="/images/DOH SEAL - FULL COLOR.png"
-          alt="DOH"
-          style={styles.logo}
-        />
+      <div style={styles.header}>
+        <img src="/images/DOH SEAL - FULL COLOR.png" alt="DOH" style={styles.logo} />
         <div>
-          <p style={styles.agency}>Department of Health — NIR CHD</p>
-          <p style={styles.system}>FHSIS Dashboard V2.0</p>
+          <p style={styles.system}>FHSIS Dashboard</p>
+          <p style={styles.agency}>NIR CHD</p>
         </div>
       </div>
 
-      {/* Center — navigation tabs */}
-      <div style={styles.tabs}>
-        {allTabs.map((tab) => (
+      <div style={styles.nav}>
+
+        <button
+          style={isActive("/home") ? { ...styles.navItem, ...styles.navItemActive } : styles.navItem}
+          onClick={() => navigate("/home")}
+        >
+          🏠 Home
+        </button>
+
+        <div style={styles.navGroupLabel}>📊 ANALYTICS</div>
+        <button
+          style={isActive("/analytics/overview") ? { ...styles.navSub, ...styles.navSubActive } : styles.navSub}
+          onClick={() => navigate("/analytics/overview")}
+        >
+          Overview
+        </button>
+        <button
+          style={isActive("/analytics/coverage") ? { ...styles.navSub, ...styles.navSubActive } : styles.navSub}
+          onClick={() => navigate("/analytics/coverage")}
+        >
+          Coverage
+        </button>
+        <button
+          style={isActive("/analytics/trends") ? { ...styles.navSub, ...styles.navSubActive } : styles.navSub}
+          onClick={() => navigate("/analytics/trends")}
+        >
+          Trends
+        </button>
+        <button
+          style={isActive("/analytics/rankings") ? { ...styles.navSub, ...styles.navSubActive } : styles.navSub}
+          onClick={() => navigate("/analytics/rankings")}
+        >
+          Rankings
+        </button>
+
+        <div style={styles.navGroupLabel}>⚙️ OTHER</div>
+        <button
+          style={isActive("/targets") ? { ...styles.navItem, ...styles.navItemActive } : styles.navItem}
+          onClick={() => navigate("/targets")}
+        >
+          🎯 Program Targets
+        </button>
+        <button
+          style={isActive("/data-availability") ? { ...styles.navItem, ...styles.navItemActive } : styles.navItem}
+          onClick={() => navigate("/data-availability")}
+        >
+          📋 Data Availability
+        </button>
+
+        {user.role === "admin" && (
           <button
-            key={tab.path}
-            style={
-              isActive(tab.path)
-                ? { ...styles.tab, ...styles.tabActive }
-                : styles.tab
-            }
-            onClick={() => navigate(tab.path)}
+            style={isActive("/management") ? { ...styles.navItem, ...styles.navItemActive } : styles.navItem}
+            onClick={() => navigate("/management")}
           >
-            {tab.label}
+            🔐 Management
           </button>
-        ))}
+        )}
+
       </div>
 
-      {/* Right side — user info and logout */}
-      <div style={styles.right}>
+      <div style={styles.footer}>
         <div style={styles.userInfo}>
-          <span style={styles.userName}>{user.sub || "User"}</span>
-          <span style={styles.userRole}>
+          <p style={styles.userName}>{user.sub || "User"}</p>
+          <p style={styles.userRole}>
             {user.role?.replace(/_/g, " ").toUpperCase() || "STAFF"}
-          </span>
+          </p>
         </div>
         <button style={styles.logoutBtn} onClick={handleLogout}>
           Sign Out
@@ -98,85 +117,118 @@ export default function Navbar() {
 }
 
 const styles = {
-  wrapper: {
+  sidebar: {
+    width: "240px",
+    minHeight: "100vh",
     backgroundColor: "#1F2A45",
-    padding: "10px 28px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    position: "sticky",
-    top: 0,
-    zIndex: 100,
-    boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-  },
-  left: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-  },
-  logo: {
-    height: "40px",
-    objectFit: "contain",
-  },
-  agency: {
-    color: "#EEFAF6",
-    fontSize: "10px",
-    margin: 0,
-    letterSpacing: "0.3px",
-  },
-  system: {
-    color: "#FFFFFF",
-    fontSize: "13px",
-    fontWeight: "700",
-    margin: "2px 0 0 0",
-    fontFamily: "'Montserrat', sans-serif",
-  },
-  tabs: {
-    display: "flex",
-    gap: "4px",
-  },
-  tab: {
-    backgroundColor: "transparent",
-    border: "none",
-    color: "#94A3B8",
-    padding: "8px 16px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontSize: "13px",
-    fontWeight: "600",
-    fontFamily: "'Barlow', sans-serif",
-    transition: "all 0.2s",
-  },
-  tabActive: {
-    backgroundColor: "#0B4BAA",
-    color: "#FFFFFF",
-    borderBottom: "3px solid #EEFAF6",
-  },
-  right: {
-    display: "flex",
-    alignItems: "center",
-    gap: "16px",
-  },
-  userInfo: {
+    padding: "20px 0",
     display: "flex",
     flexDirection: "column",
-    alignItems: "flex-end",
+    position: "fixed",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    fontFamily: "'Barlow', sans-serif",
+    boxShadow: "2px 0 8px rgba(0,0,0,0.1)",
+  },
+  header: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "0 20px 20px 20px",
+    borderBottom: "1px solid #2D3B5C",
+  },
+  logo: { height: "40px", objectFit: "contain" },
+  system: {
+    color: "#FFFFFF",
+    fontSize: "14px",
+    fontWeight: "700",
+    margin: 0,
+    fontFamily: "'Montserrat', sans-serif",
+  },
+  agency: {
+    color: "#94A3B8",
+    fontSize: "10px",
+    margin: "2px 0 0 0",
+    letterSpacing: "0.5px",
+  },
+  nav: {
+    flex: 1,
+    padding: "16px 12px",
+    overflowY: "auto",
+  },
+  navGroupLabel: {
+    color: "#64748B",
+    fontSize: "10px",
+    fontWeight: "700",
+    letterSpacing: "1px",
+    padding: "12px 12px 6px 12px",
+    marginTop: "8px",
+  },
+  navItem: {
+    display: "block",
+    width: "100%",
+    padding: "10px 12px",
+    backgroundColor: "transparent",
+    border: "none",
+    borderRadius: "6px",
+    color: "#94A3B8",
+    fontSize: "13px",
+    fontWeight: "600",
+    textAlign: "left",
+    cursor: "pointer",
+    fontFamily: "'Barlow', sans-serif",
+    marginBottom: "2px",
+  },
+  navItemActive: {
+    backgroundColor: "#0B4BAA",
+    color: "#FFFFFF",
+  },
+  navSub: {
+    display: "block",
+    width: "100%",
+    padding: "8px 12px 8px 28px",
+    backgroundColor: "transparent",
+    border: "none",
+    borderRadius: "6px",
+    color: "#94A3B8",
+    fontSize: "12px",
+    fontWeight: "500",
+    textAlign: "left",
+    cursor: "pointer",
+    fontFamily: "'Barlow', sans-serif",
+    marginBottom: "2px",
+  },
+  navSubActive: {
+    backgroundColor: "#0B4BAA",
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
+  footer: {
+    padding: "16px 20px",
+    borderTop: "1px solid #2D3B5C",
+  },
+  userInfo: {
+    marginBottom: "10px",
   },
   userName: {
     color: "#FFFFFF",
     fontSize: "13px",
     fontWeight: "600",
+    margin: 0,
   },
   userRole: {
     color: "#94A3B8",
     fontSize: "10px",
     letterSpacing: "0.5px",
+    margin: "2px 0 0 0",
   },
   logoutBtn: {
+    width: "100%",
     backgroundColor: "transparent",
     border: "1px solid #475569",
     color: "#EEFAF6",
-    padding: "7px 14px",
+    padding: "8px 14px",
     borderRadius: "6px",
     cursor: "pointer",
     fontSize: "12px",

@@ -195,6 +195,7 @@ const styles = {
   },
   body: {
     padding: "28px 32px",
+    marginLeft: "240px",
   },
   welcome: {
     marginBottom: "24px",

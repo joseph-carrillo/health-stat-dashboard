@@ -7,6 +7,7 @@ export default function Login() {
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   function handleChange(e) {
@@ -17,6 +18,23 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setLoading(true);
+
+    // DEV BYPASS — remove this before going live
+    if (formData.username === "dev" && formData.password === "dev") {
+      const fakeToken = btoa(JSON.stringify({ alg: "HS256" })) +
+        "." +
+        btoa(JSON.stringify({
+          sub: "admin",
+          role: "admin",
+          program_code: null,
+          user_id: 1
+        })) +
+        ".signature";
+      localStorage.setItem("token", fakeToken);
+      navigate("/home");
+      return;
+    }
+    // END DEV BYPASS
 
     try {
       const body = new URLSearchParams();
@@ -88,11 +106,10 @@ export default function Login() {
             />
           </div>
 
-          <div style={styles.fieldGroup}>
-            <label style={styles.label}>Password</label>
+          <div style={styles.passwordWrapper}>
             <input
-              style={styles.input}
-              type="password"
+              style={styles.passwordInput}
+              type={showPassword ? "text" : "password"}
               name="password"
               value={formData.password}
               onChange={handleChange}
@@ -100,6 +117,24 @@ export default function Login() {
               autoComplete="current-password"
               required
             />
+            <button
+              type="button"
+              style={styles.eyeBtn}
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+                </svg>
+              )}
+              </button>
           </div>
 
           {error && <p style={styles.error}>{error}</p>}
@@ -251,5 +286,27 @@ const styles = {
     color: "#94A3B8",
     textAlign: "center",
     lineHeight: "1.5",
+  },
+  passwordWrapper: {
+    display: "flex",
+    alignItems: "center",
+    border: "1px solid #CBD5E1",
+    borderRadius: "6px",
+    overflow: "hidden",
+  },
+  passwordInput: {
+    flex: 1,
+    padding: "10px 14px",
+    border: "none",
+    fontSize: "14px",
+    color: "#1F2A45",
+    outline: "none",
+  },
+  eyeBtn: {
+    backgroundColor: "transparent",
+    border: "none",
+    padding: "0 12px",
+    cursor: "pointer",
+    fontSize: "16px",
   },
 };
