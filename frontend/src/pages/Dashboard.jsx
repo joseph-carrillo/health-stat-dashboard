@@ -123,10 +123,7 @@ export default function Dashboard() {
     // We try common GeoJSON name properties — we will fix this once
     // you tell me the exact property name in your GeoJSON file
     const name =
-      feature.properties.NAME_2 ||
-      feature.properties.NAME ||
-      feature.properties.ADM2_EN ||
-      feature.properties.name ||
+      feature.properties.ADM3_EN ||
       "";
     const coverage = mockCoverage[name];
     return {
@@ -140,10 +137,7 @@ export default function Dashboard() {
   // Tooltip shown when you hover over an LGU
   function onEachFeature(feature, layer) {
     const name =
-      feature.properties.NAME_2 ||
-      feature.properties.NAME ||
-      feature.properties.ADM2_EN ||
-      feature.properties.name ||
+      feature.properties.ADM3_EN ||
       "Unknown";
     const coverage = mockCoverage[name];
     const display =

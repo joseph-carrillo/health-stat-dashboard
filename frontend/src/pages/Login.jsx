@@ -39,7 +39,7 @@ export default function Login() {
       const data = await response.json();
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("token_type", data.token_type);
-      navigate("/dashboard");
+      navigate("/home");
 
     } catch (err) {
       setError("Cannot connect to server. Is the API running?");
