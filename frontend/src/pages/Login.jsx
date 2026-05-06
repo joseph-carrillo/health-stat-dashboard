@@ -1,186 +1,244 @@
-// Login.jsx
-// DOH-NIR CHD Health Statistics Dashboard
-// Follows DOH Brand and Visual Identity Guidelines (DM 2025-0600)
+// frontend/src/pages/Login.jsx
 
-import { useState } from 'react'
-import { login } from '../services/api'
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-export default function Login({ onLogin }) {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+export default function Login() {
+  const [formData, setFormData] = useState({ username: "", password: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+  function handleChange(e) {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
     try {
-      const data = await login(username, password)
-      localStorage.setItem('token', data.access_token)
-      localStorage.setItem('user', JSON.stringify(data.user))
-      onLogin(data.user)
+      const body = new URLSearchParams();
+      body.append("username", formData.username);
+      body.append("password", formData.password);
+
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: body,
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setError(data.detail || "Login failed. Check your credentials.");
+        setLoading(false);
+        return;
+      }
+
+      const data = await response.json();
+      localStorage.setItem("token", data.access_token);
+      localStorage.setItem("token_type", data.token_type);
+      navigate("/dashboard");
+
     } catch (err) {
-      setError('Invalid username or password. Please try again.')
-    } finally {
-      setLoading(false)
+      setError("Cannot connect to server. Is the API running?");
+      setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen flex"
-      style={{ backgroundColor: '#EEFAF6' }}>
+    <div style={styles.page}>
+      <div style={styles.card}>
 
-      {/* Left Panel — DOH Branding */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center p-12"
-        style={{ backgroundColor: '#1F2A45' }}>
-
-        {/* Logos */}
-        <div className="flex items-center gap-6 mb-8">
-          <img
-            src="/images/DOH SEAL - FULL COLOR.png"
-            alt="DOH Seal"
-            className="w-24 h-24 object-contain"
-          />
-          <img
-            src="/images/bagong-pilipinas white.png"
-            alt="Bagong Pilipinas"
-            className="w-24 h-24 object-contain"
-          />
+        {/* 3 Logos in a row */}
+        <div style={styles.logoRow}>
+          <img src="/images/DOH SEAL - FULL COLOR.png" alt="DOH Seal" style={styles.logo} />
+          <img src="/images/bagong-pilipinas-logo.png" alt="Bagong Pilipinas" style={styles.logo} />
+          <img src="/images/fhsis_V2_transparent.png" alt="FHSIS NIR" style={styles.logo} />
         </div>
 
-        {/* NIR Wordmark */}
-        <img
-          src="/images/Center DOH NIR Wordmark White.png"
-          alt="DOH Negros Island Region"
-          className="w-72 object-contain mb-8"
-        />
+        {/* Agency name lines — no big gap between them */}
+        <p style={styles.agency1}>Department of Health</p>
+        <p style={styles.agency2}>Negros Island Region Center for Health Development</p>
 
-        {/* Divider */}
-        <div className="w-16 h-1 rounded mb-8"
-          style={{ backgroundColor: '#FFD700' }}>
-        </div>
+        {/* System title */}
+        <h1 style={styles.title}>
+          Field Health Services Information System <br /> Dashboard V2.0
+        </h1>
 
-        {/* System Name */}
-        <h2 className="text-white text-center text-xl font-semibold"
-          style={{ fontFamily: 'Montserrat, sans-serif' }}>
-          Health Statistics Dashboard
-        </h2>
-        <p className="text-center text-sm mt-2"
-          style={{ color: '#DEF0E9' }}>
-          FHSIS Data Management System
-        </p>
-
-        {/* Footer text */}
-        <p className="text-center text-xs mt-16"
-          style={{ color: '#587CA5' }}>
-          Republic of the Philippines<br />
-          Department of Health<br />
-          Negros Island Region Center for Health Development
-        </p>
-      </div>
-
-      {/* Right Panel — Login Form */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-8">
-
-        {/* Mobile logos — shown only on small screens */}
-        <div className="flex lg:hidden items-center gap-4 mb-8">
-          <img
-            src="/images/DOH SEAL - FULL COLOR.png"
-            alt="DOH Seal"
-            className="w-16 h-16 object-contain"
-          />
-          <img
-            src="/images/bagong-pilipinas-logo.png"
-            alt="Bagong Pilipinas"
-            className="w-16 h-16 object-contain"
-          />
-        </div>
-
-        {/* Form Card */}
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold"
-              style={{
-                fontFamily: 'Montserrat, sans-serif',
-                color: '#1F2A45'
-              }}>
-              Sign In
-            </h1>
-            <p className="text-sm mt-1"
-              style={{ color: '#587CA5' }}>
-              Enter your credentials to access the dashboard
-            </p>
+        {/* Login Form */}
+        <form onSubmit={handleSubmit} style={styles.form}>
+          <div style={styles.fieldGroup}>
+            <label style={styles.label}>Username</label>
+            <input
+              style={styles.input}
+              type="text"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              placeholder="Enter username"
+              autoComplete="username"
+              required
+            />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1"
-                style={{ color: '#333333' }}>
-                Username
-              </label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2"
-                style={{
-                  borderColor: '#DEF0E9',
-                  focusRingColor: '#0B4BAA'
-                }}
-                placeholder="Enter your username"
-                required
-              />
-            </div>
+          <div style={styles.fieldGroup}>
+            <label style={styles.label}>Password</label>
+            <input
+              style={styles.input}
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Enter password"
+              autoComplete="current-password"
+              required
+            />
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1"
-                style={{ color: '#333333' }}>
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2"
-                style={{ borderColor: '#DEF0E9' }}
-                placeholder="Enter your password"
-                required
-              />
-            </div>
+          {error && <p style={styles.error}>{error}</p>}
 
-            {error && (
-              <div className="text-sm px-4 py-2 rounded-lg"
-                style={{
-                  backgroundColor: '#FFF0F0',
-                  color: '#AD0F0A'
-                }}>
-                {error}
-              </div>
-            )}
+          <button
+            type="submit"
+            style={loading ? styles.buttonDisabled : styles.button}
+            disabled={loading}
+          >
+            {loading ? "Signing in..." : "Sign In"}
+          </button>
+        </form>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full text-white py-2 rounded-lg font-semibold text-sm transition hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: '#0B4BAA' }}>
-              {loading ? 'Signing in...' : 'Sign In'}
-            </button>
-          </form>
+        <p style={styles.footer}>
+          For access requests, please contact your system administrator.
+          <br />
+          Official use only.
+        </p>
 
-          <p className="text-center text-xs mt-6"
-            style={{ color: '#587CA5' }}>
-            Need access? Contact your system administrator.
-          </p>
-        </div>
-
-        {/* Bottom branding for mobile */}
-        <div className="lg:hidden mt-8 text-center text-xs"
-          style={{ color: '#365175' }}>
-          Department of Health — Negros Island Region
-        </div>
       </div>
     </div>
-  )
+  );
 }
+
+// --- All Styles ---
+const styles = {
+  page: {
+    minHeight: "100vh",
+    backgroundColor: "#EEFAF6",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontFamily: "'Barlow', sans-serif",
+  },
+  card: {
+    backgroundColor: "#ffffff",
+    borderRadius: "12px",
+    padding: "40px 40px",
+    width: "100%",
+    maxWidth: "460px",       // wide enough so text fits on one line
+    boxShadow: "0 4px 24px rgba(31, 42, 69, 0.12)",
+    borderTop: "5px solid #0B4BAA",
+  },
+  logoRow: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "16px",
+    marginBottom: "12px",
+  },
+  logo: {
+    height: "100px",
+    objectFit: "contain",
+  },
+  // "Department of Health" — first line
+  agency1: {
+    fontFamily: "'Barlow', sans-serif",
+    fontSize: "13px",
+    fontWeight: "600",
+    color: "#5A6A85",
+    textAlign: "center",
+    margin: "0 0 2px 0",     // tiny gap below — connects visually to agency2
+  },
+  // "Negros Island Region..." — second line, no gap from agency1
+  agency2: {
+    fontFamily: "'Barlow', sans-serif",
+    fontSize: "13px",
+    fontWeight: "600",
+    color: "#5A6A85",
+    textAlign: "center",
+    margin: "0 0 16px 0",    // normal gap below before the title
+    whiteSpace: "nowrap",    // keep on one line
+  },
+  // "Field Health Services Information System Dashboard V2.0"
+  title: {
+    fontFamily: "'Montserrat', sans-serif",
+    fontSize: "17px",
+    fontWeight: "700",
+    color: "#1F2A45",
+    textAlign: "center",
+    margin: "0 0 28px 0",
+    whiteSpace: "nowrap",    // keep on one line
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+  },
+  fieldGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "6px",
+  },
+  label: {
+    fontSize: "13px",
+    fontWeight: "600",
+    color: "#1F2A45",
+  },
+  input: {
+    padding: "10px 14px",
+    borderRadius: "6px",
+    border: "1px solid #CBD5E1",
+    fontSize: "14px",
+    color: "#1F2A45",
+    outline: "none",
+  },
+  button: {
+    marginTop: "8px",
+    padding: "12px",
+    backgroundColor: "#0B4BAA",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "15px",
+    fontWeight: "600",
+    cursor: "pointer",
+    fontFamily: "'Montserrat', sans-serif",
+    letterSpacing: "0.5px",
+  },
+  buttonDisabled: {
+    marginTop: "8px",
+    padding: "12px",
+    backgroundColor: "#93B4DC",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "15px",
+    fontWeight: "600",
+    cursor: "not-allowed",
+    fontFamily: "'Montserrat', sans-serif",
+  },
+  error: {
+    backgroundColor: "#FEE2E2",
+    color: "#991B1B",
+    padding: "10px 14px",
+    borderRadius: "6px",
+    fontSize: "13px",
+    margin: "0",
+  },
+  footer: {
+    marginTop: "24px",
+    fontSize: "11px",
+    color: "#94A3B8",
+    textAlign: "center",
+    lineHeight: "1.5",
+  },
+};

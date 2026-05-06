@@ -1,190 +1,550 @@
-// Dashboard.jsx
-// Main dashboard page for DOH-NIR Health Statistics Dashboard
+// frontend/src/pages/Dashboard.jsx
 
-import { useState, useEffect } from 'react'
-import { getHealthData } from '../services/api'
+import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { MapContainer, TileLayer, GeoJSON, Tooltip } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 
-export default function Dashboard({ user, onLogout }) {
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [selectedMonth, setSelectedMonth] = useState(1)
+// ─── Decode JWT token ───────────────────────────────────────────
+// The token is a long string. This function reads the user info inside it.
+function decodeToken(token) {
+  try {
+    const base64 = token.split(".")[1];
+    return JSON.parse(atob(base64));
+  } catch {
+    return {};
+  }
+}
 
-  const months = [
-    { value: 1, label: 'January' },
-    { value: 2, label: 'February' },
-    { value: 3, label: 'March' },
-    { value: 4, label: 'April' },
-    { value: 5, label: 'May' },
-    { value: 6, label: 'June' },
-    { value: 7, label: 'July' },
-    { value: 8, label: 'August' },
-    { value: 9, label: 'September' },
-    { value: 10, label: 'October' },
-    { value: 11, label: 'November' },
-    { value: 12, label: 'December' },
-  ]
+// ─── Color logic ────────────────────────────────────────────────
+// Given a coverage percentage, return a color.
+// Green = on target (>=95%), Yellow = near (80-94%), Red = below (<80%)
+function getCoverageColor(percent) {
+  if (percent === null || percent === undefined) return "#CBD5E1"; // gray = no data
+  if (percent >= 95) return "#16A34A";   // green
+  if (percent >= 80) return "#EAB308";   // yellow
+  return "#DC2626";                       // red
+}
 
+// ─── Mock data ──────────────────────────────────────────────────
+// This is fake data for now. We will replace with real API data later.
+// Keys must match the "ADM2_EN" or "NAME" property in your GeoJSON file.
+// We will adjust this after you tell me the property names in your GeoJSON.
+const mockCoverage = {
+  "Bacolod City": 97,
+  "Bago City": 88,
+  "Cadiz City": 72,
+  "Escalante City": 91,
+  "Himamaylan City": 65,
+  "Kabankalan City": 94,
+  "La Carlota City": 83,
+  "Sagay City": 78,
+  "San Carlos City": 96,
+  "Silay City": 89,
+  "Talisay City": 71,
+  "Victorias City": 85,
+  "Binalbagan": 90,
+  "Calatrava": 68,
+  "Candoni": 74,
+  "Cauayan": 82,
+  "Enrique B. Magalona": 93,
+  "Hinigaran": 87,
+  "Hinobaan": 76,
+  "Ilog": 95,
+  "Isabela": 69,
+  "La Castellana": 88,
+  "Manapla": 92,
+  "Moises Padilla": 73,
+  "Murcia": 86,
+  "Pontevedra": 91,
+  "Pulupandan": 97,
+  "Salvador Benedicto": 79,
+  "San Enrique": 84,
+  "Toboso": 88,
+  "Valladolid": 93,
+  "Dumaguete City": 96,
+  "Bayawan City": 81,
+  "Canlaon City": 70,
+  "Guihulngan City": 85,
+  "Tanjay City": 92,
+  "Amlan": 77,
+  "Ayungon": 83,
+  "Bacong": 89,
+  "Basay": 66,
+  "Bindoy": 74,
+  "Dauin": 91,
+  "Jimalalud": 78,
+  "La Libertad": 86,
+  "Mabinay": 72,
+  "Manjuyod": 88,
+  "Pamplona": 94,
+  "San Jose": 80,
+  "Santa Catalina": 69,
+  "Siaton": 75,
+  "Sibulan": 93,
+  "Tayasan": 87,
+  "Valencia": 95,
+  "Vallehermoso": 82,
+  "Zamboanguita": 90,
+  "Siquijor": 88,
+  "Enrique Villanueva": 79,
+  "Larena": 92,
+  "Lazi": 85,
+  "Maria": 91,
+  "San Juan": 83,
+};
+
+export default function Dashboard() {
+  const navigate = useNavigate();
+
+  // Read user info from the saved token
+  const token = localStorage.getItem("token");
+  const user = token ? decodeToken(token) : {};
+
+  // GeoJSON data state
+  const [nirGeo, setNirGeo] = useState(null);
+  const [hucGeo, setHucGeo] = useState(null);
+
+  // Load both GeoJSON files when Dashboard loads
   useEffect(() => {
-    fetchData()
-  }, [selectedMonth])
+    fetch("/geojson/NIR.geojson")
+      .then((r) => r.json())
+      .then((data) => setNirGeo(data))
+      .catch(() => console.error("Could not load PROVINCE.geojson"));
 
-  const fetchData = async () => {
-    setLoading(true)
-    setError('')
-    try {
-      const result = await getHealthData({
-        indicator_code: 'CPAB_PCT',
-        year: 2026,
-        month: selectedMonth
-      })
-      setData(result.data)
-    } catch (err) {
-      setError('Failed to load data. Please try again.')
-    } finally {
-      setLoading(false)
-    }
+    fetch("/geojson/HUC.geojson")
+      .then((r) => r.json())
+      .then((data) => setHucGeo(data))
+      .catch(() => console.error("Could not load HUC.geojson"));
+  }, []);
+
+  // Style each LGU shape on the map based on coverage
+  function styleFeature(feature) {
+    // We try common GeoJSON name properties — we will fix this once
+    // you tell me the exact property name in your GeoJSON file
+    const name =
+      feature.properties.NAME_2 ||
+      feature.properties.NAME ||
+      feature.properties.ADM2_EN ||
+      feature.properties.name ||
+      "";
+    const coverage = mockCoverage[name];
+    return {
+      fillColor: getCoverageColor(coverage),
+      fillOpacity: 0.7,
+      color: "#ffffff",
+      weight: 1,
+    };
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    onLogout()
+  // Tooltip shown when you hover over an LGU
+  function onEachFeature(feature, layer) {
+    const name =
+      feature.properties.NAME_2 ||
+      feature.properties.NAME ||
+      feature.properties.ADM2_EN ||
+      feature.properties.name ||
+      "Unknown";
+    const coverage = mockCoverage[name];
+    const display =
+      coverage !== undefined ? `${coverage}%` : "No data";
+    layer.bindTooltip(`${name}: ${display}`, {
+      sticky: true,
+      className: "map-tooltip",
+    });
+  }
+
+  // Build ranking list from mockCoverage — sorted highest to lowest
+  const ranking = Object.entries(mockCoverage)
+    .sort((a, b) => b[1] - a[1]);
+  const maxValue = ranking[0]?.[1] || 100;
+
+  function handleLogout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("token_type");
+    navigate("/");
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div style={styles.page}>
 
-      {/* Top Navigation */}
-      <nav className="bg-blue-900 text-white px-6 py-4 flex justify-between items-center">
-        <div>
-          <h1 className="text-lg font-bold">DOH-NIR CHD Dashboard</h1>
-          <p className="text-blue-300 text-xs">Health Statistics System</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <p className="text-sm font-medium">{user?.full_name || user?.username}</p>
-            <p className="text-blue-300 text-xs capitalize">{user?.role?.replace('_', ' ')}</p>
+      {/* ── Header ── */}
+      <div style={styles.header}>
+        <div style={styles.headerLeft}>
+          <img
+            src="/images/fhsis_V2_transparent.png"
+            alt="FHSIS"
+            style={styles.headerLogo}
+          />
+          <div>
+            <h1 style={styles.headerTitle}>FHSIS Dashboard V2.0</h1>
+            <p style={styles.headerSub}>
+              DOH – NIR Center for Health Development
+            </p>
           </div>
-          <button
-            onClick={handleLogout}
-            className="bg-blue-800 hover:bg-blue-700 px-3 py-1 rounded text-sm transition"
-          >
-            Logout
+        </div>
+        <div style={styles.headerRight}>
+          <span style={styles.userBadge}>
+            👤 {user.sub || "User"} &nbsp;|&nbsp;{" "}
+            {user.role?.replace("_", " ").toUpperCase() || "STAFF"}
+          </span>
+          <button style={styles.logoutBtn} onClick={handleLogout}>
+            Sign Out
           </button>
         </div>
-      </nav>
+      </div>
 
-      {/* Main Content */}
-      <div className="p-6">
+      {/* ── Body ── */}
+      <div style={styles.body}>
 
-        {/* Page Title */}
-        <div className="mb-6">
-          <h2 className="text-xl font-bold text-gray-800">
-            Child Protected at Birth (CPAB)
-          </h2>
-          <p className="text-gray-500 text-sm">
-            Coverage percentage by municipality — 2026
-          </p>
+        {/* ── Summary Cards ── */}
+        <div style={styles.cardRow}>
+          <div style={{ ...styles.summaryCard, borderTop: "4px solid #0B4BAA" }}>
+            <p style={styles.cardLabel}>Total LGUs</p>
+            <p style={styles.cardNumber}>63</p>
+          </div>
+          <div style={{ ...styles.summaryCard, borderTop: "4px solid #16A34A" }}>
+            <p style={styles.cardLabel}>On Target (≥95%)</p>
+            <p style={{ ...styles.cardNumber, color: "#16A34A" }}>
+              {Object.values(mockCoverage).filter((v) => v >= 95).length}
+            </p>
+          </div>
+          <div style={{ ...styles.summaryCard, borderTop: "4px solid #EAB308" }}>
+            <p style={styles.cardLabel}>Near Target (80–94%)</p>
+            <p style={{ ...styles.cardNumber, color: "#EAB308" }}>
+              {Object.values(mockCoverage).filter((v) => v >= 80 && v < 95).length}
+            </p>
+          </div>
+          <div style={{ ...styles.summaryCard, borderTop: "4px solid #DC2626" }}>
+            <p style={styles.cardLabel}>Below Target (&lt;80%)</p>
+            <p style={{ ...styles.cardNumber, color: "#DC2626" }}>
+              {Object.values(mockCoverage).filter((v) => v < 80).length}
+            </p>
+          </div>
         </div>
 
-        {/* Filter */}
-        <div className="bg-white rounded-xl shadow p-4 mb-6 flex items-center gap-4">
-          <label className="text-sm font-medium text-gray-700">
-            Select Month:
-          </label>
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(Number(e.target.value))}
-            className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {months.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label} 2026
-              </option>
-            ))}
-          </select>
-          <span className="text-sm text-gray-500">
-            {data.length} locations
-          </span>
-        </div>
+        {/* ── Two Maps Side by Side ── */}
+        <div style={styles.mapsRow}>
 
-        {/* Data Table */}
-        <div className="bg-white rounded-xl shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="font-semibold text-gray-800">
-              CPAB Coverage by Location
-            </h3>
+          {/* Left Map — NIR Provinces/LGUs */}
+          <div style={styles.mapCard}>
+            <h2 style={styles.mapTitle}>
+              Negros Island Region
+              <span style={styles.mapBadge}>REGIONAL</span>
+            </h2>
+            <p style={styles.mapSub}>63 LGUs across 3 provinces</p>
+            <div style={styles.mapBox}>
+              {nirGeo ? (
+                <MapContainer
+                  style={{ height: "100%", width: "100%" }}
+                  bounds={[[9.0, 122.3], [11.0, 123.5]]}
+                  scrollWheelZoom={false}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution="© OpenStreetMap"
+                  />
+                  <GeoJSON
+                    data={nirGeo}
+                    style={styleFeature}
+                    onEachFeature={onEachFeature}
+                  />
+                </MapContainer>
+              ) : (
+                <div style={styles.mapLoading}>Loading map...</div>
+              )}
+            </div>
+            {/* Legend */}
+            <div style={styles.legend}>
+              <span style={{ ...styles.legendDot, background: "#16A34A" }} /> On Target (≥95%)
+              <span style={{ ...styles.legendDot, background: "#EAB308", marginLeft: 12 }} /> Near (80–94%)
+              <span style={{ ...styles.legendDot, background: "#DC2626", marginLeft: 12 }} /> Below (&lt;80%)
+              <span style={{ ...styles.legendDot, background: "#CBD5E1", marginLeft: 12 }} /> No Data
+            </div>
           </div>
 
-          {loading ? (
-            <div className="p-8 text-center text-gray-500">
-              Loading data...
+          {/* Right Map — Bacolod Barangays */}
+          <div style={styles.mapCard}>
+            <h2 style={styles.mapTitle}>
+              Bacolod City
+              <span style={{ ...styles.mapBadge, background: "#EDE9FE", color: "#6D28D9" }}>
+                HUC
+              </span>
+            </h2>
+            <p style={styles.mapSub}>61 barangays — Highly Urbanized City</p>
+            <div style={styles.mapBox}>
+              {hucGeo ? (
+                <MapContainer
+                  style={{ height: "100%", width: "100%" }}
+                  bounds={[[10.55, 122.88], [10.75, 123.05]]}
+                  scrollWheelZoom={false}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution="© OpenStreetMap"
+                  />
+                  <GeoJSON
+                    data={hucGeo}
+                    style={styleFeature}
+                    onEachFeature={onEachFeature}
+                  />
+                </MapContainer>
+              ) : (
+                <div style={styles.mapLoading}>Loading map...</div>
+              )}
             </div>
-          ) : error ? (
-            <div className="p-8 text-center text-red-500">
-              {error}
+            {/* Legend */}
+            <div style={styles.legend}>
+              <span style={{ ...styles.legendDot, background: "#16A34A" }} /> On Target (≥95%)
+              <span style={{ ...styles.legendDot, background: "#EAB308", marginLeft: 12 }} /> Near (80–94%)
+              <span style={{ ...styles.legendDot, background: "#DC2626", marginLeft: 12 }} /> Below (&lt;80%)
+              <span style={{ ...styles.legendDot, background: "#CBD5E1", marginLeft: 12 }} /> No Data
             </div>
-          ) : data.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              No data available for this period.
-            </div>
-          ) : (
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="text-left px-6 py-3 text-gray-600 font-medium">
-                    Location
-                  </th>
-                  <th className="text-left px-6 py-3 text-gray-600 font-medium">
-                    PSGC
-                  </th>
-                  <th className="text-right px-6 py-3 text-gray-600 font-medium">
-                    Coverage (%)
-                  </th>
-                  <th className="text-left px-6 py-3 text-gray-600 font-medium">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {data.map((row, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-3 font-medium text-gray-800">
-                      {row.location}
-                    </td>
-                    <td className="px-6 py-3 text-gray-500">
-                      {row.psgc}
-                    </td>
-                    <td className="px-6 py-3 text-right font-medium">
-                      {row.value !== null
-                        ? `${row.value.toFixed(1)}%`
-                        : '—'}
-                    </td>
-                    <td className="px-6 py-3">
-                      {row.value === null ? (
-                        <span className="text-gray-400 text-xs">No data</span>
-                      ) : row.value >= 95 ? (
-                        <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">
-                          On target
-                        </span>
-                      ) : row.value >= 80 ? (
-                        <span className="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full">
-                          Near target
-                        </span>
-                      ) : (
-                        <span className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded-full">
-                          Below target
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+          </div>
         </div>
+
+        {/* ── LGU Ranking ── */}
+        <div style={styles.rankingCard}>
+          <div style={styles.rankingHeader}>
+            <div>
+              <h2 style={styles.mapTitle}>LGU Ranking</h2>
+              <p style={styles.mapSub}>LGUs ranked by coverage rate</p>
+            </div>
+            <span style={{ ...styles.mapBadge, background: "#FEF3C7", color: "#D97706" }}>
+              RANKING
+            </span>
+          </div>
+
+          <div style={styles.rankingList}>
+            {ranking.map(([name, value], index) => (
+              <div key={name} style={styles.rankingRow}>
+                <span style={styles.rankNum}>{index + 1}</span>
+                <span style={styles.rankName}>{name}</span>
+                <div style={styles.barTrack}>
+                  <div
+                    style={{
+                      ...styles.barFill,
+                      width: `${(value / maxValue) * 100}%`,
+                      backgroundColor: getCoverageColor(value),
+                    }}
+                  />
+                </div>
+                <span style={{
+                  ...styles.rankValue,
+                  color: getCoverageColor(value)
+                }}>
+                  {value}%
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     </div>
-  )
+  );
 }
+
+// ─── Styles ─────────────────────────────────────────────────────
+const styles = {
+  page: {
+    minHeight: "100vh",
+    backgroundColor: "#F0F4F8",
+    fontFamily: "'Barlow', sans-serif",
+  },
+  header: {
+    backgroundColor: "#1F2A45",
+    padding: "12px 32px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  headerLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+  },
+  headerLogo: {
+    height: "44px",
+    objectFit: "contain",
+  },
+  headerTitle: {
+    fontFamily: "'Montserrat', sans-serif",
+    color: "#FFFFFF",
+    fontSize: "17px",
+    fontWeight: "700",
+    margin: 0,
+  },
+  headerSub: {
+    color: "#EEFAF6",
+    fontSize: "11px",
+    margin: "2px 0 0 0",
+  },
+  headerRight: {
+    display: "flex",
+    alignItems: "center",
+    gap: "16px",
+  },
+  userBadge: {
+    color: "#EEFAF6",
+    fontSize: "13px",
+  },
+  logoutBtn: {
+    backgroundColor: "transparent",
+    border: "1px solid #EEFAF6",
+    color: "#EEFAF6",
+    padding: "7px 16px",
+    borderRadius: "6px",
+    cursor: "pointer",
+    fontSize: "13px",
+    fontWeight: "600",
+  },
+  body: {
+    padding: "24px 32px",
+  },
+  cardRow: {
+    display: "grid",
+    gridTemplateColumns: "repeat(4, 1fr)",
+    gap: "16px",
+    marginBottom: "24px",
+  },
+  summaryCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: "10px",
+    padding: "20px 24px",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+  },
+  cardLabel: {
+    fontSize: "12px",
+    color: "#5A6A85",
+    margin: "0 0 8px 0",
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+  },
+  cardNumber: {
+    fontSize: "32px",
+    fontWeight: "700",
+    color: "#1F2A45",
+    margin: 0,
+    fontFamily: "'Montserrat', sans-serif",
+  },
+  mapsRow: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "20px",
+    marginBottom: "24px",
+  },
+  mapCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: "10px",
+    padding: "20px",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+  },
+  mapTitle: {
+    fontFamily: "'Montserrat', sans-serif",
+    fontSize: "16px",
+    fontWeight: "700",
+    color: "#1F2A45",
+    margin: "0 0 4px 0",
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+  },
+  mapSub: {
+    fontSize: "12px",
+    color: "#5A6A85",
+    margin: "0 0 12px 0",
+  },
+  mapBadge: {
+    fontSize: "10px",
+    fontWeight: "700",
+    backgroundColor: "#DBEAFE",
+    color: "#1D4ED8",
+    padding: "3px 8px",
+    borderRadius: "4px",
+    letterSpacing: "0.5px",
+  },
+  mapBox: {
+    height: "380px",
+    borderRadius: "8px",
+    overflow: "hidden",
+    backgroundColor: "#F0F4F8",
+  },
+  mapLoading: {
+    height: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#5A6A85",
+    fontSize: "14px",
+  },
+  legend: {
+    marginTop: "10px",
+    fontSize: "11px",
+    color: "#5A6A85",
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: "4px",
+  },
+  legendDot: {
+    display: "inline-block",
+    width: "10px",
+    height: "10px",
+    borderRadius: "50%",
+    marginRight: "4px",
+  },
+  rankingCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: "10px",
+    padding: "20px 24px",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+  },
+  rankingHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: "16px",
+  },
+  rankingList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+  },
+  rankingRow: {
+    display: "grid",
+    gridTemplateColumns: "28px 180px 1fr 52px",
+    alignItems: "center",
+    gap: "10px",
+  },
+  rankNum: {
+    fontSize: "12px",
+    color: "#94A3B8",
+    fontWeight: "700",
+    textAlign: "right",
+  },
+  rankName: {
+    fontSize: "13px",
+    color: "#1F2A45",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+  barTrack: {
+    backgroundColor: "#F0F4F8",
+    borderRadius: "4px",
+    height: "14px",
+    overflow: "hidden",
+  },
+  barFill: {
+    height: "100%",
+    borderRadius: "4px",
+    transition: "width 0.4s ease",
+  },
+  rankValue: {
+    fontSize: "12px",
+    fontWeight: "700",
+    textAlign: "right",
+  },
+};
