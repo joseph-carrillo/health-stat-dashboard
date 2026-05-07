@@ -1,56 +1,50 @@
 # activeContext.md
 
 ## Current Session Goal
-Completed. Frontend login page built with DOH branding.
+Connect real province-level data to Overview page maps and summary cards.
+
+## Strategic Decision Made Today
+Adopted Two-Track deployment strategy:
+
+### Track 1 — Province Level Dashboard (Target: End of May 2026)
+- Province level maps colored by coverage
+- Summary cards with real numbers
+- Program scorecard on Home page
+- Deploy to ICTU server for internal feedback
+
+### Track 2 — LGU/Barangay Level Dashboard (Target: End of June 2026)
+- Fix FHSIS template errors (see pending list)
+- Build LGU level parsers
+- Upgrade maps to municipality/barangay level
+- Full Coverage, Trends, Rankings pages
+
+## Reason For Decision
+- Higher ops want something live now
+- Province level data already exists and works
+- LGU level files have template errors not yet fixed
+- Feedback from live system shapes LGU build correctly
 
 ## What Was Just Completed
-- Protected all API endpoints with JWT authentication
-- Added require_permission helper for role-based access
-- Built user registration endpoint (POST /api/register)
-- Built admin user management endpoints (GET/POST /api/admin/users)
-- Added users table to schema.sql
-- Fixed role column to allow NULL for pending users
-- React frontend set up with Vite
-- DOH branding applied (DM 2025-0600):
-  - Colors: Deep Navy #1F2A45, Health Blue #0B4BAA, Mint Cream #EEFAF6
-  - Fonts: Montserrat (headings) + Barlow (body)
-  - DOH Seal, Bagong Pilipinas logo, NIR Wordmark added
-- Login page built and displaying correctly
-- Dashboard page created (not yet connected to API)
-- App.jsx routing between Login and Dashboard
+- Login page connected to API
+- Sidebar navigation built
+- Home page with program scorecard and alerts
+- Skeleton placeholder pages for all sections
+- Overview page with maps and ranking (mock data)
+- All pages wired in App.jsx with RBAC route protection
+- Dev bypass added for laptop development (remove before go-live)
 
-## What Happens Next (Start Here)
-Connect the login form to the API and test full login flow in browser.
-
-Step 1 — Test login in browser
-- Go to http://localhost:5173
-- Login with admin / Admin@2026!
-- Should redirect to Dashboard
-
-Step 2 — Fix any connection issues between frontend and API
-- API runs on port 8000
-- Frontend runs on port 5173
-- Proxy is configured in vite.config.js
-
-Step 3 — Build Dashboard page properly
-- Show CPAB coverage data in table
-- Add month filter
-- Show on-target / near-target / below-target status badges
-
-Step 4 — Build Upload page
-- Program selector
-- Sub-program selector
-- File picker
-- Month/year selector
-- Upload button
-- Show batch summary after upload
+## What Happens Next
+Step 1 — Confirm real data in database (done — 500 rows, values present)
+Step 2 — Build province level API endpoint
+Step 3 — Connect real data to Overview maps and summary cards
+Step 4 — Deploy skeleton to ICTU server
 
 ## Daily Startup Checklist
 1. git pull origin main
 2. Start Docker Desktop
 3. docker-compose up -d
 4. uvicorn backend.main:app --reload (Terminal 1)
-5. cd frontend && npm run dev (Terminal 2 or 3)
+5. cd frontend && npm run dev (Terminal 2)
 6. Open http://localhost:5173
 
 ## API and Frontend Ports
@@ -60,6 +54,7 @@ Step 4 — Build Upload page
 
 ## Auth Credentials (Development)
 - Admin: username=admin, password=Admin@2026!
+- Dev bypass: username=dev, password=dev (REMOVE BEFORE GO-LIVE)
 - Test user: username=jsmith, password=Test@2026! (role=program_manager)
 
 ## Local Database
@@ -72,3 +67,11 @@ Step 4 — Build Upload page
 - Fonts: Montserrat (headings), Barlow (body)
 - Logo files in: frontend/public/images/
 - Branding memo: DM 2025-0600
+
+## ICTU Server Status
+- OS: Windows Server 2022
+- Access: SSH preferred (FTP not recommended)
+- Docker: To be installed by ICTU
+- Domain: IP address only (no domain name yet)
+- Network: Intranet + Internet access
+- Status: Pending approval from higher ops

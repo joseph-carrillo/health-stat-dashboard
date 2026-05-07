@@ -1,6 +1,6 @@
 # progress.md
 
-## Status: Frontend Started — Login Page Complete
+## Status: Two-Track Strategy Adopted — Building Province Level Dashboard
 
 ## Completed
 - Full stack setup (React + FastAPI + PostgreSQL + Docker)
@@ -31,34 +31,59 @@
 - Admin role assignment working
 - React frontend set up with Vite
 - DOH branding applied (DM 2025-0600)
-- Login page built with official colors, fonts, and logos
-- App.jsx routing between Login and Dashboard
+- Login page built with official colors, fonts, logos
+- Password show/hide toggle added
+- Dev bypass added for laptop development
+- Sidebar navigation built (role-based)
+- Home page built (program scorecard + alerts)
+- Overview page built (maps + ranking — mock data)
+- Skeleton placeholder pages built for all sections
+- All pages wired in App.jsx with RBAC route protection
+- Real data confirmed in database (500+ rows, Immunization program)
+- Two-Track strategy documented and approved
 
 ## In Progress
-- Connecting login form to API (test full browser flow)
-- Building Dashboard page with real data
+- Build province level API endpoint
+- Connect real data to Overview maps and summary cards
+- Prepare for ICTU server deployment
 
-## Build Order (Vertical Slice Strategy)
+## Track 1 — Province Dashboard (End of May 2026)
 1. ✅ Database schema and seed data
 2. ✅ Parser for File 1 (CPAB/BCG/HepaB)
 3. ✅ Commit approval system
 4. ✅ FastAPI endpoints (13 total)
 5. ✅ Auth and JWT login
 6. ✅ User registration and role management
-7. ✅ React frontend setup with DOH branding
+7. ✅ React frontend with DOH branding
 8. ✅ Login page
-9. ⬜ Test full login flow in browser
-10. ⬜ Dashboard page with real data
-11. ⬜ Upload page
-12. ⬜ Expand to remaining 62 files
+9. ✅ Sidebar navigation
+10. ✅ Home page
+11. ✅ Overview page (mock data)
+12. ✅ Skeleton placeholder pages
+13. ⬜ Province level API endpoint
+14. ⬜ Connect real data to maps and cards
+15. ⬜ Deploy to ICTU server
+16. ⬜ Internal testing and feedback
+
+## Track 2 — LGU/Barangay Dashboard (End of June 2026)
+1. ⬜ Fix FHSIS template errors (6 files)
+2. ⬜ Build LGU level parsers
+3. ⬜ Coverage page (bar charts + tables)
+4. ⬜ Trends page (line graphs)
+5. ⬜ Rankings page
+6. ⬜ Program Targets page
+7. ⬜ Data Availability page
+8. ⬜ Management page
+9. ⬜ Upgrade maps to municipality/barangay level
+10. ⬜ Expand to remaining 62 FHSIS files
 
 ## Pending Team Actions (Template Errors to Fix)
-- `envi_sanitation_zod_nir.xlsx` — Fix Qtr3 and Qtr4 structure
-- `nata_lb_abr_rabr_nir.xlsx` — Add missing ABR <10 column to Q2
-- `morta_mmr_imr_nir.xlsx` — Fix col 33 label (d4 → g4)
-- `6__pre_gd_screening_nir.xlsx` — Fix col Z formula (g/h → g/a)
-- `2_3_Vitamin_A_supplementation_nir.xlsx` — Fix col 11 formula
-- `infec_schisto_5-14, 15-19, 20-59, 60above` — Fix Qtr1b col D and Qtr1d col J
+- envi_sanitation_zod_nir.xlsx — Fix Qtr3 and Qtr4 structure
+- nata_lb_abr_rabr_nir.xlsx — Add missing ABR <10 column to Q2
+- morta_mmr_imr_nir.xlsx — Fix col 33 label (d4 → g4)
+- 6__pre_gd_screening_nir.xlsx — Fix col Z formula (g/h → g/a)
+- 2_3_Vitamin_A_supplementation_nir.xlsx — Fix col 11 formula
+- infec_schisto_5-14, 15-19, 20-59, 60above — Fix Qtr1b col D and Qtr1d col J
 
 ## Pending Clarifications (Higher Ops)
 - BHW ratio — numerator/denominator convention
@@ -72,6 +97,14 @@
 - Filariasis MDA — wrong locations, excluded
 - NCD HUC barangay rows — missing across multiple files
 
+## ICTU Server Status
+- OS: Windows Server 2022
+- Access: SSH preferred
+- Docker: To be installed by ICTU
+- Domain: IP address only
+- Network: Intranet + Internet
+- Status: Pending approval
+
 ## Local Database Credentials (Development Only)
 - Host: localhost | Port: 5432
 - Database: doh_nir_dashboard
@@ -79,5 +112,6 @@
 
 ## API Credentials (Development Only)
 - Admin: admin / Admin@2026!
+- Dev bypass: dev / dev (REMOVE BEFORE GO-LIVE)
 - Test user: jsmith / Test@2026! (program_manager, CHILD_CARE)
 - API docs: http://localhost:8000/docs

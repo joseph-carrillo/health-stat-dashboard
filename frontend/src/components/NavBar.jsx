@@ -33,10 +33,12 @@ export default function Navbar() {
     <div style={styles.sidebar}>
 
       <div style={styles.header}>
-        <img src="/images/DOH SEAL - FULL COLOR.png" alt="DOH" style={styles.logo} />
+        <img src="/images/fhsis_V2_transparent.png" alt="DOH" style={styles.logo} />
         <div>
           <p style={styles.system}>FHSIS Dashboard</p>
-          <p style={styles.agency}>NIR CHD</p>
+          <p style={styles.system}>V2.0</p>
+          <p style={styles.agency}>Negros Island Region</p>
+          <p style={styles.agency}>Center for Health Development</p>
         </div>
       </div>
 
@@ -138,7 +140,7 @@ const styles = {
     padding: "0 20px 20px 20px",
     borderBottom: "1px solid #2D3B5C",
   },
-  logo: { height: "40px", objectFit: "contain" },
+  logo: { height: "63px", objectFit: "contain" },
   system: {
     color: "#FFFFFF",
     fontSize: "14px",
