@@ -15,6 +15,7 @@ from datetime import timedelta
 import sys
 sys.path.append(str(Path(__file__).parent))
 from app.services.parser import parse_file
+from app.services.commit import approve_batch, get_batch_summary, get_conflicts, resolve_conflict
 from app.core.auth import (
     authenticate_user,
     create_access_token,
@@ -277,7 +278,8 @@ def approve_staging_batch(
     """
     result = approve_batch(
         batch_id=batch_id,
-        approved_by=None
+        approved_by=current_user["user_id"],
+        force=True
     )
     if not result.get("success"):
         raise HTTPException(

@@ -76,6 +76,12 @@ export default function Navbar() {
         >
           Rankings
         </button>
+        <button
+          style={isActive("/analytics/indicator-report") ? { ...styles.navSub, ...styles.navSubActive } : styles.navSub}
+          onClick={() => navigate("/analytics/indicator-report")}
+        >
+          Indicator Report
+        </button>
 
         <div style={styles.navGroupLabel}>⚙️ OTHER</div>
         <button

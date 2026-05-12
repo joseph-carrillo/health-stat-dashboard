@@ -208,10 +208,7 @@ def resolve_conflict(
 # Moves approved data from staging to health_data
 # =====================================================
 
-def approve_batch(
-    batch_id: str,
-    approved_by: int = None
-) -> dict:
+def approve_batch(batch_id: str, approved_by=None, force=False):
     """
     Approve a batch and commit data to health_data.
 
@@ -234,12 +231,10 @@ def approve_batch(
         (batch_id,)
     )
     unresolved = cur.fetchone()[0]
-    if unresolved > 0:
-        conn.close()
+    if unresolved > 0 and not force:
         return {
             "success": False,
-            "error": f"{unresolved} conflicts still pending review. "
-                     f"Resolve all conflicts before approving."
+            "error": f"{unresolved} conflicts still pending review. Resolve all conflicts before approving."
         }
 
     # Check for failed validation

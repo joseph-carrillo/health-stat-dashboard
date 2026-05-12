@@ -7,6 +7,7 @@ import Overview from "./pages/analytics/Overview";
 import Coverage from "./pages/analytics/Coverage";
 import Trends from "./pages/analytics/Trends";
 import Rankings from "./pages/analytics/Rankings";
+import IndicatorReport from "./pages/analytics/IndicatorReport";
 import Targets from "./pages/Targets";
 import DataAvailability from "./pages/DataAvailability";
 import Management from "./pages/Management";
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="/analytics/coverage" element={<ProtectedRoute><Coverage /></ProtectedRoute>} />
         <Route path="/analytics/trends" element={<ProtectedRoute><Trends /></ProtectedRoute>} />
         <Route path="/analytics/rankings" element={<ProtectedRoute><Rankings /></ProtectedRoute>} />
+        <Route path="/analytics/indicator-report" element={<ProtectedRoute><IndicatorReport /></ProtectedRoute>} />
         <Route path="/targets" element={<ProtectedRoute><Targets /></ProtectedRoute>} />
         <Route path="/data-availability" element={<ProtectedRoute><DataAvailability /></ProtectedRoute>} />
 
