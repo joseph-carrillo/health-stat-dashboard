@@ -17,6 +17,75 @@ function getUser() {
   }
 }
 
+// Fixed location order matching the Excel file
+const LOCATION_ORDER = [
+  { name: "Negros Occidental", isHeader: true },
+  { name: "City of Bago", isHeader: false },
+  { name: "Binalbagan", isHeader: false },
+  { name: "City of Cadiz", isHeader: false },
+  { name: "Calatrava", isHeader: false },
+  { name: "Candoni", isHeader: false },
+  { name: "Cauayan", isHeader: false },
+  { name: "Don Salvador Benedicto", isHeader: false },
+  { name: "Enrique B. Magalona (Saravia)", isHeader: false },
+  { name: "City of Escalante", isHeader: false },
+  { name: "City of Himamaylan", isHeader: false },
+  { name: "Hinigaran", isHeader: false },
+  { name: "Hinoba-an (Asia)", isHeader: false },
+  { name: "Ilog", isHeader: false },
+  { name: "Isabela", isHeader: false },
+  { name: "City of Kabankalan", isHeader: false },
+  { name: "City of La Carlota", isHeader: false },
+  { name: "La Castellana", isHeader: false },
+  { name: "Manapla", isHeader: false },
+  { name: "Moises Padilla (Magallon)", isHeader: false },
+  { name: "Murcia", isHeader: false },
+  { name: "Pontevedra", isHeader: false },
+  { name: "Pulupandan", isHeader: false },
+  { name: "City of Sagay", isHeader: false },
+  { name: "City of San Carlos", isHeader: false },
+  { name: "San Enrique", isHeader: false },
+  { name: "City of Silay", isHeader: false },
+  { name: "City of Sipalay", isHeader: false },
+  { name: "City of Talisay", isHeader: false },
+  { name: "Toboso", isHeader: false },
+  { name: "Valladolid", isHeader: false },
+  { name: "City of Victorias", isHeader: false },
+  { name: "Negros Oriental", isHeader: true },
+  { name: "Amlan", isHeader: false },
+  { name: "Ayungon", isHeader: false },
+  { name: "Bacong", isHeader: false },
+  { name: "City of Bais", isHeader: false },
+  { name: "Basay", isHeader: false },
+  { name: "City of Bayawan (Tulong)", isHeader: false },
+  { name: "Bindoy (Payabon)", isHeader: false },
+  { name: "City of Canlaon", isHeader: false },
+  { name: "Dauin", isHeader: false },
+  { name: "City of Dumaguete (Capital)", isHeader: false },
+  { name: "City of Guihulngan", isHeader: false },
+  { name: "Jimalalud", isHeader: false },
+  { name: "La Libertad", isHeader: false },
+  { name: "Mabinay", isHeader: false },
+  { name: "Manjuyod", isHeader: false },
+  { name: "Pamplona", isHeader: false },
+  { name: "San Jose", isHeader: false },
+  { name: "Santa Catalina", isHeader: false },
+  { name: "Siaton", isHeader: false },
+  { name: "Sibulan", isHeader: false },
+  { name: "City of Tanjay", isHeader: false },
+  { name: "Tayasan", isHeader: false },
+  { name: "Valencia (Luzurriaga)", isHeader: false },
+  { name: "Vallehermoso", isHeader: false },
+  { name: "Zamboanguita", isHeader: false },
+  { name: "Siquijor", isHeader: true },
+  { name: "Enrique Villanueva", isHeader: false },
+  { name: "Larena", isHeader: false },
+  { name: "Lazi", isHeader: false },
+  { name: "Maria", isHeader: false },
+  { name: "San Juan", isHeader: false },
+  { name: "Siquijor (Capital)", isHeader: false },
+  { name: "City of Bacolod (HUC)", isHeader: true },
+];
 const MONTHS = [
   { value: 1, label: "January" },
   { value: 2, label: "February" },
@@ -92,11 +161,13 @@ export default function IndicatorReport() {
       const lguMap = {};
 
       data.data.forEach((row) => {
-        // Skip barangay level locations
-        // Barangays have PSGC ending in more than 6 significant digits
-        // Municipality/city PSGCs end in 000
-        const psgc = String(row.psgc);
-        if (!psgc.endsWith("000")) return;
+        const name = row.location.trim();
+        if (
+          name.toLowerCase().includes("barangay") ||
+          name.toLowerCase().includes("poblacion") ||
+          name.toLowerCase().includes("zone") ||
+          name.toLowerCase().includes("purok")
+        ) return;
 
         const lgu = row.location.trim();
         if (!lguMap[lgu]) {
@@ -105,10 +176,13 @@ export default function IndicatorReport() {
         lguMap[lgu][row.indicator_code] = row.value;
       });
 
-      // Convert to array and sort by location name
-      const rows = Object.values(lguMap).sort((a, b) =>
-        a.location.localeCompare(b.location)
-      );
+      // Sort by fixed location order
+      const rows = LOCATION_ORDER.map(item => {
+        if (item.isHeader) {
+          return { location: item.name, isHeader: true };
+        }
+        return lguMap[item.name.trim()] || { location: item.name, isHeader: false, isEmpty: true };
+      });
 
       setTableData(rows);
 
@@ -213,28 +287,42 @@ export default function IndicatorReport() {
                 </tr>
               </thead>
               <tbody>
-                {tableData.map((row, index) => (
-                  <tr
-                    key={row.psgc}
-                    style={index % 2 === 0 ? styles.trEven : styles.trOdd}
-                  >
-                    <td style={{ ...styles.td, ...styles.stickyCol, fontWeight: "600" }}>
-                      {row.location}
-                    </td>
-                    {CPAB_INDICATORS.map((ind) => (
-                      <td
-                        key={ind.code}
-                        style={{
-                          ...styles.td,
-                          color: ind.code.endsWith("_PCT") ? "#0B4BAA" : "#1F2A45",
-                          fontWeight: ind.code.endsWith("_PCT") ? "600" : "400",
-                        }}
-                      >
-                        {formatValue(row[ind.code], ind.code)}
+                {tableData.map((row, index) => {
+                  if (row.isHeader) {
+                    return (
+                      <tr key={row.location} style={styles.trHeader}>
+                        <td
+                          style={{ ...styles.td, ...styles.stickyCol, ...styles.headerCell }}
+                          colSpan={CPAB_INDICATORS.length + 1}
+                        >
+                          {row.location}
+                        </td>
+                      </tr>
+                    );
+                  }
+                  return (
+                    <tr
+                      key={row.psgc || row.location}
+                      style={index % 2 === 0 ? styles.trEven : styles.trOdd}
+                    >
+                      <td style={{ ...styles.td, ...styles.stickyCol, fontWeight: "600" }}>
+                        {row.location}
                       </td>
-                    ))}
-                  </tr>
-                ))}
+                      {CPAB_INDICATORS.map((ind) => (
+                        <td
+                          key={ind.code}
+                          style={{
+                            ...styles.td,
+                            color: ind.code.endsWith("_PCT") ? "#0B4BAA" : "#1F2A45",
+                            fontWeight: ind.code.endsWith("_PCT") ? "600" : "400",
+                          }}
+                        >
+                          {formatValue(row[ind.code], ind.code)}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -397,5 +485,22 @@ const styles = {
     fontSize: "13px",
     color: "#5A6A85",
     margin: 0,
+  },
+  emptySub: {
+    fontSize: "13px",
+    color: "#94A3B8",
+    margin: 0,
+  },
+  trHeader: {
+    backgroundColor: "#1F2A45",
+  },
+  headerCell: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: "13px",
+    fontFamily: "'Montserrat', sans-serif",
+    letterSpacing: "0.5px",
+    backgroundColor: "#1F2A45",
+    padding: "10px 12px",
   },
 };

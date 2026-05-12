@@ -348,7 +348,7 @@ def get_health_data(
         query += " AND rp.period_value = %s AND rp.period_type = 'monthly'"
         params.append(month)
 
-    query += " ORDER BY l.name, i.code LIMIT 500"
+    query += " ORDER BY l.name, i.code LIMIT 5000"
 
     cur.execute(query, params)
     rows = cur.fetchall()
