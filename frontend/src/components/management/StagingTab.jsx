@@ -9,6 +9,7 @@ export default function StagingTab() {
   const [error, setError] = useState("");
   const [approving, setApproving] = useState(false);
   const [approved, setApproved] = useState(false);
+  const [confirmPending, setConfirmPending] = useState(false);
 
   const token = localStorage.getItem("token");
 
@@ -43,9 +44,12 @@ export default function StagingTab() {
     setLoading(false);
   }
 
-  async function handleApprove() {
-    if (!window.confirm("Are you sure you want to approve this batch? This will commit the data to the database.")) return;
+  function handleApprove() {
+    setConfirmPending(true);
+  }
 
+  async function handleConfirmApprove() {
+    setConfirmPending(false);
     setApproving(true);
 
     try {
@@ -117,14 +121,32 @@ export default function StagingTab() {
             </div>
           </div>
 
-          {/* Approve button */}
-          <button
-            style={approving ? styles.btnDisabled : styles.approveBtn}
-            onClick={handleApprove}
-            disabled={approving}
-          >
-            {approving ? "Approving..." : "✅ Approve and Commit to Database"}
-          </button>
+          {/* Approve / confirm */}
+          {confirmPending ? (
+            <div style={styles.confirmBox}>
+              <p style={styles.confirmMsg}>
+                You are about to commit{" "}
+                <strong>{(summary.total_rows || 0).toLocaleString()}</strong> rows
+                to the database. This action cannot be undone. Are you sure?
+              </p>
+              <div style={styles.confirmButtons}>
+                <button style={styles.commitBtn} onClick={handleConfirmApprove}>
+                  Yes, Commit Data
+                </button>
+                <button style={styles.cancelBtn} onClick={() => setConfirmPending(false)}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              style={approving ? styles.btnDisabled : styles.approveBtn}
+              onClick={handleApprove}
+              disabled={approving}
+            >
+              {approving ? "Approving..." : "✅ Approve and Commit to Database"}
+            </button>
+          )}
         </div>
       )}
 
@@ -245,6 +267,44 @@ const styles = {
     fontSize: "14px",
     fontWeight: "600",
     cursor: "not-allowed",
+    fontFamily: "'Montserrat', sans-serif",
+  },
+  confirmBox: {
+    backgroundColor: "#FFFBEB",
+    border: "1px solid #FCD34D",
+    borderRadius: "8px",
+    padding: "16px 20px",
+  },
+  confirmMsg: {
+    fontSize: "13px",
+    color: "#92400E",
+    margin: "0 0 16px 0",
+    lineHeight: "1.6",
+  },
+  confirmButtons: {
+    display: "flex",
+    gap: "12px",
+  },
+  commitBtn: {
+    padding: "10px 20px",
+    backgroundColor: "#16A34A",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "pointer",
+    fontFamily: "'Montserrat', sans-serif",
+  },
+  cancelBtn: {
+    padding: "10px 20px",
+    backgroundColor: "#94A3B8",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "pointer",
     fontFamily: "'Montserrat', sans-serif",
   },
   successBox: {

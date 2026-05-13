@@ -104,7 +104,7 @@ const MONTHS = [
 // CPAB/BCG/HepaB indicators in the correct column order
 // This matches the Excel file column layout
 const CPAB_INDICATORS = [
-  { code: "IMMUN_POP",        label: "Target Pop." },
+  { code: "IMMUN_POP_0_11M",  label: "Target Pop." },
   { code: "CPAB_MALE",        label: "CPAB Male" },
   { code: "CPAB_FEMALE",      label: "CPAB Female" },
   { code: "CPAB_TOTAL",       label: "CPAB Total" },
@@ -127,10 +127,42 @@ const CPAB_INDICATORS = [
   { code: "HEPAB_GT24H_PCT",    label: "HepaB >24H %" },
 ];
 
+const PROVINCES = [
+  { value: "all",                   label: "All Provinces" },
+  { value: "Negros Occidental",     label: "Negros Occidental" },
+  { value: "Negros Oriental",       label: "Negros Oriental" },
+  { value: "Siquijor",              label: "Siquijor" },
+  { value: "City of Bacolod (HUC)", label: "City of Bacolod (HUC)" },
+];
+
+const NON_PCT_CODES = CPAB_INDICATORS
+  .filter(ind => !ind.code.endsWith("_PCT"))
+  .map(ind => ind.code);
+
+function computeSubtotal(lgus) {
+  const totals = {};
+  for (const code of NON_PCT_CODES) {
+    totals[code] = lgus.reduce((acc, lgu) => {
+      const v = lgu[code];
+      return acc + (v != null ? Number(v) : 0);
+    }, 0);
+  }
+  const pop = totals["IMMUN_POP_0_11M"] || 0;
+  if (pop > 0) {
+    totals["CPAB_PCT"]       = totals["CPAB_TOTAL"]       / pop;
+    totals["BCG_24H_PCT"]    = totals["BCG_24H_TOTAL"]    / pop;
+    totals["BCG_GT24H_PCT"]  = totals["BCG_GT24H_TOTAL"]  / pop;
+    totals["HEPAB_24H_PCT"]  = totals["HEPAB_24H_TOTAL"]  / pop;
+    totals["HEPAB_GT24H_PCT"]= totals["HEPAB_GT24H_TOTAL"]/ pop;
+  }
+  return totals;
+}
+
 export default function IndicatorReport() {
   const user = getUser();
   const [year, setYear] = useState(2026);
   const [month, setMonth] = useState(1);
+  const [province, setProvince] = useState("all");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [tableData, setTableData] = useState([]);
@@ -176,13 +208,33 @@ export default function IndicatorReport() {
         lguMap[lgu][row.indicator_code] = row.value;
       });
 
-      // Sort by fixed location order
-      const rows = LOCATION_ORDER.map(item => {
+      // Build rows: province header (with subtotals) then its child LGUs
+      const rows = [];
+      let currentProvince = null;
+      let provinceLGUs = [];
+
+      for (const item of LOCATION_ORDER) {
         if (item.isHeader) {
-          return { location: item.name, isHeader: true };
+          if (currentProvince !== null) {
+            const subtotals = provinceLGUs.length > 0
+              ? computeSubtotal(provinceLGUs)
+              : (lguMap[currentProvince] || {});
+            rows.push({ location: currentProvince, isHeader: true, ...subtotals });
+            rows.push(...provinceLGUs);
+          }
+          currentProvince = item.name;
+          provinceLGUs = [];
+        } else {
+          provinceLGUs.push(lguMap[item.name.trim()] || { location: item.name, isEmpty: true });
         }
-        return lguMap[item.name.trim()] || { location: item.name, isHeader: false, isEmpty: true };
-      });
+      }
+      if (currentProvince !== null) {
+        const subtotals = provinceLGUs.length > 0
+          ? computeSubtotal(provinceLGUs)
+          : (lguMap[currentProvince] || {});
+        rows.push({ location: currentProvince, isHeader: true, ...subtotals });
+        rows.push(...provinceLGUs);
+      }
 
       setTableData(rows);
 
@@ -203,8 +255,20 @@ export default function IndicatorReport() {
     if (code.endsWith("_PCT")) {
       return (value * 100).toFixed(1) + "%";
     }
-    return Number(value).toLocaleString();
+    return value === 0 ? "0" : Number(value).toLocaleString();
   }
+
+  const visibleRows = province === "all"
+    ? tableData
+    : (() => {
+        const result = [];
+        let inProvince = false;
+        for (const row of tableData) {
+          if (row.isHeader) inProvince = row.location === province;
+          if (inProvince) result.push(row);
+        }
+        return result;
+      })();
 
   return (
     <div style={styles.page}>
@@ -249,13 +313,26 @@ export default function IndicatorReport() {
             </select>
           </div>
 
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Province</label>
+            <select
+              style={styles.select}
+              value={province}
+              onChange={(e) => setProvince(e.target.value)}
+            >
+              {PROVINCES.map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+
           <button style={styles.btn} onClick={fetchData} disabled={loading}>
             {loading ? "Loading..." : "Load Data"}
           </button>
 
           {tableData.length > 0 && (
             <span style={styles.rowCount}>
-              {tableData.length} LGUs
+              {visibleRows.length} locations loaded
             </span>
           )}
         </div>
@@ -271,7 +348,7 @@ export default function IndicatorReport() {
         )}
 
         {/* Table */}
-        {!loading && tableData.length > 0 && (
+        {!loading && visibleRows.length > 0 && (
           <div style={styles.tableWrapper}>
             <table style={styles.table}>
               <thead>
@@ -287,36 +364,31 @@ export default function IndicatorReport() {
                 </tr>
               </thead>
               <tbody>
-                {tableData.map((row, index) => {
+                {visibleRows.map((row, index) => {
                   if (row.isHeader) {
                     return (
                       <tr key={row.location} style={styles.trHeader}>
-                        <td
-                          style={{ ...styles.td, ...styles.stickyCol, ...styles.headerCell }}
-                          colSpan={CPAB_INDICATORS.length + 1}
-                        >
+                        <td style={{ ...styles.td, ...styles.stickyCol, ...styles.headerCell }}>
                           {row.location}
                         </td>
+                        {CPAB_INDICATORS.map((ind) => (
+                          <td
+                            key={ind.code}
+                            style={{ ...styles.td, ...styles.headerCell, color: "#FFFFFF", fontWeight: "700" }}
+                          >
+                            {formatValue(row[ind.code], ind.code)}
+                          </td>
+                        ))}
                       </tr>
                     );
                   }
                   return (
-                    <tr
-                      key={row.psgc || row.location}
-                      style={index % 2 === 0 ? styles.trEven : styles.trOdd}
-                    >
-                      <td style={{ ...styles.td, ...styles.stickyCol, fontWeight: "600" }}>
+                    <tr key={`${row.location}-${index}`} style={index % 2 === 0 ? styles.trEven : styles.trOdd}>
+                      <td style={{ ...styles.td, ...styles.stickyCol, textAlign: "left", fontWeight: "500" }}>
                         {row.location}
                       </td>
                       {CPAB_INDICATORS.map((ind) => (
-                        <td
-                          key={ind.code}
-                          style={{
-                            ...styles.td,
-                            color: ind.code.endsWith("_PCT") ? "#0B4BAA" : "#1F2A45",
-                            fontWeight: ind.code.endsWith("_PCT") ? "600" : "400",
-                          }}
-                        >
+                        <td key={ind.code} style={styles.td}>
                           {formatValue(row[ind.code], ind.code)}
                         </td>
                       ))}
@@ -329,7 +401,7 @@ export default function IndicatorReport() {
         )}
 
         {/* Empty state */}
-        {!loading && tableData.length === 0 && !error && (
+        {!loading && visibleRows.length === 0 && !error && (
           <div style={styles.emptyBox}>
             <p style={styles.emptyText}>No data found for this period.</p>
             <p style={styles.emptySub}>
@@ -406,9 +478,11 @@ const styles = {
     fontFamily: "'Montserrat', sans-serif",
   },
   rowCount: {
-    fontSize: "13px",
-    color: "#5A6A85",
-    fontWeight: "600",
+    fontSize: "12px",
+    fontWeight: "400",
+    color: "#94A3B8",
+    alignSelf: "center",
+    marginTop: "20px",
   },
   errorBox: {
     backgroundColor: "#FEE2E2",
@@ -493,6 +567,9 @@ const styles = {
   },
   trHeader: {
     backgroundColor: "#1F2A45",
+    position: "sticky",
+    top: 0,
+    zIndex: 5,
   },
   headerCell: {
     color: "#FFFFFF",

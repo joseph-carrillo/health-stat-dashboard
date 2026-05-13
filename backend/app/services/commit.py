@@ -254,6 +254,10 @@ def approve_batch(batch_id: str, approved_by=None, force=False):
         }
 
     # Get all rows to commit
+    # NOTE: We do NOT filter out NULL values here in SQL.
+    # NULL handling happens in Python below so we can:
+    #   1. Count how many were blank (skipped_null)
+    #   2. Protect previously-committed real values from being overwritten
     cur.execute(
         """SELECT
                indicator_id, location_id, period_id,
@@ -269,11 +273,20 @@ def approve_batch(batch_id: str, approved_by=None, force=False):
     inserted = 0
     updated = 0
     skipped = 0
+    skipped_null = 0   # NEW: blank cells from Excel — do not write to DB
 
     for row in rows:
         (indicator_id, location_id, period_id,
          value, is_computed, source_file,
          conflict_status) = row
+
+        # Skip blank values (NULL from Excel empty cells).
+        # This protects existing committed data from being overwritten
+        # with blanks when a partial re-upload happens.
+        # Bug fix: Bacolod HUC NULL data overwrite issue.
+        if value is None:
+            skipped_null += 1
+            continue
 
         if conflict_status == "accepted":
             # Overwrite existing data
@@ -328,7 +341,8 @@ def approve_batch(batch_id: str, approved_by=None, force=False):
         "batch_id": batch_id,
         "inserted": inserted,
         "updated": updated,
-        "skipped": skipped,
+        "skipped": skipped,           # DB insert errors
+        "skipped_null": skipped_null, # Blank cells from Excel — intentionally not written
         "total_committed": inserted + updated
     }
 

@@ -48,6 +48,7 @@ export default function UploadTab() {
   const [status, setStatus] = useState(null);
   const [result, setResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [copied, setCopied] = useState(false);
 
   // When program changes reset sub-program
   function handleProgramChange(e) {
@@ -116,6 +117,18 @@ export default function UploadTab() {
     } catch (err) {
       setStatus("error");
       setErrorMsg("Cannot connect to server. Is the API running?");
+    }
+  }
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(result.batch_id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      // Clipboard API can fail on insecure contexts or when permissions are denied.
+      // We don't show "Copied!" in that case — better than lying to the user.
+      console.error("Copy to clipboard failed:", err);
     }
   }
 
@@ -218,16 +231,20 @@ export default function UploadTab() {
           <div style={styles.field}>
             <label style={styles.label}>Excel File</label>
             <div style={styles.filePicker}>
-              <input
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleFileChange}
-                disabled={status === "loading"}
-                style={styles.fileInput}
-              />
-              {file && (
-                <p style={styles.fileName}>✅ {file.name}</p>
-              )}
+              <label style={status === "loading" ? styles.fileBtnDisabled : styles.fileBtn}>
+                Browse File
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleFileChange}
+                  disabled={status === "loading"}
+                  style={styles.fileInputHidden}
+                />
+              </label>
+              {file
+                ? <p style={styles.fileName}>✅ {file.name}</p>
+                : <p style={styles.fileHint}>No file chosen</p>
+              }
             </div>
           </div>
         )}
@@ -278,7 +295,51 @@ export default function UploadTab() {
           <div style={styles.resultGrid}>
             <div style={styles.resultItem}>
               <span style={styles.resultLabel}>Batch ID</span>
-              <span style={styles.resultValue}>{result.batch_id}</span>
+              <div style={styles.batchIdRow}>
+                <span style={{ ...styles.resultValue, fontSize: "12px", wordBreak: "break-all" }}>
+                  {result.batch_id}
+                </span>
+                <button
+                  style={copied ? styles.copyBtnDone : styles.copyBtn}
+                  onClick={handleCopy}
+                  title="Copy Batch ID"
+                  aria-label={copied ? "Copied" : "Copy Batch ID to clipboard"}
+                >
+                  {copied ? (
+                    <>
+                      {/* Green checkmark — shown for 2 seconds after click */}
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    /* Clipboard icon — gray #5A6A85 */
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
             <div style={styles.resultItem}>
               <span style={styles.resultLabel}>Rows Parsed</span>
@@ -298,6 +359,22 @@ export default function UploadTab() {
             <br />
             Your Batch ID is: <strong>{result.batch_id}</strong>
           </p>
+
+          {result.errors_detail?.length > 0 && (
+            <div style={styles.warnBox}>
+              <p style={styles.warnTitle}>
+                ⚠ {result.errors_detail.length} row{result.errors_detail.length !== 1 ? "s" : ""} were skipped
+              </p>
+              <ul style={styles.warnList}>
+                {result.errors_detail.map((err, i) => (
+                  <li key={i} style={styles.warnItem}>
+                    <strong>PSGC {err.psgc}</strong> (row {err.row}) — {err.error}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <button style={styles.btn} onClick={handleReset}>
             Upload Another File
           </button>
@@ -347,11 +424,40 @@ const styles = {
     textAlign: "center",
     backgroundColor: "#F8FAFC",
   },
-  fileInput: { fontSize: "13px" },
+  fileInputHidden: { display: "none" },
+  fileBtn: {
+    display: "inline-block",
+    padding: "10px 24px",
+    backgroundColor: "#0B4BAA",
+    color: "#ffffff",
+    borderRadius: "6px",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "pointer",
+    fontFamily: "'Montserrat', sans-serif",
+    marginBottom: "10px",
+  },
+  fileBtnDisabled: {
+    display: "inline-block",
+    padding: "10px 24px",
+    backgroundColor: "#93B4DC",
+    color: "#ffffff",
+    borderRadius: "6px",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "not-allowed",
+    fontFamily: "'Montserrat', sans-serif",
+    marginBottom: "10px",
+  },
+  fileHint: {
+    fontSize: "12px",
+    color: "#94A3B8",
+    margin: 0,
+  },
   fileName: {
     fontSize: "13px",
     color: "#16A34A",
-    margin: "8px 0 0 0",
+    margin: 0,
     fontWeight: "600",
   },
   summaryPreview: {
@@ -447,5 +553,62 @@ const styles = {
     color: "#5A6A85",
     margin: "0 0 20px 0",
     lineHeight: "1.6",
+  },
+  batchIdRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "8px",
+  },
+  copyBtn: {
+    flexShrink: 0,
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    padding: 0,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "4px",
+    color: "#5A6A85",
+    fontFamily: "inherit",
+    fontSize: "12px",
+    lineHeight: 1,
+  },
+  copyBtnDone: {
+    flexShrink: 0,
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    padding: 0,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "4px",
+    color: "#16A34A",
+    fontFamily: "inherit",
+    fontSize: "12px",
+    fontWeight: "600",
+    lineHeight: 1,
+  },
+  warnBox: {
+    backgroundColor: "#FFFBEB",
+    border: "1px solid #FCD34D",
+    borderRadius: "8px",
+    padding: "16px 20px",
+    marginBottom: "20px",
+  },
+  warnTitle: {
+    fontSize: "13px",
+    fontWeight: "700",
+    color: "#92400E",
+    margin: "0 0 10px 0",
+  },
+  warnList: {
+    margin: 0,
+    paddingLeft: "20px",
+  },
+  warnItem: {
+    fontSize: "12px",
+    color: "#92400E",
+    marginBottom: "4px",
+    lineHeight: "1.5",
   },
 };
