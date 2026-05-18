@@ -184,7 +184,7 @@ async def upload_file(
         template_id=template_id,
         year=year,
         month=month,
-        uploaded_by=None
+        uploaded_by=current_user["user_id"]
     )
 
     # Clean up temp file
@@ -303,16 +303,6 @@ def get_health_data(
     """
     Get committed health data with optional filters.
     """
-    import psycopg2
-
-    DB_CONFIG = {
-        "host": "localhost",
-        "port": 5432,
-        "database": "doh_nir_dashboard",
-        "user": "doh_admin",
-        "password": "doh_password_2026"
-    }
-
     conn = psycopg2.connect(**DB_CONFIG)
     cur = conn.cursor()
 
@@ -601,3 +591,110 @@ def deactivate_user(
         "success": True,
         "message": f"User {result[0]} deactivated successfully."
     }
+
+
+# =====================================================
+# ENDPOINT — Coverage Summary (for Overview map)
+# Returns LGU-level coverage values for a given indicator/period
+# =====================================================
+@app.get("/api/coverage-summary")
+def get_coverage_summary(
+    year: int = 2026,
+    month: int = 1,
+    indicator_code: str = "CPAB_PCT",
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Returns per-LGU coverage values for the given indicator and period.
+    PCT indicators are stored as decimal ratios (0.915 = 91.5%).
+    """
+    conn = psycopg2.connect(**DB_CONFIG)
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT l.name, h.value
+        FROM health_data h
+        JOIN locations l ON l.id = h.location_id
+        JOIN indicators i ON i.id = h.indicator_id
+        JOIN report_periods rp ON rp.id = h.period_id
+        WHERE i.code = %s
+          AND rp.year = %s
+          AND rp.period_value = %s
+          AND rp.period_type = 'monthly'
+        ORDER BY l.name
+        """,
+        (indicator_code, year, month)
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    data = [
+        {
+            "location": r[0].strip(),
+            "value": float(r[1]) if r[1] is not None else None
+        }
+        for r in rows
+    ]
+
+    return {
+        "indicator_code": indicator_code,
+        "year": year,
+        "month": month,
+        "count": len(data),
+        "data": data
+    }
+
+
+# =====================================================
+# ENDPOINT — Batch History (for HistoryTab)
+# =====================================================
+@app.get("/api/batches/history")
+def get_batch_history(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Returns a list of all uploaded batches with their approval status.
+    """
+    conn = psycopg2.connect(**DB_CONFIG)
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT
+            s.batch_id,
+            MIN(s.uploaded_at)   AS uploaded_at,
+            MAX(s.approved_at)   AS approved_at,
+            COUNT(*)             AS total_rows,
+            MAX(s.source_file)   AS source_file,
+            COUNT(CASE WHEN s.conflict_status IN ('accepted','rejected') THEN 1 END)
+                                 AS conflicts_resolved,
+            COUNT(CASE WHEN s.conflict_status = 'pending_review' THEN 1 END)
+                                 AS conflicts_pending
+        FROM staging_health_data s
+        GROUP BY s.batch_id
+        ORDER BY MIN(s.uploaded_at) DESC
+        LIMIT 50
+        """
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    batches = []
+    for row in rows:
+        (batch_id, uploaded_at, approved_at, total_rows,
+         source_file, conflicts_resolved, conflicts_pending) = row
+        batches.append({
+            "batch_id": str(batch_id),
+            "uploaded_at": str(uploaded_at),
+            "approved_at": str(approved_at) if approved_at else None,
+            "total_rows": total_rows,
+            "source_file": source_file or "—",
+            "conflicts_resolved": conflicts_resolved,
+            "conflicts_pending": conflicts_pending,
+            "status": "approved" if approved_at else "pending"
+        })
+
+    return {"total": len(batches), "batches": batches}

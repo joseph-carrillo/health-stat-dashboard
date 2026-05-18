@@ -41,9 +41,21 @@ def get_db_connection():
     return psycopg2.connect(**DB_CONFIG)
 
 
-def get_location_id(cur, psgc: str) -> int | None:
-    """Look up location id by PSGC code."""
-    psgc_clean = str(psgc).strip().replace(".0", "")
+def get_location_id(cur, psgc) -> int | None:
+    """
+    Look up location id by PSGC code.
+
+    PSGCs in the DB are 10-digit strings.  Excel can yield the same value
+    in many shapes: float ('1830200000.0'), int (1830200000), string with
+    commas ('1,830,200,000'), or with stray whitespace.  Normalize to a
+    plain digits-only string before lookup.
+    """
+    raw = str(psgc).strip().replace(",", "").replace(" ", "")
+    if "." in raw:
+        raw = raw.split(".", 1)[0]      # drop any decimal part
+    psgc_clean = "".join(ch for ch in raw if ch.isdigit())
+    if not psgc_clean:
+        return None
     cur.execute(
         "SELECT id FROM locations WHERE psgc = %s",
         (psgc_clean,)
@@ -158,12 +170,21 @@ def compute_value(formula: str, row_values: dict) -> float | None:
     Calculate a computed value from a formula string.
     Formula uses indicator codes as variable names.
     e.g. "CPAB_MALE + CPAB_FEMALE"
-    e.g. "CPAB_TOTAL / IMMUN_POP_0_11M * 100"
+    e.g. "CPAB_TOTAL / IMMUN_POP_0_11M"
+
+    Only returns None when a value that actually appears in THIS formula is
+    missing.  Unrelated indicators being None (blank cells in the Excel for
+    other columns) no longer cause the whole computation to bail out.
+
+    Codes are substituted longest-first so that a shorter code like CPAB_MALE
+    does not accidentally overwrite part of CPAB_MALE_SOME_LONGER_CODE.
     """
     try:
-        # Replace indicator codes with their values
         expression = formula
-        for code, value in row_values.items():
+        for code in sorted(row_values.keys(), key=len, reverse=True):
+            if code not in expression:
+                continue
+            value = row_values[code]
             if value is None:
                 return None
             expression = expression.replace(code, str(value))
@@ -253,20 +274,34 @@ def parse_file(
     errors = []
 
     # --- Process each row ---
+    # Blank-PSGC rows can appear MID-SHEET (province summary/total rows,
+    # visual separators between regions, etc.). We skip them individually
+    # rather than break — otherwise an LGU placed after a separator (e.g.
+    # City of Bacolod HUC, which sits below the Siquijor block in the
+    # FHSIS template) is silently dropped.
+    #
+    # Safety: stop only when we hit many consecutive blanks in a row,
+    # which signals the real end of the data.
+    MAX_CONSECUTIVE_BLANKS = 15
+    consecutive_blanks = 0
+
     for row_idx in range(data_start, len(df)):
         row = df.iloc[row_idx]
-
-        # Stop at blank PSGC
         psgc_raw = row.iloc[psgc_col]
+
         if is_blank(psgc_raw):
-            break
+            consecutive_blanks += 1
+            if consecutive_blanks >= MAX_CONSECUTIVE_BLANKS:
+                break
+            continue
+        consecutive_blanks = 0
 
         # Look up location
         location_id = get_location_id(cur, psgc_raw)
         if not location_id:
             errors.append({
                 "row": row_idx,
-                "psgc": psgc_raw,
+                "psgc": str(psgc_raw),
                 "error": "PSGC not found in locations table"
             })
             rows_processed += 1

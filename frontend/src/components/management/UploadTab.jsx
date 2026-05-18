@@ -343,7 +343,7 @@ export default function UploadTab() {
             </div>
             <div style={styles.resultItem}>
               <span style={styles.resultLabel}>Rows Parsed</span>
-              <span style={styles.resultValue}>{result.rows_parsed || 0}</span>
+              <span style={styles.resultValue}>{result.rows_processed || 0}</span>
             </div>
             <div style={styles.resultItem}>
               <span style={styles.resultLabel}>Rows Staged</span>

@@ -273,7 +273,8 @@ def approve_batch(batch_id: str, approved_by=None, force=False):
     inserted = 0
     updated = 0
     skipped = 0
-    skipped_null = 0   # NEW: blank cells from Excel — do not write to DB
+    skipped_null = 0    # blank cells from Excel — intentionally not written
+    auto_resolved = 0   # pending_review conflicts auto-accepted under force=True
 
     for row in rows:
         (indicator_id, location_id, period_id,
@@ -281,15 +282,23 @@ def approve_batch(batch_id: str, approved_by=None, force=False):
          conflict_status) = row
 
         # Skip blank values (NULL from Excel empty cells).
-        # This protects existing committed data from being overwritten
-        # with blanks when a partial re-upload happens.
-        # Bug fix: Bacolod HUC NULL data overwrite issue.
+        # Protects existing committed data from being overwritten with blanks.
         if value is None:
             skipped_null += 1
             continue
 
-        if conflict_status == "accepted":
-            # Overwrite existing data
+        # When force=True (the UI's "Approve and Commit" path), unresolved
+        # conflicts are treated as accepted — use the incoming value.
+        # Without this, pending_review rows fall through every branch below
+        # and silently never reach health_data — which leaves stale data
+        # (including stale NULLs from previous buggy uploads) in place.
+        effective_status = conflict_status
+        if force and conflict_status == "pending_review":
+            effective_status = "accepted"
+            auto_resolved += 1
+
+        if effective_status == "accepted":
+            # Overwrite existing row (or insert if somehow absent)
             cur.execute(
                 """UPDATE health_data
                    SET value = %s,
@@ -302,9 +311,26 @@ def approve_batch(batch_id: str, approved_by=None, force=False):
                 (value, approved_by, datetime.now(), source_file,
                  indicator_id, location_id, period_id)
             )
-            updated += 1
+            if cur.rowcount == 0:
+                # No existing row — fall back to INSERT
+                try:
+                    cur.execute(
+                        """INSERT INTO health_data (
+                               indicator_id, location_id, period_id,
+                               value, is_computed,
+                               uploaded_by, uploaded_at, source_file
+                           ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+                        (indicator_id, location_id, period_id,
+                         value, is_computed,
+                         approved_by, datetime.now(), source_file)
+                    )
+                    inserted += 1
+                except Exception:
+                    skipped += 1
+            else:
+                updated += 1
 
-        elif conflict_status == "none":
+        elif effective_status == "none":
             # Insert new data
             try:
                 cur.execute(
@@ -320,7 +346,7 @@ def approve_batch(batch_id: str, approved_by=None, force=False):
                      approved_by, datetime.now(), source_file)
                 )
                 inserted += 1
-            except Exception as e:
+            except Exception:
                 skipped += 1
 
     # Mark batch as approved in staging
@@ -341,8 +367,9 @@ def approve_batch(batch_id: str, approved_by=None, force=False):
         "batch_id": batch_id,
         "inserted": inserted,
         "updated": updated,
-        "skipped": skipped,           # DB insert errors
-        "skipped_null": skipped_null, # Blank cells from Excel — intentionally not written
+        "auto_resolved": auto_resolved,  # pending_review conflicts auto-accepted under force=True
+        "skipped": skipped,              # DB insert errors
+        "skipped_null": skipped_null,    # Blank cells from Excel — intentionally not written
         "total_committed": inserted + updated
     }
 
