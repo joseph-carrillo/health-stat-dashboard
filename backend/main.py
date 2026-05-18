@@ -698,3 +698,91 @@ def get_batch_history(
         })
 
     return {"total": len(batches), "batches": batches}
+
+
+# =====================================================
+# ENDPOINT — Coverage Breakdown (for Coverage + Rankings pages)
+# Returns numerator / denominator / pct per LGU for a program/period
+# =====================================================
+@app.get("/api/coverage-breakdown")
+def get_coverage_breakdown(
+    year: int = 2026,
+    month: int = 1,
+    total_code: str = "CPAB_TOTAL",
+    pct_code: str = "CPAB_PCT",
+    denom_code: str = "IMMUN_POP_0_11M",
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Returns per-LGU numerator, denominator, and coverage PCT
+    for the given indicator group and period.
+    PCT values are decimal ratios (0.915 = 91.5%).
+    """
+    from collections import defaultdict
+
+    conn = psycopg2.connect(**DB_CONFIG)
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT
+            l.name       AS location,
+            l.psgc,
+            l.is_huc,
+            p.name       AS province,
+            i.code       AS indicator_code,
+            h.value
+        FROM health_data h
+        JOIN locations l ON l.id = h.location_id
+        LEFT JOIN locations p
+            ON p.psgc = l.parent_psgc AND p.level = 'province'
+        JOIN indicators i ON i.id = h.indicator_id
+        JOIN report_periods rp ON rp.id = h.period_id
+        WHERE i.code = ANY(%s)
+          AND rp.year = %s
+          AND rp.period_value = %s
+          AND rp.period_type = 'monthly'
+        ORDER BY p.name, l.name
+        """,
+        ([total_code, pct_code, denom_code], year, month)
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    loc_data = defaultdict(dict)
+    for location, psgc, is_huc, province, code, value in rows:
+        key = location.strip()
+        loc_data[key]["psgc"] = psgc
+        loc_data[key]["is_huc"] = is_huc
+        loc_data[key]["province"] = (
+            "HUC" if is_huc
+            else (province.strip() if province else "Unknown")
+        )
+        loc_data[key][code] = float(value) if value is not None else None
+
+    result = [
+        {
+            "location": name,
+            "psgc": d.get("psgc"),
+            "is_huc": d.get("is_huc", False),
+            "province": d.get("province", "Unknown"),
+            "numerator": d.get(total_code),
+            "denominator": d.get(denom_code),
+            "pct": d.get(pct_code),
+        }
+        for name, d in sorted(
+            loc_data.items(),
+            key=lambda x: (x[1].get("province", ""), x[0])
+        )
+    ]
+
+    return {
+        "year": year,
+        "month": month,
+        "total_code": total_code,
+        "pct_code": pct_code,
+        "denom_code": denom_code,
+        "count": len(result),
+        "data": result
+    }
