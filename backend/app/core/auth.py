@@ -2,36 +2,26 @@
 # Authentication and RBAC for DOH-NIR Dashboard
 # Uses JWT tokens for secure authentication
 
+import os
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-import psycopg2
+
+from app.core.db import DB_CONFIG, get_db_connection
 
 # =====================================================
 # SECURITY SETTINGS
 # =====================================================
-SECRET_KEY = "doh-nir-dashboard-secret-key-2026-change-in-production"
+SECRET_KEY = os.getenv(
+    "JWT_SECRET_KEY",
+    "doh-nir-dashboard-secret-key-2026-change-in-production",
+)
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours (one work day)
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# =====================================================
-# DATABASE CONNECTION
-# =====================================================
-DB_CONFIG = {
-    "host": "localhost",
-    "port": 5432,
-    "database": "doh_nir_dashboard",
-    "user": "doh_admin",
-    "password": "doh_password_2026"
-}
-
-
-def get_db_connection():
-    return psycopg2.connect(**DB_CONFIG)
 
 
 # =====================================================
@@ -173,3 +163,16 @@ def authenticate_user(username: str,
 def get_role_permissions(role: str) -> dict:
     """Get permissions for a role."""
     return ROLES.get(role, {})
+
+
+def update_last_login(user_id: int) -> None:
+    """Stamp the user's last_login with the current time."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "UPDATE users SET last_login = %s WHERE id = %s",
+        (datetime.now(), user_id),
+    )
+    conn.commit()
+    cur.close()
+    conn.close()

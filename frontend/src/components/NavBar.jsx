@@ -2,17 +2,7 @@
 // Sidebar navigation — left side of the screen
 
 import { useNavigate, useLocation } from "react-router-dom";
-
-function getUser() {
-  const token = localStorage.getItem("token");
-  if (!token) return {};
-  try {
-    const base64 = token.split(".")[1];
-    return JSON.parse(atob(base64));
-  } catch {
-    return {};
-  }
-}
+import { getUser, can, logout } from "../services/auth";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -20,8 +10,7 @@ export default function Navbar() {
   const user = getUser();
 
   function handleLogout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("token_type");
+    logout();
     navigate("/");
   }
 
@@ -74,8 +63,22 @@ export default function Navbar() {
         >
           Rankings
         </button>
+        <button
+          style={isActive("/analytics/reports") ? { ...styles.navSub, ...styles.navSubActive } : styles.navSub}
+          onClick={() => navigate("/analytics/reports")}
+        >
+          Indicator Reports
+        </button>
 
         <div style={styles.navGroupLabel}>⚙️ OTHER</div>
+        {can("can_upload") && (
+          <button
+            style={isActive("/upload") ? { ...styles.navItem, ...styles.navItemActive } : styles.navItem}
+            onClick={() => navigate("/upload")}
+          >
+            ⬆️ Upload Data
+          </button>
+        )}
         <button
           style={isActive("/targets") ? { ...styles.navItem, ...styles.navItemActive } : styles.navItem}
           onClick={() => navigate("/targets")}
@@ -89,7 +92,7 @@ export default function Navbar() {
           📋 Data Availability
         </button>
 
-        {user.role === "admin" && (
+        {can("can_manage_users") && (
           <button
             style={isActive("/management") ? { ...styles.navItem, ...styles.navItemActive } : styles.navItem}
             onClick={() => navigate("/management")}

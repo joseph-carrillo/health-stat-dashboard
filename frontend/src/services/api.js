@@ -26,8 +26,9 @@ API.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
+      localStorage.removeItem('token_type')
       localStorage.removeItem('user')
-      window.location.href = '/login'
+      window.location.href = '/'
     }
     return Promise.reject(error)
   }
@@ -60,13 +61,73 @@ export const getHealthData = async (params = {}) => {
 }
 
 // =====================================================
+// REFERENCE DATA
+// =====================================================
+export const getPrograms = async () => {
+  const response = await API.get('/programs')
+  return response.data
+}
+
+export const getIndicators = async (programCode) => {
+  const response = await API.get('/indicators', {
+    params: programCode ? { program_code: programCode } : {},
+  })
+  return response.data
+}
+
+export const getLocations = async (params = {}) => {
+  const response = await API.get('/locations', { params })
+  return response.data
+}
+
+export const getPeriods = async (year) => {
+  const response = await API.get('/periods', { params: year ? { year } : {} })
+  return response.data
+}
+
+// =====================================================
+// AGGREGATE / DASHBOARD DATA
+// =====================================================
+export const getScorecard = async (params = {}) => {
+  const response = await API.get('/scorecard', { params })
+  return response.data
+}
+
+export const getCoverage = async (params = {}) => {
+  const response = await API.get('/coverage', { params })
+  return response.data
+}
+
+export const getCoverageDetail = async (params = {}) => {
+  const response = await API.get('/coverage-detail', { params })
+  return response.data
+}
+
+export const getTrend = async (params = {}) => {
+  const response = await API.get('/trend', { params })
+  return response.data
+}
+
+export const getDataAvailability = async (params = {}) => {
+  const response = await API.get('/data-availability', { params })
+  return response.data
+}
+
+export const setIndicatorTarget = async (indicatorId, targetValue, targetYear) => {
+  const response = await API.patch(
+    `/indicators/${indicatorId}/target?target_value=${targetValue}&target_year=${targetYear}`
+  )
+  return response.data
+}
+
+// =====================================================
 // UPLOAD
 // =====================================================
-export const uploadFile = async (file, templateId, year, month) => {
+export const uploadFile = async (file, templateId, year, month, dryRun = false) => {
   const formData = new FormData()
   formData.append('file', file)
   const response = await API.post(
-    `/upload?template_id=${templateId}&year=${year}&month=${month}`,
+    `/upload?template_id=${templateId}&year=${year}&month=${month}&dry_run=${dryRun}`,
     formData,
     { headers: { 'Content-Type': 'multipart/form-data' } }
   )
@@ -78,6 +139,18 @@ export const uploadFile = async (file, templateId, year, month) => {
 // =====================================================
 export const getBatchSummary = async (batchId) => {
   const response = await API.get(`/staging/${batchId}`)
+  return response.data
+}
+
+export const getConflicts = async (batchId) => {
+  const response = await API.get(`/staging/${batchId}/conflicts`)
+  return response.data
+}
+
+export const resolveConflict = async (stagingId, decision) => {
+  const response = await API.post(
+    `/staging/conflict/${stagingId}/resolve?decision=${decision}`
+  )
   return response.data
 }
 
@@ -108,6 +181,24 @@ export const assignRole = async (userId, role, programCode) => {
 
 export const deactivateUser = async (userId) => {
   const response = await API.post(`/admin/users/${userId}/deactivate`)
+  return response.data
+}
+
+export const getAuditLog = async (limit = 100) => {
+  const response = await API.get('/admin/audit', { params: { limit } })
+  return response.data
+}
+
+// =====================================================
+// TEMPLATE REPORTS (raw "Excel face")
+// =====================================================
+export const getTemplates = async () => {
+  const response = await API.get('/templates')
+  return response.data
+}
+
+export const getTemplateReport = async (templateId, params = {}) => {
+  const response = await API.get(`/templates/${templateId}/report`, { params })
   return response.data
 }
 

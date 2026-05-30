@@ -19,23 +19,6 @@ export default function Login() {
     setError("");
     setLoading(true);
 
-    // DEV BYPASS — remove this before going live
-    if (formData.username === "dev" && formData.password === "dev") {
-      const fakeToken = btoa(JSON.stringify({ alg: "HS256" })) +
-        "." +
-        btoa(JSON.stringify({
-          sub: "admin",
-          role: "admin",
-          program_code: null,
-          user_id: 1
-        })) +
-        ".signature";
-      localStorage.setItem("token", fakeToken);
-      navigate("/home");
-      return;
-    }
-    // END DEV BYPASS
-
     try {
       const body = new URLSearchParams();
       body.append("username", formData.username);
@@ -57,6 +40,9 @@ export default function Login() {
       const data = await response.json();
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("token_type", data.token_type);
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+      }
       navigate("/home");
 
     } catch (err) {

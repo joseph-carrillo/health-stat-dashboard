@@ -154,6 +154,21 @@ CREATE TABLE users (
     last_login      TIMESTAMP
 );
 
+-- =====================================================
+-- TABLE 9: audit_log
+-- Records every data-changing action (Data Privacy Act compliance)
+-- =====================================================
+CREATE TABLE audit_log (
+    id              SERIAL PRIMARY KEY,
+    actor_id        INTEGER,
+    actor_username  VARCHAR(100),
+    action          VARCHAR(100) NOT NULL,
+    entity_type     VARCHAR(100),
+    entity_id       VARCHAR(255),
+    details         JSONB,
+    created_at      TIMESTAMP DEFAULT NOW()
+);
+
 -- =============================================================
 -- INDEXES — speeds up common queries
 -- =============================================================
@@ -164,3 +179,5 @@ CREATE INDEX idx_staging_batch         ON staging_health_data(batch_id);
 CREATE INDEX idx_staging_status        ON staging_health_data(validation_status);
 CREATE INDEX idx_indicators_program    ON indicators(program_id);
 CREATE INDEX idx_indicators_code       ON indicators(code);
+CREATE INDEX idx_audit_action          ON audit_log(action);
+CREATE INDEX idx_audit_actor           ON audit_log(actor_id);

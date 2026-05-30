@@ -7,19 +7,12 @@ import uuid
 import math
 from pathlib import Path
 import pandas as pd
-import psycopg2
+
+from app.core.db import get_db_connection
 
 # =====================================================
-# DATABASE CONNECTION
+# CONFIG LOCATION
 # =====================================================
-DB_CONFIG = {
-    "host": "localhost",
-    "port": 5432,
-    "database": "doh_nir_dashboard",
-    "user": "doh_admin",
-    "password": "doh_password_2026"
-}
-
 CONFIGS_DIR = Path(__file__).parent / "configs"
 
 
@@ -32,13 +25,71 @@ def load_config(template_id: str) -> dict:
     config_file = CONFIGS_DIR / f"{template_id.lower()}.json"
     if not config_file.exists():
         raise FileNotFoundError(f"Config not found: {config_file}")
-    with open(config_file, "r") as f:
+    with open(config_file, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
-def get_db_connection():
-    """Get a database connection."""
-    return psycopg2.connect(**DB_CONFIG)
+def validate_config(config: dict) -> list:
+    """Structurally validate a template config before it is used.
+
+    Returns a list of human-readable problems. An empty list means the
+    config is well-formed. This does not touch the database — it only
+    checks shape, so new templates can be vetted quickly.
+    """
+    problems = []
+
+    required_top = [
+        "template_id", "program_code", "psgc_column",
+        "header_row", "data_start_row", "sheet_map", "columns",
+    ]
+    for key in required_top:
+        if key not in config:
+            problems.append(f"Missing required key: '{key}'")
+
+    columns = config.get("columns", [])
+    if not isinstance(columns, list) or not columns:
+        problems.append("'columns' must be a non-empty list")
+        return problems
+
+    seen_index = set()
+    seen_code = set()
+    declared_codes = {c.get("indicator_code") for c in columns}
+
+    for i, col in enumerate(columns):
+        label = col.get("indicator_code", f"column #{i}")
+        if "index" not in col:
+            problems.append(f"{label}: missing 'index'")
+        elif col["index"] in seen_index:
+            problems.append(f"{label}: duplicate column index {col['index']}")
+        else:
+            seen_index.add(col["index"])
+
+        if "indicator_code" not in col:
+            problems.append(f"column #{i}: missing 'indicator_code'")
+        elif col["indicator_code"] in seen_code:
+            problems.append(
+                f"{label}: duplicate indicator_code '{col['indicator_code']}'"
+            )
+        else:
+            seen_code.add(col["indicator_code"])
+
+        if col.get("is_computed") and not col.get("formula"):
+            problems.append(f"{label}: computed column needs a 'formula'")
+
+    # Sanity check DQC rules reference declared indicators.
+    for rule in config.get("dqc_rules", []):
+        code = rule.get("indicator_code")
+        if code and code not in declared_codes:
+            problems.append(
+                f"DQC rule references unknown indicator '{code}'"
+            )
+        for code in rule.get("sequence", []):
+            if code not in declared_codes:
+                problems.append(
+                    f"DQC sequence references unknown indicator '{code}'"
+                )
+
+    return problems
 
 
 def get_location_id(cur, psgc: str) -> int | None:
@@ -181,7 +232,8 @@ def parse_file(
     template_id: str,
     year: int,
     month: int,
-    uploaded_by: int = None
+    uploaded_by: int = None,
+    dry_run: bool = False
 ) -> dict:
     """
     Parse an FHSIS Excel file and store data in staging.
@@ -192,6 +244,8 @@ def parse_file(
         year: Reporting year (e.g. 2026)
         month: Reporting month number (1-12)
         uploaded_by: User ID of uploader
+        dry_run: If True, parse and validate only — no database writes.
+                 Used to test new template configs safely.
 
     Returns:
         dict with keys: batch_id, rows_processed,
@@ -251,6 +305,7 @@ def parse_file(
     rows_staged = 0
     all_issues = []
     errors = []
+    preview = []
 
     # --- Process each row ---
     for row_idx in range(data_start, len(df)):
@@ -340,32 +395,48 @@ def parse_file(
                 False
             )
 
-            cur.execute(
-                """INSERT INTO staging_health_data (
-                    batch_id, indicator_id, location_id, period_id,
-                    value, validation_status, conflict_status,
-                    existing_value, uploaded_by, source_file
-                ) VALUES (
-                    %s, %s, %s, %s,
-                    %s, %s, %s,
-                    %s, %s, %s
-                )""",
-                (
-                    batch_id, indicator_id, location_id, period_id,
-                    value, validation_status, conflict_status,
-                    existing_value, uploaded_by,
-                    Path(file_path).name
+            if not dry_run:
+                cur.execute(
+                    """INSERT INTO staging_health_data (
+                        batch_id, indicator_id, location_id, period_id,
+                        value, validation_status, conflict_status,
+                        existing_value, is_computed, uploaded_by, source_file
+                    ) VALUES (
+                        %s, %s, %s, %s,
+                        %s, %s, %s,
+                        %s, %s, %s, %s
+                    )""",
+                    (
+                        batch_id, indicator_id, location_id, period_id,
+                        value, validation_status, conflict_status,
+                        existing_value, is_computed, uploaded_by,
+                        Path(file_path).name
+                    )
                 )
-            )
             rows_staged += 1
 
-    conn.commit()
+            if len(preview) < 25:
+                preview.append({
+                    "psgc": str(psgc_raw),
+                    "indicator_code": indicator_code,
+                    "value": value,
+                    "validation_status": validation_status,
+                    "conflict_status": conflict_status,
+                    "existing_value": (
+                        float(existing_value)
+                        if existing_value is not None else None
+                    ),
+                })
+
+    if not dry_run:
+        conn.commit()
     cur.close()
     conn.close()
 
     return {
         "success": True,
-        "batch_id": batch_id,
+        "batch_id": None if dry_run else batch_id,
+        "dry_run": dry_run,
         "template_id": template_id,
         "period": f"{month}/{year}",
         "rows_processed": rows_processed,
@@ -373,7 +444,8 @@ def parse_file(
         "dqc_issues": len(all_issues),
         "errors": len(errors),
         "issues_detail": all_issues,
-        "errors_detail": errors
+        "errors_detail": errors,
+        "preview": preview
     }
 
 

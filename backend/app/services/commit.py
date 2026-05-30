@@ -3,23 +3,9 @@
 # Moves approved data from staging_health_data to health_data
 # DOH-NIR CHD Health Statistics Dashboard
 
-import psycopg2
 from datetime import datetime
 
-# =====================================================
-# DATABASE CONNECTION
-# =====================================================
-DB_CONFIG = {
-    "host": "localhost",
-    "port": 5432,
-    "database": "doh_nir_dashboard",
-    "user": "doh_admin",
-    "password": "doh_password_2026"
-}
-
-
-def get_db_connection():
-    return psycopg2.connect(**DB_CONFIG)
+from app.core.db import get_db_connection
 
 
 # =====================================================
