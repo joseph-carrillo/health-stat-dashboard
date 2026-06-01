@@ -2,7 +2,25 @@
   "permissions": {
     "allow": [
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\User\\\\Desktop\\\\health-stat-dashboard\" -Force)",
-      "Bash(Select-Object Name, Mode)"
+      "Bash(Select-Object Name, Mode)",
+      "Bash(not exist *)",
+      "Bash(uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000)",
+      "Bash(curl -s http://localhost:8000/)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
+      "Bash(python -c ' *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(python *)",
+      "Bash(curl -s -X POST http://localhost:8000/api/login -d \"username=admin&password=Admin@2026!\" -H \"Content-Type: application/x-www-form-urlencoded\")",
+      "Bash(curl -s http://localhost:8000/docs)",
+      "PowerShell(Stop-Process *)",
+      "Bash(curl -s \"http://localhost:8000/openapi.json\")",
+      "Bash(taskkill /F /PID 21456 /PID 24228 /PID 23560)",
+      "Bash(netstat -ano)",
+      "Bash(kill -9 21456 24228 23560)",
+      "PowerShell(Get-Process *)"
     ]
   }
 }
