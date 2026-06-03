@@ -38,8 +38,10 @@ function coverageToStatus(ratio) {
   return "below";
 }
 
-const CURRENT_MONTH = new Date().getMonth() + 1;
-const CURRENT_YEAR  = new Date().getFullYear();
+// Track 1 demo period — DB has committed Immunization data for Jan–Feb 2026.
+// Use calendar month once uploads exist for the current period.
+const DEFAULT_YEAR = 2026;
+const DEFAULT_MONTH = 1;
 
 // Programs not yet in the DB — shown as data pending
 const PLACEHOLDER_PROGRAMS = [
@@ -60,7 +62,7 @@ export default function Home() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    fetch(`/api/coverage-summary?year=${CURRENT_YEAR}&month=${CURRENT_MONTH}&indicator_code=CPAB_PCT`, {
+    fetch(`/api/coverage-summary?year=${DEFAULT_YEAR}&month=${DEFAULT_MONTH}&indicator_code=CPAB_PCT`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
@@ -113,7 +115,7 @@ export default function Home() {
   // Static system alerts — replace with a real alert API when available
   const allAlerts = [
     { id: 1, type: "info", program: "System", message: "Upload data via Management → Upload to populate the dashboard." },
-    { id: 2, type: "info", program: "Immunization", message: `Showing CPAB coverage average across ${immunizationData?.count ?? 0} LGUs for ${new Date().toLocaleDateString("en-PH", { month: "long", year: "numeric" })}.` },
+    { id: 2, type: "info", program: "Immunization", message: `Showing CPAB coverage average across ${immunizationData?.count ?? 0} LGUs for January ${DEFAULT_YEAR}.` },
   ];
 
   const alerts = isAdmin
@@ -172,7 +174,7 @@ export default function Home() {
           <div style={styles.section}>
             <h2 style={styles.sectionTitle}>Program Scorecard</h2>
             <p style={styles.sectionSub}>
-              Current month coverage · {new Date().toLocaleDateString("en-PH", { month: "long", year: "numeric" })}
+              Immunization coverage · January {DEFAULT_YEAR}
             </p>
             <table style={styles.table}>
               <thead>

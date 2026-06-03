@@ -93,7 +93,7 @@ export default function Rankings() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [program, year, month]);
 
   const prog = PROGRAMS[program];
   const withData = data.filter(r => r.pct !== null && r.pct !== undefined);

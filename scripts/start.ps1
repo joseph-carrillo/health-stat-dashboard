@@ -4,8 +4,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $frontendDir = Join-Path $repoRoot "frontend"
+$logsDir = Join-Path $repoRoot "logs"
 
 $backendPort = 8000
 $frontendPort = 5173
@@ -18,31 +19,44 @@ function Test-PortInUse {
   return [bool]$res
 }
 
+function Wait-ForPort {
+  param(
+    [Parameter(Mandatory=$true)][int]$Port,
+    [Parameter(Mandatory=$true)][string]$Name,
+    [int]$TimeoutSeconds = 30
+  )
+
+  $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+  while ((Get-Date) -lt $deadline) {
+    if (Test-PortInUse -Port $Port) {
+      Write-Host "$Name is listening on port $Port"
+      return $true
+    }
+    Start-Sleep -Seconds 1
+  }
+
+  Write-Host "Warning: $Name did not start on port $Port within ${TimeoutSeconds}s. Check logs in $logsDir"
+  return $false
+}
+
 function Start-Backend {
   if (Test-PortInUse -Port $backendPort) {
     Write-Host "Backend already running on port $backendPort"
     return
   }
 
-  $logsDir = Join-Path $repoRoot "logs"
   New-Item -ItemType Directory -Path $logsDir -Force | Out-Null
-
   $outFile = Join-Path $logsDir "backend.out.log"
-  $errFile = Join-Path $logsDir "backend.err.log"
 
   Write-Host "Starting backend (uvicorn) ..."
 
-  # Run from repo root so `backend.main:app` resolves correctly.
-  Set-Location $repoRoot
+  $cmd = @"
+Set-Location '$repoRoot'
+python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port $backendPort 2>&1 | Tee-Object -FilePath '$outFile'
+"@
 
-  $args = @(
-    "-NoProfile",
-    "-Command",
-    "python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port $backendPort 2>&1 | Tee-Object -FilePath `"$outFile`""
-  )
-
-  # Note: `Tee-Object` also mirrors output to the log. Stop uses ports, not PIDs.
-  Start-Process -FilePath "powershell.exe" -ArgumentList $args -WindowStyle Hidden | Out-Null
+  Start-Process -FilePath "powershell.exe" -ArgumentList @("-NoProfile", "-Command", $cmd) -WindowStyle Minimized | Out-Null
+  Wait-ForPort -Port $backendPort -Name "Backend API" | Out-Null
 }
 
 function Start-Frontend {
@@ -51,22 +65,18 @@ function Start-Frontend {
     return
   }
 
-  $logsDir = Join-Path $repoRoot "logs"
   New-Item -ItemType Directory -Path $logsDir -Force | Out-Null
-
   $outFile = Join-Path $logsDir "frontend.out.log"
 
   Write-Host "Starting frontend (Vite) ..."
 
-  Set-Location $frontendDir
+  $cmd = @"
+Set-Location '$frontendDir'
+npm run dev -- --host 0.0.0.0 --port $frontendPort 2>&1 | Tee-Object -FilePath '$outFile'
+"@
 
-  $args = @(
-    "-NoProfile",
-    "-Command",
-    "npm run dev -- --host 0.0.0.0 --port $frontendPort 2>&1 | Tee-Object -FilePath `"$outFile`""
-  )
-
-  Start-Process -FilePath "powershell.exe" -ArgumentList $args -WindowStyle Hidden | Out-Null
+  Start-Process -FilePath "powershell.exe" -ArgumentList @("-NoProfile", "-Command", $cmd) -WindowStyle Minimized | Out-Null
+  Wait-ForPort -Port $frontendPort -Name "Frontend App" | Out-Null
 }
 
 function Start-Docker {
@@ -76,13 +86,11 @@ function Start-Docker {
 
   Write-Host "Starting PostgreSQL via Docker ..."
 
-  # Prefer legacy `docker-compose` but fall back to `docker compose`.
+  Set-Location $repoRoot
   $hasDockerCompose = (Get-Command docker-compose -ErrorAction SilentlyContinue) -ne $null
   if ($hasDockerCompose) {
-    Set-Location $repoRoot
     & docker-compose up -d
   } else {
-    Set-Location $repoRoot
     & docker compose up -d
   }
 }
@@ -95,4 +103,4 @@ Write-Host ""
 Write-Host "Done. Check:"
 Write-Host "  Frontend: http://localhost:$frontendPort"
 Write-Host "  Backend docs: http://localhost:$backendPort/docs"
-
+Write-Host "  Logs: $logsDir"

@@ -410,9 +410,10 @@ export default function IndicatorReport() {
                     <th
                       key={g.label}
                       colSpan={g.colspan}
+                      rowSpan={g.colspan === 1 ? 2 : 1}
                       style={{
                         ...styles.th,
-                        ...(g.colspan === 1 ? { verticalAlign: "middle", rowSpan: 2 } : {}),
+                        ...(g.colspan === 1 ? { verticalAlign: "middle" } : {}),
                         borderLeft: "2px solid #3B4F72",
                         letterSpacing: "0.4px",
                       }}

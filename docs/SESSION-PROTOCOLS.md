@@ -162,3 +162,11 @@ Keep it short (10-20 lines max):
 
 Then startup reads this file first, and shutdown refreshes it.
 
+## Cursor rules
+
+Project rules live in `.cursor/rules/` (session protocols, Track 1 context, backend/frontend hints). They load automatically in Cursor Agent.
+
+## Track 1 week plan
+
+Day-by-day checklist: `docs/TRACK1-WEEK-PLAN.md`
+

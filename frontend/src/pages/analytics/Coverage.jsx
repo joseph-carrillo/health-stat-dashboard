@@ -107,7 +107,7 @@ export default function Coverage() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [program, year, month]);
 
   const prog = PROGRAMS[program];
 

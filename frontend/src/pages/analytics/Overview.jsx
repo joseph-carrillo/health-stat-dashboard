@@ -4,6 +4,10 @@ import Navbar from "../../components/Navbar";
 import { useEffect, useState, useMemo } from "react";
 import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import {
+  buildCoverageLookup,
+  resolveGeoLookupKey,
+} from "../../utils/locationNames";
 
 const MONTHS = [
   { value: 1, label: "January" }, { value: 2, label: "February" },
@@ -22,24 +26,11 @@ function getCoverageColor(ratio) {
   return "#DC2626";
 }
 
-// Try to match a GeoJSON ADM3_EN name to a DB location name.
-// GeoJSON uses "Bago City", DB uses "City of Bago" — normalize both.
-function normalizeName(name) {
-  return (name || "")
-    .trim()
-    .toLowerCase()
-    .replace(/^city of /, "")
-    .replace(/ city$/, "")
-    .replace(/ \(.*?\)$/, "")  // strip trailing parenthetical like "(HUC)" or "(Capital)"
-    .replace(/[^a-z0-9 ]/g, "")
-    .trim();
-}
-
 export default function Overview() {
   const [nirGeo, setNirGeo] = useState(null);
   const [hucGeo, setHucGeo] = useState(null);
   const [year, setYear] = useState(2026);
-  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [month, setMonth] = useState(1); // Jan 2026 — latest committed Immunization period in DB
   const [coverageData, setCoverageData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -66,14 +57,10 @@ export default function Overview() {
       .finally(() => setLoading(false));
   }, [year, month]);
 
-  // Build lookup: normalized DB name → decimal ratio value
-  const coverageLookup = useMemo(() => {
-    const map = {};
-    for (const entry of coverageData) {
-      map[normalizeName(entry.location)] = entry.value;
-    }
-    return map;
-  }, [coverageData]);
+  const coverageLookup = useMemo(
+    () => buildCoverageLookup(coverageData),
+    [coverageData]
+  );
 
   // Summary counts
   const onTarget   = coverageData.filter((d) => d.value !== null && d.value >= 0.95).length;
@@ -82,7 +69,7 @@ export default function Overview() {
   const noData     = 63 - coverageData.filter((d) => d.value !== null).length;
 
   function getRatioForGeoName(geoName) {
-    const key = normalizeName(geoName);
+    const key = resolveGeoLookupKey(geoName, coverageLookup);
     return coverageLookup[key] ?? null;
   }
 

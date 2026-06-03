@@ -1,6 +1,6 @@
 # progress.md
 
-## Status: Two-Track Strategy Adopted — Building Province Level Dashboard
+## Status: Track 1 Immunization File 1 E2E verified — Child Care module partial (1/15 files)
 
 ## Completed
 - Full stack setup (React + FastAPI + PostgreSQL + Docker)
@@ -41,11 +41,16 @@
 - All pages wired in App.jsx with RBAC route protection
 - Real data confirmed in database (500+ rows, Immunization program)
 - Two-Track strategy documented and approved
+- Session startup/shutdown protocols + Cursor rules + track1-verify script
+- Overview/Home/Coverage/Rankings on live APIs (Jan 2026 demo period)
+- Overview GeoJSON name matching (locationNames.js)
+- Indicator Report header rowSpan fix
+- User verified Excel vs Indicator Report (Immunization File 1)
 
 ## In Progress
-- Build province level API endpoint
-- Connect real data to Overview maps and summary cards
-- Prepare for ICTU server deployment
+- Child Care module: 14 FHSIS files remaining (Immunization files 4–8, Sick, Nutrition, SBI)
+- ICTU server deployment
+- RBAC demo path testing (admin vs program_manager)
 
 ## Track 1 — Province Dashboard (End of May 2026)
 1. ✅ Database schema and seed data
@@ -58,12 +63,12 @@
 8. ✅ Login page
 9. ✅ Sidebar navigation
 10. ✅ Home page
-11. ✅ Overview page (mock data)
+11. ✅ Overview page (live coverage-summary)
 12. ✅ Skeleton placeholder pages
-13. ⬜ Province level API endpoint
-14. ⬜ Connect real data to maps and cards
+13. ✅ Province-level APIs in use (coverage-summary, coverage-breakdown, health-data)
+14. ✅ Connect real data to maps and cards (Jan 2026)
 15. ⬜ Deploy to ICTU server
-16. ⬜ Internal testing and feedback
+16. ⬜ Internal testing and feedback (partial — user verified File 1 numbers)
 
 ## Track 2 — LGU/Barangay Dashboard (End of June 2026)
 1. ⬜ Fix FHSIS template errors (6 files)
