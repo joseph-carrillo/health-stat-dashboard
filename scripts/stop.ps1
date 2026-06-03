@@ -18,11 +18,11 @@ function Stop-By-Port {
       return
     }
 
-    $pids = $conns | Select-Object -ExpandProperty OwningProcess -Unique
-    foreach ($pid in $pids) {
-      if ($pid -ne $null -and $pid -ne 0) {
-        Write-Host "Stopping process PID $pid on port $Port ..."
-        Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+    $procIds = $conns | Select-Object -ExpandProperty OwningProcess -Unique
+    foreach ($procId in $procIds) {
+      if ($procId -ne $null -and $procId -ne 0) {
+        Write-Host "Stopping process PID $procId on port $Port ..."
+        Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
       }
     }
   } catch {
