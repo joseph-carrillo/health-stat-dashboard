@@ -8,6 +8,11 @@ import {
   buildCoverageLookup,
   resolveGeoLookupKey,
 } from "../../utils/locationNames";
+import {
+  DEFAULT_OVERVIEW_INDICATOR,
+  findOverviewIndicator,
+  OVERVIEW_INDICATOR_GROUPS,
+} from "../../config/overviewIndicators";
 
 const MONTHS = [
   { value: 1, label: "January" }, { value: 2, label: "February" },
@@ -31,6 +36,7 @@ export default function Overview() {
   const [hucGeo, setHucGeo] = useState(null);
   const [year, setYear] = useState(2026);
   const [month, setMonth] = useState(1); // Jan 2026 — latest committed Immunization period in DB
+  const [indicatorCode, setIndicatorCode] = useState(DEFAULT_OVERVIEW_INDICATOR);
   const [coverageData, setCoverageData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -48,14 +54,20 @@ export default function Overview() {
     const token = localStorage.getItem("token");
     setLoading(true);
     setError("");
-    fetch(`/api/coverage-summary?year=${year}&month=${month}&indicator_code=CPAB_PCT`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => r.json())
+    fetch(
+      `/api/coverage-summary?year=${year}&month=${month}&indicator_code=${encodeURIComponent(indicatorCode)}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    )
+      .then((r) => {
+        if (!r.ok) throw new Error("coverage fetch failed");
+        return r.json();
+      })
       .then((d) => setCoverageData(d.data || []))
       .catch(() => setError("Could not load coverage data."))
       .finally(() => setLoading(false));
-  }, [year, month]);
+  }, [year, month, indicatorCode]);
+
+  const selectedIndicator = findOverviewIndicator(indicatorCode);
 
   const coverageLookup = useMemo(
     () => buildCoverageLookup(coverageData),
@@ -105,9 +117,29 @@ export default function Overview() {
         <div style={styles.topRow}>
           <div>
             <h1 style={styles.pageTitle}>Analytics — Overview</h1>
-            <p style={styles.pageSub}>CPAB / BCG / HepaB — Immunization Coverage</p>
+            <p style={styles.pageSub}>
+              {selectedIndicator.group
+                ? `${selectedIndicator.group} · ${selectedIndicator.label} coverage`
+                : "Child Care — Immunization coverage"}
+            </p>
           </div>
           <div style={styles.filterRow}>
+            <div style={styles.filterGroup}>
+              <label style={styles.filterLabel}>Indicator</label>
+              <select
+                style={styles.select}
+                value={indicatorCode}
+                onChange={(e) => setIndicatorCode(e.target.value)}
+              >
+                {OVERVIEW_INDICATOR_GROUPS.map((g) => (
+                  <optgroup key={g.group} label={g.group}>
+                    {g.options.map((o) => (
+                      <option key={o.code} value={o.code}>{o.label}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
             <div style={styles.filterGroup}>
               <label style={styles.filterLabel}>Month</label>
               <select style={styles.select} value={month}
@@ -173,7 +205,7 @@ export default function Overview() {
                   scrollWheelZoom={false}
                 >
                   <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="© OpenStreetMap" />
-                  <GeoJSON key={`nir-${year}-${month}`} data={nirGeo} style={styleFeature} onEachFeature={onEachFeature} />
+                  <GeoJSON key={`nir-${year}-${month}-${indicatorCode}`} data={nirGeo} style={styleFeature} onEachFeature={onEachFeature} />
                 </MapContainer>
               ) : (
                 <div style={styles.mapLoading}>Loading map…</div>
@@ -201,7 +233,7 @@ export default function Overview() {
                   scrollWheelZoom={false}
                 >
                   <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="© OpenStreetMap" />
-                  <GeoJSON key={`huc-${year}-${month}`} data={hucGeo} style={styleFeature} onEachFeature={onEachFeature} />
+                  <GeoJSON key={`huc-${year}-${month}-${indicatorCode}`} data={hucGeo} style={styleFeature} onEachFeature={onEachFeature} />
                 </MapContainer>
               ) : (
                 <div style={styles.mapLoading}>Loading map…</div>
@@ -222,7 +254,7 @@ export default function Overview() {
           <p style={styles.mapSub}>
             {loading ? "Loading…"
               : ranking.length > 0
-                ? `${ranking.length} LGUs with data — CPAB coverage, ${MONTHS.find(m => m.value === month)?.label} ${year}`
+                ? `${ranking.length} LGUs with data — ${selectedIndicator.label} (${indicatorCode}), ${MONTHS.find(m => m.value === month)?.label} ${year}`
                 : "No data available for this period. Upload data to see rankings."
             }
           </p>

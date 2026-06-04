@@ -46,15 +46,20 @@
 - Overview GeoJSON name matching (locationNames.js)
 - Indicator Report header rowSpan fix
 - User verified Excel vs Indicator Report (Immunization File 1)
+- Immunization File 4 (DPT-HiB-HepB): parser config, upload UI, approve/commit fixes, Indicator Report File 4
+- Overview: multi-indicator coverage maps (File 1 + File 4 PCT)
+- Approve pipeline hardened (force DQC, savepoint upsert on commit)
 
 ## In Progress
-- Child Care module: 14 FHSIS files remaining (Immunization files 4–8, Sick, Nutrition, SBI)
+- Child Care module: 13 FHSIS files remaining (Immunization files 5–8, Sick, Nutrition, SBI)
+- Trends page (line charts) — deferred until multi-month data
+- Chart library / viz polish — deferred; pipeline priority
 - ICTU server deployment
 - RBAC demo path testing (admin vs program_manager)
 
 ## Track 1 — Province Dashboard (End of May 2026)
 1. ✅ Database schema and seed data
-2. ✅ Parser for File 1 (CPAB/BCG/HepaB)
+2. ✅ Parser for File 1 (CPAB/BCG/HepaB) and File 4 (DPT-HiB-HepB)
 3. ✅ Commit approval system
 4. ✅ FastAPI endpoints (13 total)
 5. ✅ Auth and JWT login

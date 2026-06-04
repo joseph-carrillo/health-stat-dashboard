@@ -39,10 +39,27 @@ function Wait-ForPort {
   return $false
 }
 
+function Stop-Backend {
+  try {
+    $conns = Get-NetTCPConnection -LocalPort $backendPort -State Listen -ErrorAction SilentlyContinue
+    if (-not $conns) { return }
+    $procIds = $conns | Select-Object -ExpandProperty OwningProcess -Unique
+    foreach ($procId in $procIds) {
+      if ($procId -ne $null -and $procId -ne 0) {
+        Write-Host "Stopping backend PID $procId on port $backendPort ..."
+        Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
+      }
+    }
+    Start-Sleep -Seconds 2
+  } catch {
+    Write-Host "Warning: could not stop backend on port $backendPort. $($_.Exception.Message)"
+  }
+}
+
 function Start-Backend {
   if (Test-PortInUse -Port $backendPort) {
-    Write-Host "Backend already running on port $backendPort"
-    return
+    Write-Host "Backend already on port $backendPort - restarting to load latest code ..."
+    Stop-Backend
   }
 
   New-Item -ItemType Directory -Path $logsDir -Force | Out-Null
@@ -50,9 +67,10 @@ function Start-Backend {
 
   Write-Host "Starting backend (uvicorn) ..."
 
+  # No --reload: auto-reload often leaves port 8000 dead after a parser crash.
   $cmd = @"
 Set-Location '$repoRoot'
-python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port $backendPort 2>&1 | Tee-Object -FilePath '$outFile'
+python -m uvicorn backend.main:app --host 0.0.0.0 --port $backendPort 2>&1 | Tee-Object -FilePath '$outFile'
 "@
 
   Start-Process -FilePath "powershell.exe" -ArgumentList @("-NoProfile", "-Command", $cmd) -WindowStyle Minimized | Out-Null

@@ -1,23 +1,22 @@
 # activeContext.md
 
 ## Current Session Goal (next time)
-Choose next build lane: Child Care Immunization File 4, Child Care Nutrition, or new health program — see `session-handoff.md`.
+Continue **upload pipeline** (next FHSIS file) OR build **Trends** line chart when ready. See `session-handoff.md`.
 
 ## Strategic Decision (unchanged)
 Two-Track strategy: Track 1 province dashboard for ops feedback; Track 2 LGU/barangay later.
 
 ## What Was Just Completed (latest session)
-- **Immunization File 1 E2E signed off** by user (Excel matches Indicator Report)
-- Track 1 Tue/Wed: live APIs on Home, Overview, Coverage, Rankings; `TRACK1-API-MAP.md`
-- Overview map: 63/63 LGU match via `frontend/src/utils/locationNames.js`
-- Indicator Report header alignment (Target Pop. spans 2 rows)
-- Dev tooling: startup/shutdown scripts, Cursor rules, `track1-verify.ps1`
-- **Child Care scope clarified:** 15 FHSIS files total; only File 1 (CPAB/BCG/HepaB) built end-to-end
+- Immunization **File 4 (DPT-HiB-HepB 1/2/3)** — parse, stage, approve to `health_data`
+- `commit.py` approve: force DQC bypass + transaction savepoints for duplicate inserts
+- `scripts/start.ps1` — restart backend if port 8000 already in use
+- Overview maps/ranking — selectable indicator (CPAB, BCG, HepaB, DPT1/2/3 %)
+- Viz planning: pipeline before new charts; Trends = line chart when multi-month
 
 ## What Happens Next
 1. `run startup protocols`
-2. User picks Lane A / B / C (see session-handoff)
-3. Or Track 1 Thursday: RBAC + ICTU deploy prep
+2. Next file in Child Care Immunization (files 5–8) OR Nutrition first file
+3. Optional: commit/push any local changes if shutdown push missed files
 
 ## Daily Startup (or use script)
 1. `run startup protocols` OR `.\scripts\start.ps1`

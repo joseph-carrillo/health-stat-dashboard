@@ -128,15 +128,14 @@ def run_dqc_rules(staged_rows: list, dqc_rules: list) -> list:
 
     for rule in dqc_rules:
         rule_type = rule["rule_type"]
-        code = rule["indicator_code"]
-        message = rule["message"]
-
-        if code not in values or values[code] is None:
-            continue
+        message = rule.get("message", "")
 
         if rule_type == "over_threshold":
+            code = rule["indicator_code"]
+            if code not in values or values[code] is None:
+                continue
             threshold = rule["threshold"]
-            if values[code] is not None and values[code] > threshold:
+            if values[code] > threshold:
                 issues.append({
                     "indicator_code": code,
                     "value": values[code],
@@ -145,8 +144,8 @@ def run_dqc_rules(staged_rows: list, dqc_rules: list) -> list:
                 })
 
         elif rule_type == "sequence":
-            # A >= B >= C
-            sequence = rule["sequence"]
+            # A >= B >= C (e.g. DPT dose totals)
+            sequence = rule.get("sequence", [])
             for i in range(len(sequence) - 1):
                 a = values.get(sequence[i])
                 b = values.get(sequence[i + 1])

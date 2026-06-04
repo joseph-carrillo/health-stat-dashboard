@@ -179,13 +179,21 @@ async def upload_file(
         shutil.copyfileobj(file.file, buffer)
 
     # Run parser
-    result = parse_file(
-        file_path=str(file_path),
-        template_id=template_id,
-        year=year,
-        month=month,
-        uploaded_by=current_user["user_id"]
-    )
+    try:
+        result = parse_file(
+            file_path=str(file_path),
+            template_id=template_id,
+            year=year,
+            month=month,
+            uploaded_by=current_user["user_id"]
+        )
+    except Exception as e:
+        if file_path.exists():
+            os.remove(file_path)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Parser crashed: {str(e)}"
+        )
 
     # Clean up temp file
     os.remove(file_path)

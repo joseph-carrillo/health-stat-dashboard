@@ -1,7 +1,12 @@
 // frontend/src/pages/analytics/IndicatorReport.jsx
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Navbar from "../../components/Navbar";
+import {
+  REPORT_TEMPLATES,
+  deriveComputedFields,
+  computeSubtotal,
+} from "../../config/indicatorReportTemplates";
 
 function getUser() {
   const token = localStorage.getItem("token");
@@ -101,98 +106,6 @@ const PROVINCES = [
   { value: "City of Bacolod (HUC)", label: "City of Bacolod (HUC)" },
 ];
 
-// ── Column groups — defines the two-row header matching the Excel layout ──────
-const COL_GROUPS = [
-  {
-    label: "Target Pop. (0-11M)",
-    colspan: 1,
-    codes: ["IMMUN_POP_0_11M"],
-    subLabels: [""],
-  },
-  {
-    label: "CPAB",
-    colspan: 4,
-    codes: ["CPAB_MALE", "CPAB_FEMALE", "CPAB_TOTAL", "CPAB_PCT"],
-    subLabels: ["Male", "Female", "Total", "%"],
-  },
-  {
-    label: "BCG ≤24H",
-    colspan: 4,
-    codes: ["BCG_24H_MALE", "BCG_24H_FEMALE", "BCG_24H_TOTAL", "BCG_24H_PCT"],
-    subLabels: ["Male", "Female", "Total", "%"],
-  },
-  {
-    label: "BCG >24H",
-    colspan: 4,
-    codes: ["BCG_GT24H_MALE", "BCG_GT24H_FEMALE", "BCG_GT24H_TOTAL", "BCG_GT24H_PCT"],
-    subLabels: ["Male", "Female", "Total", "%"],
-  },
-  {
-    label: "HepaB ≤24H",
-    colspan: 4,
-    codes: ["HEPAB_24H_MALE", "HEPAB_24H_FEMALE", "HEPAB_24H_TOTAL", "HEPAB_24H_PCT"],
-    subLabels: ["Male", "Female", "Total", "%"],
-  },
-  {
-    label: "HepaB >24H",
-    colspan: 4,
-    codes: ["HEPAB_GT24H_MALE", "HEPAB_GT24H_FEMALE", "HEPAB_GT24H_TOTAL", "HEPAB_GT24H_PCT"],
-    subLabels: ["Male", "Female", "Total", "%"],
-  },
-];
-
-// Flat ordered list of all indicator codes (used for rendering data cells)
-const ALL_CODES = COL_GROUPS.flatMap(g => g.codes);
-
-// Codes that are NOT percentages — used for province subtotal summing
-const NON_PCT_CODES = ALL_CODES.filter(c => !c.endsWith("_PCT"));
-
-// ── Client-side derivation of computed fields ─────────────────────────────────
-// Fixes rows where the backend stored NULL for computed indicators because of
-// the old parser bug (early-return on any blank cell). Raw male/female counts
-// are always read directly from Excel so they survive correctly. This lets us
-// recompute totals and PCT from those raw values without requiring a re-upload.
-function deriveComputedFields(lguMap) {
-  for (const lgu of Object.values(lguMap)) {
-    const pop = lgu["IMMUN_POP_0_11M"] || 0;
-
-    const derive = (total, male, female, pct) => {
-      if (lgu[total] == null && lgu[male] != null && lgu[female] != null) {
-        lgu[total] = (lgu[male] || 0) + (lgu[female] || 0);
-      }
-      if (lgu[pct] == null && lgu[total] != null && pop > 0) {
-        lgu[pct] = lgu[total] / pop;
-      }
-    };
-
-    derive("CPAB_TOTAL",        "CPAB_MALE",        "CPAB_FEMALE",        "CPAB_PCT");
-    derive("BCG_24H_TOTAL",     "BCG_24H_MALE",     "BCG_24H_FEMALE",     "BCG_24H_PCT");
-    derive("BCG_GT24H_TOTAL",   "BCG_GT24H_MALE",   "BCG_GT24H_FEMALE",   "BCG_GT24H_PCT");
-    derive("HEPAB_24H_TOTAL",   "HEPAB_24H_MALE",   "HEPAB_24H_FEMALE",   "HEPAB_24H_PCT");
-    derive("HEPAB_GT24H_TOTAL", "HEPAB_GT24H_MALE", "HEPAB_GT24H_FEMALE", "HEPAB_GT24H_PCT");
-  }
-}
-
-// ── Province subtotals ────────────────────────────────────────────────────────
-function computeSubtotal(lgus) {
-  const totals = {};
-  for (const code of NON_PCT_CODES) {
-    totals[code] = lgus.reduce((acc, lgu) => {
-      const v = lgu[code];
-      return acc + (v != null ? Number(v) : 0);
-    }, 0);
-  }
-  const pop = totals["IMMUN_POP_0_11M"] || 0;
-  if (pop > 0) {
-    totals["CPAB_PCT"]        = totals["CPAB_TOTAL"]        / pop;
-    totals["BCG_24H_PCT"]     = totals["BCG_24H_TOTAL"]     / pop;
-    totals["BCG_GT24H_PCT"]   = totals["BCG_GT24H_TOTAL"]   / pop;
-    totals["HEPAB_24H_PCT"]   = totals["HEPAB_24H_TOTAL"]   / pop;
-    totals["HEPAB_GT24H_PCT"] = totals["HEPAB_GT24H_TOTAL"] / pop;
-  }
-  return totals;
-}
-
 // ── Format a single cell value ────────────────────────────────────────────────
 function formatValue(value, code) {
   if (value === null || value === undefined) return "—";
@@ -207,8 +120,16 @@ function formatValue(value, code) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function IndicatorReport() {
+  const [reportFile, setReportFile] = useState("cpab_bcg_hepa");
+  const template = REPORT_TEMPLATES[reportFile];
+  const COL_GROUPS = template.colGroups;
+  const ALL_CODES = useMemo(
+    () => COL_GROUPS.flatMap((g) => g.codes),
+    [reportFile]
+  );
+
   const [year, setYear]       = useState(2026);
-  const [month, setMonth]     = useState(new Date().getMonth() + 1);
+  const [month, setMonth]     = useState(1);
   const [province, setProvince] = useState("all");
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
@@ -257,7 +178,7 @@ export default function IndicatorReport() {
 
       // Derive any computed fields that the backend stored as NULL
       // (handles data uploaded before the parser fix)
-      deriveComputedFields(lguMap);
+      deriveComputedFields(lguMap, template);
 
       // Build ordered rows: province header (with subtotal) then its children
       const rows = [];
@@ -269,7 +190,7 @@ export default function IndicatorReport() {
           // Flush previous province group
           if (currentProvince !== null) {
             const subtotals = provinceLGUs.length > 0
-              ? computeSubtotal(provinceLGUs)
+              ? computeSubtotal(provinceLGUs, template)
               : (lguMap[currentProvince] || {});
             rows.push({ location: currentProvince, isHeader: true, ...subtotals });
             rows.push(...provinceLGUs);
@@ -286,7 +207,7 @@ export default function IndicatorReport() {
       // it falls back to its own row from lguMap which is the correct behaviour)
       if (currentProvince !== null) {
         const subtotals = provinceLGUs.length > 0
-          ? computeSubtotal(provinceLGUs)
+          ? computeSubtotal(provinceLGUs, template)
           : (lguMap[currentProvince] || {});
         rows.push({ location: currentProvince, isHeader: true, ...subtotals });
         rows.push(...provinceLGUs);
@@ -302,11 +223,10 @@ export default function IndicatorReport() {
     setLoading(false);
   }
 
-  // Auto-fetch whenever year or month changes
   useEffect(() => {
     fetchData(year, month);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [year, month]);
+  }, [year, month, reportFile]);
 
   // ── Province filter (client-side) ─────────────────────────────────────────
   const visibleRows = province === "all"
@@ -335,12 +255,25 @@ export default function IndicatorReport() {
         <div style={styles.pageHeader}>
           <div>
             <h1 style={styles.pageTitle}>Indicator Report</h1>
-            <p style={styles.pageSub}>CPAB / BCG / HepaB — Child Care: Immunization</p>
+            <p style={styles.pageSub}>{template.subtitle}</p>
           </div>
         </div>
 
         {/* Filters */}
         <div style={styles.filterRow}>
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>FHSIS File</label>
+            <select
+              style={styles.select}
+              value={reportFile}
+              onChange={(e) => setReportFile(e.target.value)}
+            >
+              {Object.entries(REPORT_TEMPLATES).map(([key, t]) => (
+                <option key={key} value={key}>{t.label}</option>
+              ))}
+            </select>
+          </div>
+
           <div style={styles.filterGroup}>
             <label style={styles.filterLabel}>Month</label>
             <select style={styles.select} value={month}

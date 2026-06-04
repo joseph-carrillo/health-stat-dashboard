@@ -110,16 +110,31 @@ export default function StagingTab() {
               <span style={styles.summaryValue}>{summary.total_rows || 0}</span>
             </div>
             <div style={styles.summaryItem}>
+              <span style={styles.summaryLabel}>Passed DQC</span>
+              <span style={{ ...styles.summaryValue, color: "#16A34A" }}>
+                {summary.passed ?? 0}
+              </span>
+            </div>
+            <div style={styles.summaryItem}>
+              <span style={styles.summaryLabel}>Failed DQC</span>
+              <span style={{ ...styles.summaryValue, color: (summary.failed || 0) > 0 ? "#DC2626" : "#16A34A" }}>
+                {summary.failed ?? 0}
+              </span>
+            </div>
+            <div style={styles.summaryItem}>
               <span style={styles.summaryLabel}>Conflicts</span>
               <span style={{ ...styles.summaryValue, color: summary.conflicts > 0 ? "#DC2626" : "#16A34A" }}>
                 {summary.conflicts || 0}
               </span>
             </div>
-            <div style={styles.summaryItem}>
-              <span style={styles.summaryLabel}>Status</span>
-              <span style={styles.summaryValue}>{summary.status || "pending"}</span>
-            </div>
           </div>
+
+          {(summary.failed || 0) > 0 && (
+            <p style={styles.dqcWarn}>
+              Some rows failed automatic checks (often DPT dose order). You can still approve —
+              data will be committed for review. Re-upload later if you fix the Excel file.
+            </p>
+          )}
 
           {/* Approve / confirm */}
           {confirmPending ? (
@@ -127,7 +142,11 @@ export default function StagingTab() {
               <p style={styles.confirmMsg}>
                 You are about to commit{" "}
                 <strong>{(summary.total_rows || 0).toLocaleString()}</strong> rows
-                to the database. This action cannot be undone. Are you sure?
+                to the database
+                {(summary.failed || 0) > 0
+                  ? ` (including ${summary.failed} rows that failed DQC checks)`
+                  : ""}.
+                This action cannot be undone. Are you sure?
               </p>
               <div style={styles.confirmButtons}>
                 <button style={styles.commitBtn} onClick={handleConfirmApprove}>
@@ -274,6 +293,16 @@ const styles = {
     border: "1px solid #FCD34D",
     borderRadius: "8px",
     padding: "16px 20px",
+  },
+  dqcWarn: {
+    fontSize: "13px",
+    color: "#854D0E",
+    background: "#FEF9C3",
+    border: "1px solid #EAB308",
+    borderRadius: "8px",
+    padding: "12px 14px",
+    margin: "0 0 16px 0",
+    lineHeight: "1.5",
   },
   confirmMsg: {
     fontSize: "13px",

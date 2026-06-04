@@ -13,9 +13,9 @@ const PROGRAM_STRUCTURE = [
       {
         name: "Immunization",
         reportType: "monthly",
-        templateId: "cpab_bcg_hepa",
         files: [
-          { label: "CPAB / BCG / HepaB (File 1)", value: "cpab_bcg_hepa" }
+          { label: "CPAB / BCG / HepaB (File 1)", value: "cpab_bcg_hepa" },
+          { label: "DPT-HiB-HepB 1/2/3 (File 4)", value: "dpt_hib_hepb123" },
         ]
       }
     ]
@@ -42,6 +42,7 @@ const YEARS = [2025, 2026, 2027];
 export default function UploadTab() {
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [selectedSubProgram, setSelectedSubProgram] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [month, setMonth] = useState("");
   const [year, setYear] = useState(2026);
   const [file, setFile] = useState(null);
@@ -55,6 +56,7 @@ export default function UploadTab() {
     const found = PROGRAM_STRUCTURE.find(p => p.program === e.target.value);
     setSelectedProgram(found || null);
     setSelectedSubProgram(null);
+    setSelectedFile(null);
     setFile(null);
     setErrorMsg("");
   }
@@ -63,6 +65,7 @@ export default function UploadTab() {
   function handleSubProgramChange(e) {
     const found = selectedProgram?.subPrograms.find(s => s.name === e.target.value);
     setSelectedSubProgram(found || null);
+    setSelectedFile(found?.files?.[0] || null);
     setFile(null);
     setErrorMsg("");
   }
@@ -83,6 +86,7 @@ export default function UploadTab() {
     if (!selectedProgram) { setErrorMsg("Please select a program."); return; }
     if (!selectedSubProgram) { setErrorMsg("Please select a sub-program."); return; }
     if (!month) { setErrorMsg("Please select a month."); return; }
+    if (!selectedFile) { setErrorMsg("Please select which FHSIS file you are uploading."); return; }
     if (!file) { setErrorMsg("Please select an Excel file."); return; }
 
     setErrorMsg("");
@@ -95,7 +99,7 @@ export default function UploadTab() {
       formData.append("file", file);
 
       const response = await fetch(
-        `/api/upload?template_id=${selectedSubProgram.templateId}&year=${year}&month=${month}`,
+        `/api/upload?template_id=${selectedFile.value}&year=${year}&month=${month}`,
         {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
@@ -103,11 +107,30 @@ export default function UploadTab() {
         }
       );
 
-      const data = await response.json();
+      let data = {};
+      const text = await response.text();
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        setStatus("error");
+        setErrorMsg(
+          response.ok
+            ? "Upload returned an invalid response."
+            : `Server error (${response.status}). Check backend logs.`
+        );
+        return;
+      }
 
       if (!response.ok) {
         setStatus("error");
-        setErrorMsg(data.detail || "Upload failed.");
+        const detail = data.detail;
+        setErrorMsg(
+          typeof detail === "string"
+            ? detail
+            : Array.isArray(detail)
+              ? detail.map((d) => d.msg || JSON.stringify(d)).join("; ")
+              : `Upload failed (${response.status}).`
+        );
         return;
       }
 
@@ -116,7 +139,7 @@ export default function UploadTab() {
 
     } catch (err) {
       setStatus("error");
-      setErrorMsg("Cannot connect to server. Is the API running?");
+      setErrorMsg(err?.message || "Cannot connect to server. Is the API running?");
     }
   }
 
@@ -135,6 +158,7 @@ export default function UploadTab() {
   function handleReset() {
     setSelectedProgram(null);
     setSelectedSubProgram(null);
+    setSelectedFile(null);
     setMonth("");
     setYear(2026);
     setFile(null);
@@ -186,8 +210,31 @@ export default function UploadTab() {
           </div>
         )}
 
+        {/* FHSIS file — when sub-program has multiple templates */}
+        {selectedSubProgram && selectedSubProgram.files?.length > 0 && (
+          <div style={styles.field}>
+            <label style={styles.label}>FHSIS File</label>
+            <select
+              style={styles.select}
+              value={selectedFile?.value || ""}
+              onChange={(e) => {
+                const found = selectedSubProgram.files.find(f => f.value === e.target.value);
+                setSelectedFile(found || null);
+                setFile(null);
+                setErrorMsg("");
+              }}
+              disabled={status === "loading"}
+            >
+              <option value="">Select file...</option>
+              {selectedSubProgram.files.map((f) => (
+                <option key={f.value} value={f.value}>{f.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Period — only shows when sub-program is selected */}
-        {selectedSubProgram && (
+        {selectedSubProgram && selectedFile && (
           <div style={styles.row}>
 
             {/* Monthly selector */}
@@ -227,7 +274,7 @@ export default function UploadTab() {
         )}
 
         {/* File picker — only shows when period is selected */}
-        {selectedSubProgram && month && (
+        {selectedSubProgram && selectedFile && month && (
           <div style={styles.field}>
             <label style={styles.label}>Excel File</label>
             <div style={styles.filePicker}>
@@ -257,6 +304,9 @@ export default function UploadTab() {
             </p>
             <p style={styles.summaryLine}>
               <strong>Sub-Program:</strong> {selectedSubProgram.name}
+            </p>
+            <p style={styles.summaryLine}>
+              <strong>Template:</strong> {selectedFile?.label}
             </p>
             <p style={styles.summaryLine}>
               <strong>Period:</strong> {MONTHS.find(m => m.value === Number(month))?.label} {year}

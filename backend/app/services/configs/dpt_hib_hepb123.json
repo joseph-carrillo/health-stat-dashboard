@@ -1,0 +1,138 @@
+{
+  "template_id": "DPT_HIB_HEPB123",
+  "template_version": "2026",
+  "program_code": "CHILD_CARE",
+  "source_file_pattern": "4_DPT-HiB-HepB123",
+  "frequency": "monthly",
+  "psgc_column": 0,
+  "location_column": 1,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "sheet_map": {
+    "1": "Jan", "2": "Feb", "3": "Mar", "4": "Apr",
+    "5": "May", "6": "Jun", "7": "Jul", "8": "Aug",
+    "9": "Sep", "10": "Oct", "11": "Nov", "12": "Dec"
+  },
+
+  "aggregation": {
+    "quarterly": {
+      "1": [1, 2, 3],
+      "2": [4, 5, 6],
+      "3": [7, 8, 9],
+      "4": [10, 11, 12]
+    },
+    "annual": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+  },
+
+  "columns": [
+    {
+      "index": 2,
+      "indicator_code": "DPT_POP_2026",
+      "is_computed": false,
+      "year": "current"
+    },
+    {
+      "index": 3,
+      "indicator_code": "DPT1_MALE",
+      "is_computed": false,
+      "year": "current"
+    },
+    {
+      "index": 4,
+      "indicator_code": "DPT1_FEMALE",
+      "is_computed": false,
+      "year": "current"
+    },
+    {
+      "index": 5,
+      "indicator_code": "DPT1_TOTAL",
+      "is_computed": true,
+      "formula": "DPT1_MALE + DPT1_FEMALE",
+      "year": "current"
+    },
+    {
+      "index": 6,
+      "indicator_code": "DPT1_PCT",
+      "is_computed": true,
+      "formula": "DPT1_TOTAL / DPT_POP_2026",
+      "year": "current"
+    },
+    {
+      "index": 7,
+      "indicator_code": "DPT2_MALE",
+      "is_computed": false,
+      "year": "current"
+    },
+    {
+      "index": 8,
+      "indicator_code": "DPT2_FEMALE",
+      "is_computed": false,
+      "year": "current"
+    },
+    {
+      "index": 9,
+      "indicator_code": "DPT2_TOTAL",
+      "is_computed": true,
+      "formula": "DPT2_MALE + DPT2_FEMALE",
+      "year": "current"
+    },
+    {
+      "index": 10,
+      "indicator_code": "DPT2_PCT",
+      "is_computed": true,
+      "formula": "DPT2_TOTAL / DPT_POP_2026",
+      "year": "current"
+    },
+    {
+      "index": 11,
+      "indicator_code": "DPT3_MALE",
+      "is_computed": false,
+      "year": "current"
+    },
+    {
+      "index": 12,
+      "indicator_code": "DPT3_FEMALE",
+      "is_computed": false,
+      "year": "current"
+    },
+    {
+      "index": 13,
+      "indicator_code": "DPT3_TOTAL",
+      "is_computed": true,
+      "formula": "DPT3_MALE + DPT3_FEMALE",
+      "year": "current"
+    },
+    {
+      "index": 14,
+      "indicator_code": "DPT3_PCT",
+      "is_computed": true,
+      "formula": "DPT3_TOTAL / DPT_POP_2026",
+      "year": "current"
+    }
+  ],
+
+  "dqc_rules": [
+    {
+      "rule_type": "over_threshold",
+      "indicator_code": "DPT1_PCT",
+      "threshold": 2.0,
+      "message": "DPT dose 1 percentage exceeds 200% of projected population"
+    },
+    {
+      "rule_type": "over_threshold",
+      "indicator_code": "DPT2_PCT",
+      "threshold": 2.0,
+      "message": "DPT dose 2 percentage exceeds 200% of projected population"
+    },
+    {
+      "rule_type": "over_threshold",
+      "indicator_code": "DPT3_PCT",
+      "threshold": 2.0,
+      "message": "DPT dose 3 percentage exceeds 200% of projected population"
+    }
+  ],
+
+  "notes": "Current-year columns only (cols 2-14). Previous-year cols 15-27 not imported in Phase 1. Sequence rule (dose1>=dose2>=dose3) omitted — often violated in real FHSIS data; review in Excel instead."
+}

@@ -22,6 +22,19 @@ def get_db_connection():
     return psycopg2.connect(**DB_CONFIG)
 
 
+def _savepoint_execute(cur, sql, params):
+    """Run SQL inside a savepoint so one failure does not abort the whole batch."""
+    cur.execute("SAVEPOINT commit_row")
+    try:
+        cur.execute(sql, params)
+        cur.execute("RELEASE SAVEPOINT commit_row")
+        return True
+    except Exception:
+        cur.execute("ROLLBACK TO SAVEPOINT commit_row")
+        cur.execute("RELEASE SAVEPOINT commit_row")
+        return False
+
+
 # =====================================================
 # GET BATCH SUMMARY
 # Returns a summary of what is in staging for a batch
@@ -245,7 +258,7 @@ def approve_batch(batch_id: str, approved_by=None, force=False):
         (batch_id,)
     )
     failed = cur.fetchone()[0]
-    if failed > 0:
+    if failed > 0 and not force:
         conn.close()
         return {
             "success": False,
@@ -312,42 +325,72 @@ def approve_batch(batch_id: str, approved_by=None, force=False):
                  indicator_id, location_id, period_id)
             )
             if cur.rowcount == 0:
-                # No existing row — fall back to INSERT
-                try:
-                    cur.execute(
-                        """INSERT INTO health_data (
-                               indicator_id, location_id, period_id,
-                               value, is_computed,
-                               uploaded_by, uploaded_at, source_file
-                           ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
-                        (indicator_id, location_id, period_id,
-                         value, is_computed,
-                         approved_by, datetime.now(), source_file)
-                    )
-                    inserted += 1
-                except Exception:
-                    skipped += 1
-            else:
-                updated += 1
-
-        elif effective_status == "none":
-            # Insert new data
-            try:
-                cur.execute(
+                insert_sql = (
                     """INSERT INTO health_data (
                            indicator_id, location_id, period_id,
                            value, is_computed,
                            uploaded_by, uploaded_at, source_file
-                       ) VALUES (
-                           %s, %s, %s, %s, %s, %s, %s, %s
-                       )""",
-                    (indicator_id, location_id, period_id,
-                     value, is_computed,
-                     approved_by, datetime.now(), source_file)
+                       ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
                 )
+                insert_params = (
+                    indicator_id, location_id, period_id,
+                    value, is_computed,
+                    approved_by, datetime.now(), source_file,
+                )
+                if _savepoint_execute(cur, insert_sql, insert_params):
+                    inserted += 1
+                else:
+                    cur.execute(
+                        """UPDATE health_data
+                           SET value = %s,
+                               uploaded_by = %s,
+                               uploaded_at = %s,
+                               source_file = %s
+                           WHERE indicator_id = %s
+                           AND location_id = %s
+                           AND period_id = %s""",
+                        (value, approved_by, datetime.now(), source_file,
+                         indicator_id, location_id, period_id),
+                    )
+                    if cur.rowcount:
+                        updated += 1
+                    else:
+                        skipped += 1
+            else:
+                updated += 1
+
+        elif effective_status == "none":
+            insert_sql = (
+                """INSERT INTO health_data (
+                       indicator_id, location_id, period_id,
+                       value, is_computed,
+                       uploaded_by, uploaded_at, source_file
+                   ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
+            )
+            insert_params = (
+                indicator_id, location_id, period_id,
+                value, is_computed,
+                approved_by, datetime.now(), source_file,
+            )
+            if _savepoint_execute(cur, insert_sql, insert_params):
                 inserted += 1
-            except Exception:
-                skipped += 1
+            else:
+                cur.execute(
+                    """UPDATE health_data
+                       SET value = %s,
+                           uploaded_by = %s,
+                           uploaded_at = %s,
+                           source_file = %s
+                       WHERE indicator_id = %s
+                       AND location_id = %s
+                       AND period_id = %s""",
+                    (value, approved_by, datetime.now(), source_file,
+                     indicator_id, location_id, period_id),
+                )
+                if cur.rowcount:
+                    updated += 1
+                else:
+                    skipped += 1
 
     # Mark batch as approved in staging
     cur.execute(
