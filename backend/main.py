@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from datetime import timedelta
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
+from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
@@ -31,6 +31,7 @@ from app.services.commit import (
     get_batch_summary,
     get_conflicts,
     resolve_conflict,
+    resolve_conflicts_bulk,
     approve_batch,
 )
 from app.services import analytics
@@ -211,6 +212,7 @@ async def upload_file(
             month=month,
             uploaded_by=current_user.get("user_id"),
             dry_run=dry_run,
+            source_filename=file.filename,
         )
     finally:
         if file_path.exists():
@@ -308,6 +310,41 @@ def resolve_staging_conflict(
         entity_type="staging_row",
         entity_id=staging_id,
         details={"decision": decision},
+    )
+    return result
+
+
+@app.post("/api/staging/{batch_id}/conflicts/resolve-bulk")
+def resolve_staging_conflicts_bulk(
+    batch_id: str,
+    decision: str,
+    body: dict = Body(default={}),
+    current_user: dict = Depends(require_permission("can_approve")),
+):
+    """Resolve many conflicts: decision accept|reject; omit staging_ids in body for all pending."""
+    if decision not in ["accept", "reject"]:
+        raise HTTPException(
+            status_code=400, detail="Decision must be 'accept' or 'reject'"
+        )
+    staging_ids = body.get("staging_ids")
+    result = resolve_conflicts_bulk(
+        batch_id=batch_id,
+        decision=decision,
+        resolved_by=current_user.get("user_id"),
+        staging_ids=staging_ids or None,
+    )
+    if result.get("error"):
+        raise HTTPException(status_code=400, detail=result["error"])
+    write_audit(
+        action="resolve_conflicts_bulk",
+        actor=current_user,
+        entity_type="batch",
+        entity_id=batch_id,
+        details={
+            "decision": decision,
+            "updated": result.get("updated", 0),
+            "selected_count": len(staging_ids) if staging_ids else "all",
+        },
     )
     return result
 
@@ -590,6 +627,16 @@ def get_health_data(
 # =====================================================
 # TEMPLATE REPORTS ("Excel face" raw view)
 # =====================================================
+@app.get("/api/upload-catalog")
+def get_upload_catalog(
+    current_user: dict = Depends(require_permission("can_upload")),
+):
+    """Program / sub-program / template hierarchy for the upload form."""
+    from app.services.upload_catalog import build_upload_catalog
+
+    return build_upload_catalog()
+
+
 @app.get("/api/templates")
 def get_templates(current_user: dict = Depends(get_current_user)):
     """List the Excel templates that can be rendered as raw reports."""
@@ -601,9 +648,18 @@ def get_template_report(
     template_id: str,
     year: int = 2026,
     month: int = 1,
+    view_period_type: str | None = None,
+    period_value: int | None = None,
+    sheet_name: str | None = None,
     current_user: dict = Depends(get_current_user),
 ):
-    """Committed data for one month, laid out exactly like the source Excel."""
+    """Committed data laid out exactly like the source Excel.
+
+    view_period_type: monthly | quarterly | annual (how to view the report).
+    period_value: month 1–12, quarter 1–4, or 1 for annual.
+    sheet_name: Excel tab for multi-sheet templates (e.g. MAM, SAM).
+    month is an alias for period_value when period_value is omitted.
+    """
     perms = current_user.get("permissions", {})
     can_sensitive = perms.get("can_view_sensitive", False)
     program_scope = (
@@ -614,6 +670,9 @@ def get_template_report(
             template_id=template_id,
             year=year,
             month=month,
+            view_period_type=view_period_type,
+            period_value=period_value,
+            sheet_name=sheet_name,
             include_sensitive=can_sensitive,
             program_scope=program_scope,
         )

@@ -1,0 +1,64 @@
+{
+  "template_id": "SICK_VITAMIN_A",
+  "template_version": "2026",
+  "program_code": "CHILD_CARE",
+  "source_file_pattern": "1_Sick_Received_Vitamin_A",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 1,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000",
+    "Negros Island Region": "1800000000",
+    "Negros Island Region (NIR)": "1800000000",
+    "BARMM": "1800000000"
+  },
+
+  "display": {
+    "label": "File 1 - Sick Children Given Vitamin A",
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Name of City / Municipality" }
+    ]
+  },
+
+  "upload": {
+    "sub_program": "Management of the Sick",
+    "file_number": 1
+  },
+
+  "sheet_map": {
+    "1": "Q1",
+    "2": "Q2",
+    "3": "Q3",
+    "4": "Q4",
+    "annual": "Annual"
+  },
+
+  "columns": [
+    { "index": 2, "indicator_code": "SICK_VITA_SEEN_611_MALE", "is_computed": false },
+    { "index": 3, "indicator_code": "SICK_VITA_SEEN_611_FEMALE", "is_computed": false },
+    { "index": 4, "indicator_code": "SICK_VITA_SEEN_611_TOTAL", "is_computed": true, "formula": "SICK_VITA_SEEN_611_MALE + SICK_VITA_SEEN_611_FEMALE" },
+    { "index": 5, "indicator_code": "SICK_VITA_GIVEN_611_MALE", "is_computed": false },
+    { "index": 6, "indicator_code": "SICK_VITA_GIVEN_611_FEMALE", "is_computed": false },
+    { "index": 7, "indicator_code": "SICK_VITA_GIVEN_611_TOTAL", "is_computed": true, "formula": "SICK_VITA_GIVEN_611_MALE + SICK_VITA_GIVEN_611_FEMALE" },
+    { "index": 8, "indicator_code": "SICK_VITA_GIVEN_611_PCT", "is_computed": true, "formula": "SICK_VITA_GIVEN_611_TOTAL / SICK_VITA_SEEN_611_TOTAL" },
+    { "index": 9, "indicator_code": "SICK_VITA_SEEN_1259_MALE", "is_computed": false },
+    { "index": 10, "indicator_code": "SICK_VITA_SEEN_1259_FEMALE", "is_computed": false },
+    { "index": 11, "indicator_code": "SICK_VITA_SEEN_1259_TOTAL", "is_computed": true, "formula": "SICK_VITA_SEEN_1259_MALE + SICK_VITA_SEEN_1259_FEMALE" },
+    { "index": 12, "indicator_code": "SICK_VITA_GIVEN_1259_MALE", "is_computed": false },
+    { "index": 13, "indicator_code": "SICK_VITA_GIVEN_1259_FEMALE", "is_computed": false },
+    { "index": 14, "indicator_code": "SICK_VITA_GIVEN_1259_TOTAL", "is_computed": true, "formula": "SICK_VITA_GIVEN_1259_MALE + SICK_VITA_GIVEN_1259_FEMALE" },
+    { "index": 15, "indicator_code": "SICK_VITA_GIVEN_1259_PCT", "is_computed": true, "formula": "SICK_VITA_GIVEN_1259_TOTAL / SICK_VITA_SEEN_1259_TOTAL" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "SICK_VITA_GIVEN_611_PCT", "threshold": 1.0, "message": "Vitamin A (6-11m) percentage exceeds 100% of children seen" },
+    { "rule_type": "over_threshold", "indicator_code": "SICK_VITA_GIVEN_1259_PCT", "threshold": 1.0, "message": "Vitamin A (12-59m) percentage exceeds 100% of children seen" }
+  ],
+
+  "notes": "Quarterly + Annual sheets. Phase 1: quarterly upload (Qtr1–Qtr4). Denominator is Seen (facility visits), not projected population."
+}

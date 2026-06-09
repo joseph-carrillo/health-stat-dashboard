@@ -1,0 +1,72 @@
+{
+  "template_id": "PCV123",
+  "template_version": "2026",
+  "program_code": "CHILD_CARE",
+  "source_file_pattern": "7_PCV123",
+  "frequency": "monthly",
+  "psgc_column": 0,
+  "location_column": 1,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000",
+    "Negros Island Region": "1800000000",
+    "Negros Island Region (NIR)": "1800000000",
+    "BARMM": "1800000000"
+  },
+
+  "display": {
+    "label": "File 7 - PCV 1/2/3",
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Name of City / Municipality" }
+    ]
+  },
+
+  "upload": {
+    "sub_program": "Immunization",
+    "file_number": 7
+  },
+
+  "sheet_map": {
+    "1": "Jan", "2": "Feb", "3": "Mar", "4": "Apr",
+    "5": "May", "6": "Jun", "7": "Jul", "8": "Aug",
+    "9": "Sep", "10": "Oct", "11": "Nov", "12": "Dec"
+  },
+
+  "aggregation": {
+    "quarterly": {
+      "1": [1, 2, 3],
+      "2": [4, 5, 6],
+      "3": [7, 8, 9],
+      "4": [10, 11, 12]
+    },
+    "annual": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+  },
+
+  "columns": [
+    { "index": 2, "indicator_code": "PCV_POP_2026", "is_computed": false, "year": "current" },
+    { "index": 3, "indicator_code": "PCV1_MALE", "is_computed": false, "year": "current" },
+    { "index": 4, "indicator_code": "PCV1_FEMALE", "is_computed": false, "year": "current" },
+    { "index": 5, "indicator_code": "PCV1_TOTAL", "is_computed": true, "formula": "PCV1_MALE + PCV1_FEMALE", "year": "current" },
+    { "index": 6, "indicator_code": "PCV1_PCT", "is_computed": true, "formula": "PCV1_TOTAL / PCV_POP_2026", "year": "current" },
+    { "index": 7, "indicator_code": "PCV2_MALE", "is_computed": false, "year": "current" },
+    { "index": 8, "indicator_code": "PCV2_FEMALE", "is_computed": false, "year": "current" },
+    { "index": 9, "indicator_code": "PCV2_TOTAL", "is_computed": true, "formula": "PCV2_MALE + PCV2_FEMALE", "year": "current" },
+    { "index": 10, "indicator_code": "PCV2_PCT", "is_computed": true, "formula": "PCV2_TOTAL / PCV_POP_2026", "year": "current" },
+    { "index": 11, "indicator_code": "PCV3_MALE", "is_computed": false, "year": "current" },
+    { "index": 12, "indicator_code": "PCV3_FEMALE", "is_computed": false, "year": "current" },
+    { "index": 13, "indicator_code": "PCV3_TOTAL", "is_computed": true, "formula": "PCV3_MALE + PCV3_FEMALE", "year": "current" },
+    { "index": 14, "indicator_code": "PCV3_PCT", "is_computed": true, "formula": "PCV3_TOTAL / PCV_POP_2026", "year": "current" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "PCV1_PCT", "threshold": 2.0, "message": "PCV dose 1 percentage exceeds 200% of projected population" },
+    { "rule_type": "over_threshold", "indicator_code": "PCV2_PCT", "threshold": 2.0, "message": "PCV dose 2 percentage exceeds 200% of projected population" },
+    { "rule_type": "over_threshold", "indicator_code": "PCV3_PCT", "threshold": 2.0, "message": "PCV dose 3 percentage exceeds 200% of projected population" }
+  ],
+
+  "notes": "Current-year columns only (cols 2-14). Previous-year cols 15-27 not imported in Phase 1."
+}

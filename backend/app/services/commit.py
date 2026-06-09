@@ -202,6 +202,56 @@ def resolve_conflict(
     }
 
 
+def resolve_conflicts_bulk(
+    batch_id: str,
+    decision: str,
+    resolved_by: int = None,
+    staging_ids: list | None = None,
+) -> dict:
+    """Resolve many conflicts in one request (all pending or selected IDs)."""
+    if decision not in ["accept", "reject"]:
+        return {"error": "Decision must be 'accept' or 'reject'"}
+
+    new_status = "accepted" if decision == "accept" else "rejected"
+    conn = get_db_connection()
+    cur = conn.cursor()
+    now = datetime.now()
+
+    if staging_ids:
+        cur.execute(
+            """UPDATE staging_health_data
+               SET conflict_status = %s,
+                   approved_by = %s,
+                   approved_at = %s
+               WHERE batch_id = %s
+                 AND conflict_status = 'pending_review'
+                 AND id = ANY(%s)""",
+            (new_status, resolved_by, now, batch_id, staging_ids),
+        )
+    else:
+        cur.execute(
+            """UPDATE staging_health_data
+               SET conflict_status = %s,
+                   approved_by = %s,
+                   approved_at = %s
+               WHERE batch_id = %s
+                 AND conflict_status = 'pending_review'""",
+            (new_status, resolved_by, now, batch_id),
+        )
+
+    updated = cur.rowcount
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return {
+        "batch_id": batch_id,
+        "decision": decision,
+        "new_status": new_status,
+        "updated": updated,
+    }
+
+
 # =====================================================
 # APPROVE BATCH
 # Moves approved data from staging to health_data

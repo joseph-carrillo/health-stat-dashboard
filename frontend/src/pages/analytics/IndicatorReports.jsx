@@ -5,8 +5,75 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Navbar from "../../components/Navbar";
-import { getTemplates, getTemplateReport } from "../../services/api";
-import { MONTHS, YEARS } from "../../services/constants";
+import { getUploadCatalog, getTemplateReport } from "../../services/api";
+import { MONTHS, YEARS, QUARTERS } from "../../services/constants";
+import {
+  REPORT_TEMPLATES,
+  computeSubtotal,
+} from "../../config/indicatorReportTemplates";
+import {
+  findCatalogProgram,
+  findCatalogSubProgram,
+  sortTemplatesByFhsisFile,
+} from "../../config/uploadPrograms";
+
+const VIEW_PERIOD_TYPES = [
+  { id: "monthly", label: "Monthly" },
+  { id: "quarterly", label: "Quarterly" },
+  { id: "annual", label: "Annual" },
+];
+
+/** Monthly templates can be viewed as M/Q/Y; others lock to their upload frequency. */
+function viewPeriodOptionsForTemplate(template) {
+  const freq = template?.frequency || "monthly";
+  if (freq === "monthly") return VIEW_PERIOD_TYPES;
+  if (freq === "quarterly") {
+    return VIEW_PERIOD_TYPES.filter((p) => p.id !== "monthly");
+  }
+  if (freq === "annual") {
+    return VIEW_PERIOD_TYPES.filter((p) => p.id === "annual");
+  }
+  return VIEW_PERIOD_TYPES;
+}
+
+// Indicator Reports red-cell DQC — only templates with display.dqc_highlight.
+// Fallback rules until API returns dqc_rules (e.g. before backend restart).
+const TEMPLATE_DQC_RULES_FALLBACK = {
+  sick_diarrhea_pneumonia: [
+    {
+      rule_type: "over_threshold",
+      indicator_code: "DIAR_ORS_PCT",
+      threshold: 1.0,
+      message: "ORS percentage exceeds 100% of diarrhea cases seen",
+    },
+    {
+      rule_type: "over_threshold",
+      indicator_code: "DIAR_ORSZ_PCT",
+      threshold: 1.0,
+      message: "ORS+Zinc percentage exceeds 100% of diarrhea cases seen",
+    },
+    {
+      rule_type: "over_threshold",
+      indicator_code: "DIAR_COMBINED_PCT",
+      threshold: 1.0,
+      message: "Combined diarrhea treatment percentage exceeds 100%",
+    },
+    {
+      rule_type: "over_threshold",
+      indicator_code: "PNEU_ABX_PCT",
+      threshold: 1.0,
+      message: "Pneumonia antibiotic percentage exceeds 100% of cases seen",
+    },
+  ],
+};
+
+function viewPeriodLabel(viewType, periodValue) {
+  if (viewType === "annual") return "Annual";
+  if (viewType === "quarterly") {
+    return QUARTERS.find((q) => q.value === periodValue)?.label ?? `Q${periodValue}`;
+  }
+  return MONTHS.find((m) => m.value === periodValue)?.label ?? `Month ${periodValue}`;
+}
 
 const NIR_AREA_FILTERS = [
   { id: "all", label: "All NIR" },
@@ -16,12 +83,18 @@ const NIR_AREA_FILTERS = [
   { id: "bacolod_huc", label: "City of Bacolod (HUC)", psgcPrefix: "18302" },
 ];
 
+const NIR_REGION_PSGC = "1800000000";
+
 const PROVINCE_HUC_PSGCS = new Set([
   "1804500000",
   "1804600000",
   "1806100000",
   "1830200000",
 ]);
+
+function isNirRegionRow(psgc) {
+  return String(psgc) === NIR_REGION_PSGC;
+}
 
 function isProvinceHucRow(psgc) {
   return PROVINCE_HUC_PSGCS.has(String(psgc));
@@ -32,6 +105,102 @@ function filterRowsByArea(rows, areaId) {
   const area = NIR_AREA_FILTERS.find((a) => a.id === areaId);
   if (!area?.psgcPrefix) return rows;
   return rows.filter((r) => String(r.psgc).startsWith(area.psgcPrefix));
+}
+
+function computeValueFromFormula(formula, rowValues) {
+  if (!formula) return null;
+  try {
+    let expression = formula;
+    const codes = Object.keys(rowValues).sort((a, b) => b.length - a.length);
+    for (const code of codes) {
+      if (!expression.includes(code)) continue;
+      const value = rowValues[code];
+      if (value == null) return null;
+      expression = expression.split(code).join(String(value));
+    }
+    // eslint-disable-next-line no-new-func
+    return Function(`"use strict"; return (${expression})`)();
+  } catch {
+    return null;
+  }
+}
+
+function recomputeRowValues(values, columns) {
+  for (const col of columns) {
+    if (!col.is_computed || !col.formula) continue;
+    values[col.indicator_code] = computeValueFromFormula(
+      col.formula,
+      values
+    );
+  }
+}
+
+/** Sum province/HUC rows (or all LGUs) and apply template formulas — works for any upload config. */
+function computeSubtotalFromColumns(lgus, columns) {
+  const totals = {};
+  for (const col of columns) {
+    if (col.is_computed) continue;
+    totals[col.indicator_code] = lgus.reduce((acc, lgu) => {
+      const v = lgu[col.indicator_code];
+      return acc + (v != null ? Number(v) : 0);
+    }, 0);
+  }
+  recomputeRowValues(totals, columns);
+  return totals;
+}
+
+// Pin NIR regional total on top. Uses uploaded row when present; otherwise
+// sums the 3 provinces + Bacolod HUC (matches Excel regional rollup).
+function synthesizeNirRow(allRows, columns, templateId) {
+  const template = REPORT_TEMPLATES[templateId];
+
+  let parts = allRows.filter((r) => isProvinceHucRow(r.psgc));
+  if (parts.length === 0) {
+    parts = allRows.filter(
+      (r) => !isNirRegionRow(r.psgc) && !isProvinceHucRow(r.psgc)
+    );
+  }
+  if (parts.length === 0) return null;
+
+  const lgus = parts.map((r) => ({ ...(r.values || {}) }));
+  const totals = template
+    ? computeSubtotal(lgus, template)
+    : computeSubtotalFromColumns(lgus, columns);
+
+  const values = {};
+  for (const col of columns) {
+    let v = totals[col.indicator_code];
+    if (v == null) {
+      values[col.indicator_code] = null;
+      continue;
+    }
+    values[col.indicator_code] = v;
+  }
+
+  return {
+    psgc: NIR_REGION_PSGC,
+    location: "NIR",
+    values,
+    isCalculated: true,
+  };
+}
+
+function prepareDisplayRows(allRows, areaId, columns, templateId) {
+  let nirSource = allRows.find((r) => isNirRegionRow(r.psgc));
+  if (!nirSource) {
+    nirSource = synthesizeNirRow(allRows, columns, templateId);
+  }
+  const bodyRows = filterRowsByArea(
+    allRows.filter((r) => !isNirRegionRow(r.psgc)),
+    areaId
+  );
+  if (!nirSource) return bodyRows;
+  const nirRow = {
+    ...nirSource,
+    psgc: NIR_REGION_PSGC,
+    location: nirSource.isCalculated ? "NIR (calculated)" : "NIR",
+  };
+  return [nirRow, ...bodyRows];
 }
 
 // Group consecutive columns that share the same header group so we can render
@@ -57,55 +226,233 @@ function buildSegments(columns) {
   return segments;
 }
 
+function isPctColumn(col) {
+  return col.is_percentage || String(col.indicator_code || "").endsWith("_PCT");
+}
+
+// DB/parser store coverage as ratios (0.5 = 50%). API may also return 0–100.
+function toDisplayPercent(value) {
+  const n = Number(value);
+  if (Number.isNaN(n)) return null;
+  if (n >= 0 && n <= 1.5) return n * 100;
+  return n;
+}
+
 function fmtValue(value, isPct) {
   if (value === null || value === undefined) return "—";
-  if (isPct) return `${Number(value).toFixed(1)}%`;
+  if (isPct) {
+    const pct = toDisplayPercent(value);
+    return pct === null ? "—" : `${pct.toFixed(2)}%`;
+  }
   return Number(value).toLocaleString();
 }
 
+function resolveDqcMessage(row, col, value, dqcRules = [], dqcHighlight = false) {
+  if (!dqcHighlight) return undefined;
+
+  const code = col.indicator_code;
+  const fromApi = row.dqc?.[code];
+  if (fromApi) return fromApi;
+
+  const rule = dqcRules.find(
+    (r) => r.rule_type === "over_threshold" && r.indicator_code === code
+  );
+  if (!rule || value == null || value === undefined) return undefined;
+
+  const pct = toDisplayPercent(value);
+  if (pct == null) return undefined;
+
+  const threshold = rule.threshold ?? 1;
+  const thresholdPct = threshold <= 1.5 ? threshold * 100 : threshold;
+  if (pct > thresholdPct) {
+    return rule.message || "Value exceeds the allowed threshold";
+  }
+  return undefined;
+}
+
 export default function IndicatorReports() {
-  const [templates, setTemplates] = useState([]);
+  const [catalog, setCatalog] = useState(null);
+  const [programCode, setProgramCode] = useState("");
+  const [subProgramName, setSubProgramName] = useState("");
   const [templateId, setTemplateId] = useState("");
+  const [viewPeriodType, setViewPeriodType] = useState("monthly");
+  const [periodValue, setPeriodValue] = useState(1);
   const [year, setYear] = useState(2026);
-  const [month, setMonth] = useState(1);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [areaFilter, setAreaFilter] = useState("all");
+  const [reportSheet, setReportSheet] = useState("");
+
+  const activeProgram = useMemo(
+    () => findCatalogProgram(catalog, programCode),
+    [catalog, programCode]
+  );
+
+  const subPrograms = useMemo(() => {
+    return (activeProgram?.sub_programs || []).filter(
+      (sp) => (sp.templates || []).length > 0
+    );
+  }, [activeProgram]);
+
+  const activeSubProgram = useMemo(
+    () => findCatalogSubProgram(activeProgram, subProgramName),
+    [activeProgram, subProgramName]
+  );
+
+  const visibleTemplates = useMemo(() => {
+    return sortTemplatesByFhsisFile(activeSubProgram?.templates || []);
+  }, [activeSubProgram]);
+
+  const activeTemplate = useMemo(
+    () => visibleTemplates.find((t) => t.id === templateId),
+    [visibleTemplates, templateId]
+  );
+
+  const viewPeriodOptions = useMemo(
+    () => viewPeriodOptionsForTemplate(activeTemplate),
+    [activeTemplate]
+  );
+
+  const reportSheets = useMemo(() => {
+    return activeTemplate?.report_sheets?.length
+      ? activeTemplate.report_sheets
+      : report?.report_sheets || [];
+  }, [activeTemplate, report?.report_sheets]);
 
   useEffect(() => {
-    getTemplates()
-      .then((res) => {
-        const list = res.templates || [];
-        setTemplates(list);
-        if (list[0]) setTemplateId(list[0].id);
+    const next = reportSheets[0]?.id || "";
+    setReportSheet(next);
+  }, [templateId, reportSheets]);
+
+  useEffect(() => {
+    if (!viewPeriodOptions.length) return;
+    if (!viewPeriodOptions.some((p) => p.id === viewPeriodType)) {
+      setViewPeriodType(viewPeriodOptions[0].id);
+      setPeriodValue(1);
+    }
+  }, [viewPeriodOptions, viewPeriodType]);
+
+  useEffect(() => {
+    getUploadCatalog()
+      .then((data) => {
+        setCatalog(data);
+        const program = data.programs?.find((p) =>
+          p.sub_programs?.some((sp) => (sp.templates || []).length > 0)
+        );
+        if (!program) return;
+        const subProgram = program.sub_programs.find(
+          (sp) => (sp.templates || []).length > 0
+        );
+        const template = subProgram?.templates?.[0];
+        if (!template) return;
+        setProgramCode(program.code);
+        setSubProgramName(subProgram.name);
+        setTemplateId(template.id);
+        setViewPeriodType(template.frequency || "monthly");
+        setPeriodValue(1);
       })
       .catch(() => {});
   }, []);
+
+  function applyTemplateDefaults(template) {
+    if (!template) return;
+    setTemplateId(template.id);
+    const opts = viewPeriodOptionsForTemplate(template);
+    const freq = template.frequency || "monthly";
+    const nextView = opts.some((o) => o.id === freq) ? freq : opts[0]?.id || "monthly";
+    setViewPeriodType(nextView);
+    setPeriodValue(1);
+  }
+
+  function handleProgramChange(nextCode) {
+    const program = findCatalogProgram(catalog, nextCode);
+    const subProgram = program?.sub_programs?.find(
+      (sp) => (sp.templates || []).length > 0
+    );
+    const template = subProgram?.templates?.[0];
+    setProgramCode(nextCode);
+    setSubProgramName(subProgram?.name || "");
+    if (template) applyTemplateDefaults(template);
+  }
+
+  function handleSubProgramChange(nextName) {
+    const subProgram = findCatalogSubProgram(activeProgram, nextName);
+    const sorted = sortTemplatesByFhsisFile(subProgram?.templates || []);
+    setSubProgramName(nextName);
+    if (sorted[0]) applyTemplateDefaults(sorted[0]);
+  }
+
+  function handleTemplateChange(nextId) {
+    const next = visibleTemplates.find((t) => t.id === nextId);
+    if (next) applyTemplateDefaults(next);
+  }
+
+  function handleViewPeriodTypeChange(nextType) {
+    setViewPeriodType(nextType);
+    setPeriodValue(1);
+  }
 
   useEffect(() => {
     if (!templateId) return;
     let active = true;
     setLoading(true);
-    getTemplateReport(templateId, { year, month })
+    getTemplateReport(templateId, {
+      year,
+      view_period_type: viewPeriodType,
+      period_value: periodValue,
+      ...(reportSheet ? { sheet_name: reportSheet } : {}),
+    })
       .then((res) => active && setReport(res))
       .catch(() => active && setReport(null))
       .finally(() => active && setLoading(false));
     return () => {
       active = false;
     };
-  }, [templateId, year, month]);
+  }, [templateId, year, viewPeriodType, periodValue, reportSheet]);
 
   const columns = report?.columns || [];
   const idColumns = report?.id_columns || [];
   const rows = report?.rows || [];
   const filteredRows = useMemo(
-    () => filterRowsByArea(rows, areaFilter),
-    [rows, areaFilter]
+    () => prepareDisplayRows(rows, areaFilter, columns, templateId),
+    [rows, areaFilter, columns, templateId]
   );
   const segments = useMemo(() => buildSegments(columns), [columns]);
   const areaLabel = NIR_AREA_FILTERS.find((a) => a.id === areaFilter)?.label;
-  const periodLabel = MONTHS.find((m) => m.value === month)?.label;
+  // Only templates with display.dqc_highlight in config (diarrhea/pneumonia for now).
+  const dqcHighlight =
+    report?.dqc_highlight === true ||
+    (report?.dqc_highlight === undefined &&
+      templateId === "sick_diarrhea_pneumonia");
+  const dqcRules =
+    report?.dqc_rules?.length > 0
+      ? report.dqc_rules
+      : TEMPLATE_DQC_RULES_FALLBACK[templateId] || [];
+  const dqcCellCount = useMemo(() => {
+    if (!dqcHighlight) return 0;
+    let n = 0;
+    for (const r of filteredRows) {
+      for (const c of columns) {
+        const v = r.values?.[c.indicator_code];
+        if (resolveDqcMessage(r, c, v, dqcRules, dqcHighlight)) n += 1;
+      }
+    }
+    return n;
+  }, [filteredRows, columns, dqcRules, dqcHighlight]);
+  const dataFrequency = activeTemplate?.frequency || report?.period_type || "monthly";
+  const periodLabel = viewPeriodLabel(viewPeriodType, periodValue);
+  const periodDisplay =
+    dataFrequency === "annual" ? String(year) : `${periodLabel} ${year}`;
+  const activeSheetLabel =
+    reportSheets.find((s) => s.id === reportSheet)?.label || reportSheet;
   const totalCols = idColumns.length + columns.length;
+  const programsWithTemplates = useMemo(
+    () =>
+      (catalog?.programs || []).filter((p) =>
+        p.sub_programs?.some((sp) => (sp.templates || []).length > 0)
+      ),
+    [catalog]
+  );
 
   return (
     <div style={styles.page}>
@@ -118,40 +465,133 @@ export default function IndicatorReports() {
           columns are computed (totals and percentages) — not raw entries.
         </p>
 
-        <div style={styles.filterBar}>
-          <select
-            style={{ ...styles.select, minWidth: "320px" }}
-            value={templateId}
-            onChange={(e) => setTemplateId(e.target.value)}
-          >
-            {templates.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-          <select style={styles.select} value={year} onChange={(e) => setYear(Number(e.target.value))}>
-            {YEARS.map((y) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
-          <select style={styles.select} value={month} onChange={(e) => setMonth(Number(e.target.value))}>
-            {MONTHS.map((m) => (
-              <option key={m.value} value={m.value}>{m.label}</option>
-            ))}
-          </select>
-          <select
-            style={{ ...styles.select, minWidth: "220px" }}
-            value={areaFilter}
-            onChange={(e) => setAreaFilter(e.target.value)}
-          >
-            {NIR_AREA_FILTERS.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.label}
-              </option>
-            ))}
-          </select>
-          {loading && <span style={styles.loadingTag}>Loading...</span>}
+        <div style={styles.filterPanel}>
+          <div style={styles.filterRow}>
+            <select
+              style={styles.filterProgram}
+              value={programCode}
+              title={activeProgram?.name || ""}
+              onChange={(e) => handleProgramChange(e.target.value)}
+            >
+              {programsWithTemplates.map((p) => (
+                <option key={p.code} value={p.code}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            <select
+              style={styles.filterSubProgram}
+              value={subProgramName}
+              title={subProgramName}
+              onChange={(e) => handleSubProgramChange(e.target.value)}
+            >
+              {subPrograms.map((sp) => (
+                <option key={sp.name} value={sp.name}>
+                  {sp.name}
+                </option>
+              ))}
+            </select>
+            <select
+              style={styles.filterFile}
+              value={templateId}
+              title={activeTemplate?.label || ""}
+              onChange={(e) => handleTemplateChange(e.target.value)}
+            >
+              {visibleTemplates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={styles.filterRow}>
+            <select
+              style={styles.filterYear}
+              value={year}
+              title={String(year)}
+              onChange={(e) => setYear(Number(e.target.value))}
+            >
+              {YEARS.map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+            {viewPeriodOptions.length > 1 ? (
+              <select
+                style={styles.filterPeriodType}
+                value={viewPeriodType}
+                title={
+                  viewPeriodOptions.find((p) => p.id === viewPeriodType)?.label ||
+                  ""
+                }
+                onChange={(e) => handleViewPeriodTypeChange(e.target.value)}
+              >
+                {viewPeriodOptions.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            ) : viewPeriodOptions.length === 1 ? (
+              <span style={styles.filterPeriodTypeStatic} title={viewPeriodOptions[0].label}>
+                {viewPeriodOptions[0].label}
+              </span>
+            ) : null}
+            {viewPeriodType === "quarterly" && (
+              <select
+                style={styles.filterPeriodDetail}
+                value={periodValue}
+                title={periodLabel}
+                onChange={(e) => setPeriodValue(Number(e.target.value))}
+              >
+                {QUARTERS.map((q) => (
+                  <option key={q.value} value={q.value}>{q.label}</option>
+                ))}
+              </select>
+            )}
+            {viewPeriodType === "monthly" && (
+              <select
+                style={styles.filterPeriodDetail}
+                value={periodValue}
+                title={periodLabel}
+                onChange={(e) => setPeriodValue(Number(e.target.value))}
+              >
+                {MONTHS.map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+            )}
+            {reportSheets.length > 1 && (
+              <select
+                style={styles.filterSheet}
+                value={reportSheet}
+                title={activeSheetLabel || "Sheet"}
+                onChange={(e) => setReportSheet(e.target.value)}
+              >
+                {reportSheets.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          <div style={styles.filterRow}>
+            <select
+              style={styles.filterArea}
+              value={areaFilter}
+              title={areaLabel || "All NIR"}
+              onChange={(e) => setAreaFilter(e.target.value)}
+            >
+              {NIR_AREA_FILTERS.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.label}
+                </option>
+              ))}
+            </select>
+            {loading && <span style={styles.loadingTag}>Loading...</span>}
+          </div>
         </div>
 
         <div style={styles.metaRow}>
@@ -170,11 +610,22 @@ export default function IndicatorReports() {
             <strong>{columns.length}</strong> data column{columns.length === 1 ? "" : "s"}
           </span>
           <span style={styles.metaItem}>
-            Period: <strong>{periodLabel} {year}</strong>
+            Period: <strong>{periodDisplay}</strong>
           </span>
-          {report?.program_code && (
+          {reportSheets.length > 1 && activeSheetLabel && (
             <span style={styles.metaItem}>
-              Program: <strong>{report.program_code}</strong>
+              Sheet: <strong>{activeSheetLabel}</strong>
+            </span>
+          )}
+          {report?.aggregated && (
+            <span style={styles.metaItem}>
+              View: <strong>{viewPeriodType}</strong> (aggregated from{" "}
+              <strong>{dataFrequency}</strong> uploads)
+            </span>
+          )}
+          {activeProgram?.name && (
+            <span style={styles.metaItem}>
+              Program: <strong>{activeProgram.name}</strong>
             </span>
           )}
         </div>
@@ -186,11 +637,13 @@ export default function IndicatorReports() {
             <p style={styles.empty}>No column layout found for this template.</p>
           ) : rows.length === 0 ? (
             <p style={styles.empty}>
-              No data uploaded for {periodLabel} {year} in this template.
+              No data uploaded for {periodDisplay} in this template
+              {activeSheetLabel ? ` (${activeSheetLabel} sheet)` : ""}.
             </p>
           ) : filteredRows.length === 0 ? (
             <p style={styles.empty}>
-              No rows for {areaLabel} in {periodLabel} {year}.
+              No rows for {areaLabel} in {periodDisplay}
+              {activeSheetLabel ? ` (${activeSheetLabel})` : ""}.
             </p>
           ) : (
             <div style={styles.tableScroll}>
@@ -244,15 +697,20 @@ export default function IndicatorReports() {
                 </thead>
                 <tbody>
                   {filteredRows.map((r, ri) => {
-                    const highlighted = isProvinceHucRow(r.psgc);
-                    const rowStyle = highlighted
-                      ? styles.trProvinceHuc
-                      : ri % 2
-                        ? styles.trAlt
-                        : styles.tr;
-                    const idCellStyle = highlighted
-                      ? styles.tdIdProvinceHuc
-                      : styles.tdId;
+                    const isNir = isNirRegionRow(r.psgc);
+                    const isProvince = isProvinceHucRow(r.psgc);
+                    const rowStyle = isNir
+                      ? styles.trNirRegion
+                      : isProvince
+                        ? styles.trProvinceHuc
+                        : ri % 2
+                          ? styles.trAlt
+                          : styles.tr;
+                    const idCellStyle = isNir
+                      ? styles.tdIdNirRegion
+                      : isProvince
+                        ? styles.tdIdProvinceHuc
+                        : styles.tdId;
                     return (
                     <tr key={r.psgc} style={rowStyle}>
                       {idColumns.map((c) => (
@@ -262,21 +720,32 @@ export default function IndicatorReports() {
                       ))}
                       {columns.map((c, ci) => {
                         const v = r.values?.[c.indicator_code];
+                        const dqcMsg = resolveDqcMessage(
+                          r,
+                          c,
+                          v,
+                          dqcRules,
+                          dqcHighlight
+                        );
                         const firstOfGroup =
                           ci === 0 || columns[ci - 1].group !== c.group || !c.group;
                         return (
                           <td
                             key={c.indicator_code}
+                            title={dqcMsg || undefined}
                             style={{
                               ...styles.tdNum,
-                              ...(c.is_computed ? styles.tdComputed : {}),
+                              ...(isNir ? styles.tdNumNirRegion : {}),
+                              ...(c.is_computed && !isNir ? styles.tdComputed : {}),
+                              ...(c.is_computed && isNir ? styles.tdComputedNir : {}),
                               ...(firstOfGroup ? styles.groupStart : {}),
+                              ...(dqcMsg ? styles.tdDqcFail : {}),
                             }}
                           >
                             {v === undefined || v === null ? (
                               <span style={styles.missing}>—</span>
                             ) : (
-                              fmtValue(v, c.is_percentage)
+                              fmtValue(v, isPctColumn(c))
                             )}
                           </td>
                         );
@@ -292,9 +761,16 @@ export default function IndicatorReports() {
 
         <p style={styles.legend}>
           Layout mirrors the source Excel file: {totalCols} columns total. A dash
-          (—) means no value was uploaded for that location. Province and HUC
-          summary rows are highlighted in blue. Use the area filter to show one
-          province (or Bacolod HUC) and its LGUs only.
+          (—) means no value was uploaded for that location.
+          {dqcHighlight && dqcCellCount > 0
+            ? ` ${dqcCellCount} cell${dqcCellCount === 1 ? "" : "s"} failed DQC (red) — hover for the reason.`
+            : ""}{" "}
+          When the view period is broader than the file frequency, counts are
+          summed (e.g. Q1 on monthly files = Jan–Mar; annual on monthly = 12
+          months; annual on quarterly = four quarters) and percentages are
+          recalculated from those totals. The NIR regional total is pinned on
+          top; if not in the upload it is calculated by summing Negros
+          Occidental, Negros Oriental, Siquijor, and Bacolod HUC.
         </p>
       </div>
     </div>
@@ -303,13 +779,41 @@ export default function IndicatorReports() {
 
 const COMPUTED_TINT = "#F2F6FF";
 
+const FILTER_SELECT_BASE = {
+  padding: "8px 12px",
+  borderRadius: "6px",
+  border: "1px solid #CBD5E1",
+  fontSize: "13px",
+  color: "#1F2A45",
+  backgroundColor: "#fff",
+  outline: "none",
+  flexShrink: 0,
+  boxSizing: "border-box",
+};
+
 const styles = {
   page: { minHeight: "100vh", backgroundColor: "#F0F4F8", fontFamily: "'Barlow', sans-serif" },
   body: { padding: "24px 32px", marginLeft: "240px" },
   title: { fontFamily: "'Montserrat', sans-serif", fontSize: "22px", fontWeight: "700", color: "#1F2A45", margin: "0 0 4px 0" },
   subtitle: { fontSize: "13px", color: "#5A6A85", margin: "0 0 20px 0", maxWidth: "720px" },
-  filterBar: { display: "flex", gap: "10px", marginBottom: "14px", alignItems: "center", flexWrap: "wrap" },
-  select: { padding: "8px 12px", borderRadius: "6px", border: "1px solid #CBD5E1", fontSize: "13px", color: "#1F2A45", backgroundColor: "#fff", outline: "none", minWidth: "120px" },
+  filterPanel: { display: "flex", flexDirection: "column", gap: "10px", marginBottom: "14px" },
+  filterRow: { display: "flex", gap: "10px", alignItems: "center", flexWrap: "nowrap" },
+  filterProgram: { ...FILTER_SELECT_BASE, width: "180px" },
+  filterSubProgram: { ...FILTER_SELECT_BASE, width: "220px" },
+  filterFile: { ...FILTER_SELECT_BASE, width: "420px" },
+  filterYear: { ...FILTER_SELECT_BASE, width: "96px" },
+  filterPeriodType: { ...FILTER_SELECT_BASE, width: "132px" },
+  filterPeriodTypeStatic: {
+    ...FILTER_SELECT_BASE,
+    width: "132px",
+    display: "inline-flex",
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+    color: "#5A6A85",
+  },
+  filterPeriodDetail: { ...FILTER_SELECT_BASE, width: "168px" },
+  filterSheet: { ...FILTER_SELECT_BASE, width: "120px" },
+  filterArea: { ...FILTER_SELECT_BASE, width: "240px" },
   loadingTag: { fontSize: "12px", color: "#5A6A85" },
   metaRow: { display: "flex", gap: "20px", flexWrap: "wrap", marginBottom: "16px" },
   metaItem: { fontSize: "12px", color: "#5A6A85" },
@@ -324,11 +828,22 @@ const styles = {
   thComputed: { backgroundColor: "#3A5B9E" },
   tr: { backgroundColor: "#fff" },
   trAlt: { backgroundColor: "#F8FAFC" },
+  trNirRegion: { backgroundColor: "#C5DBFC" },
   trProvinceHuc: { backgroundColor: "#E8F0FE" },
   tdId: { position: "sticky", left: 0, backgroundColor: "inherit", padding: "7px 12px", fontSize: "12px", color: "#1F2A45", fontWeight: "600", borderRight: "1px solid #E2E8F0", borderBottom: "1px solid #F0F4F8" },
-  tdIdProvinceHuc: { position: "sticky", left: 0, backgroundColor: "#E8F0FE", padding: "7px 12px", fontSize: "12px", color: "#0B4BAA", fontWeight: "700", borderRight: "1px solid #CBD5E1", borderBottom: "1px solid #D6E4FF", borderLeft: "3px solid #0B4BAA" },
+  tdIdNirRegion: { position: "sticky", left: 0, backgroundColor: "#C5DBFC", padding: "7px 12px", fontSize: "12px", color: "#1E3A8A", fontWeight: "700", borderRight: "1px solid #93B4DC", borderBottom: "1px solid #93B4DC", borderLeft: "3px solid #0B4BAA" },
+  tdIdProvinceHuc: { position: "sticky", left: 0, backgroundColor: "#E8F0FE", padding: "7px 12px", fontSize: "12px", color: "#0B4BAA", fontWeight: "700", borderRight: "1px solid #CBD5E1", borderBottom: "1px solid #D6E4FF", borderLeft: "3px solid #60A5FA" },
   tdNum: { padding: "7px 10px", fontSize: "12px", color: "#1F2A45", textAlign: "right", borderBottom: "1px solid #F0F4F8" },
+  tdNumNirRegion: { backgroundColor: "#C5DBFC", color: "#1E3A8A", fontWeight: "600", borderBottom: "1px solid #93B4DC" },
   tdComputed: { backgroundColor: COMPUTED_TINT },
+  tdComputedNir: { backgroundColor: "#B0CFF5" },
+  tdDqcFail: {
+    backgroundColor: "#FEE2E2",
+    color: "#991B1B",
+    fontWeight: "700",
+    cursor: "help",
+    boxShadow: "inset 0 0 0 2px #EF4444",
+  },
   groupStart: { borderLeft: "2px solid #CBD5E1" },
   missing: { color: "#CBD5E1" },
   legend: { fontSize: "11px", color: "#94A3B8", marginTop: "12px" },

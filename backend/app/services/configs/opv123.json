@@ -1,8 +1,8 @@
 {
-  "template_id": "DPT_HIB_HEPB123",
+  "template_id": "OPV123",
   "template_version": "2026",
   "program_code": "CHILD_CARE",
-  "source_file_pattern": "4_DPT-HiB-HepB123",
+  "source_file_pattern": "5_OPV123",
   "frequency": "monthly",
   "psgc_column": 0,
   "location_column": 1,
@@ -18,7 +18,7 @@
   },
 
   "display": {
-    "label": "File 4 - DPT-HiB-HepB 1/2/3",
+    "label": "File 5 - OPV 1/2/3",
     "id_columns": [
       { "key": "psgc", "label": "PSGC" },
       { "key": "location", "label": "Name of City / Municipality" }
@@ -27,7 +27,7 @@
 
   "upload": {
     "sub_program": "Immunization",
-    "file_number": 4
+    "file_number": 5
   },
 
   "sheet_map": {
@@ -49,86 +49,86 @@
   "columns": [
     {
       "index": 2,
-      "indicator_code": "DPT_POP_2026",
+      "indicator_code": "OPV_POP_2026",
       "is_computed": false,
       "year": "current"
     },
     {
       "index": 3,
-      "indicator_code": "DPT1_MALE",
+      "indicator_code": "OPV1_MALE",
       "is_computed": false,
       "year": "current"
     },
     {
       "index": 4,
-      "indicator_code": "DPT1_FEMALE",
+      "indicator_code": "OPV1_FEMALE",
       "is_computed": false,
       "year": "current"
     },
     {
       "index": 5,
-      "indicator_code": "DPT1_TOTAL",
+      "indicator_code": "OPV1_TOTAL",
       "is_computed": true,
-      "formula": "DPT1_MALE + DPT1_FEMALE",
+      "formula": "OPV1_MALE + OPV1_FEMALE",
       "year": "current"
     },
     {
       "index": 6,
-      "indicator_code": "DPT1_PCT",
+      "indicator_code": "OPV1_PCT",
       "is_computed": true,
-      "formula": "DPT1_TOTAL / DPT_POP_2026",
+      "formula": "OPV1_TOTAL / OPV_POP_2026",
       "year": "current"
     },
     {
       "index": 7,
-      "indicator_code": "DPT2_MALE",
+      "indicator_code": "OPV2_MALE",
       "is_computed": false,
       "year": "current"
     },
     {
       "index": 8,
-      "indicator_code": "DPT2_FEMALE",
+      "indicator_code": "OPV2_FEMALE",
       "is_computed": false,
       "year": "current"
     },
     {
       "index": 9,
-      "indicator_code": "DPT2_TOTAL",
+      "indicator_code": "OPV2_TOTAL",
       "is_computed": true,
-      "formula": "DPT2_MALE + DPT2_FEMALE",
+      "formula": "OPV2_MALE + OPV2_FEMALE",
       "year": "current"
     },
     {
       "index": 10,
-      "indicator_code": "DPT2_PCT",
+      "indicator_code": "OPV2_PCT",
       "is_computed": true,
-      "formula": "DPT2_TOTAL / DPT_POP_2026",
+      "formula": "OPV2_TOTAL / OPV_POP_2026",
       "year": "current"
     },
     {
       "index": 11,
-      "indicator_code": "DPT3_MALE",
+      "indicator_code": "OPV3_MALE",
       "is_computed": false,
       "year": "current"
     },
     {
       "index": 12,
-      "indicator_code": "DPT3_FEMALE",
+      "indicator_code": "OPV3_FEMALE",
       "is_computed": false,
       "year": "current"
     },
     {
       "index": 13,
-      "indicator_code": "DPT3_TOTAL",
+      "indicator_code": "OPV3_TOTAL",
       "is_computed": true,
-      "formula": "DPT3_MALE + DPT3_FEMALE",
+      "formula": "OPV3_MALE + OPV3_FEMALE",
       "year": "current"
     },
     {
       "index": 14,
-      "indicator_code": "DPT3_PCT",
+      "indicator_code": "OPV3_PCT",
       "is_computed": true,
-      "formula": "DPT3_TOTAL / DPT_POP_2026",
+      "formula": "OPV3_TOTAL / OPV_POP_2026",
       "year": "current"
     }
   ],
@@ -136,21 +136,21 @@
   "dqc_rules": [
     {
       "rule_type": "over_threshold",
-      "indicator_code": "DPT1_PCT",
+      "indicator_code": "OPV1_PCT",
       "threshold": 2.0,
-      "message": "DPT dose 1 percentage exceeds 200% of projected population"
+      "message": "OPV dose 1 percentage exceeds 200% of projected population"
     },
     {
       "rule_type": "over_threshold",
-      "indicator_code": "DPT2_PCT",
+      "indicator_code": "OPV2_PCT",
       "threshold": 2.0,
-      "message": "DPT dose 2 percentage exceeds 200% of projected population"
+      "message": "OPV dose 2 percentage exceeds 200% of projected population"
     },
     {
       "rule_type": "over_threshold",
-      "indicator_code": "DPT3_PCT",
+      "indicator_code": "OPV3_PCT",
       "threshold": 2.0,
-      "message": "DPT dose 3 percentage exceeds 200% of projected population"
+      "message": "OPV dose 3 percentage exceeds 200% of projected population"
     }
   ],
 

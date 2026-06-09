@@ -1,8 +1,17 @@
 # progress.md
 
-## Status: Track 1 — File 1 + File 4 live; Phase 1 dashboards merged across two machines (June 9)
+## Status: Track 1 — Immunization Files 1+4, Nutrition Files 1–6, Sick Child Files 1–3; Indicator Reports polished (June 9)
 
-## Latest Session (June 9) — Merge + Indicator Reports filter
+## Latest Session (June 9) — Nutrition pipeline + report fixes
+- Nutrition Files 1–5 quarterly + File 6 annual (MAM/SAM dual-sheet upload)
+- Upload catalog API + refactored Upload page; `uploadPrograms.js` helpers
+- Parser: multi-sheet annual, `ensure_period_id`, filename validation
+- Indicator Reports: filter layout, annual/MAM-SAM views, computed Total/%, generic NIR rollup
+- Percentage display normalized (DB ratio → UI percent); DQC red cells on diarrhea template only
+- Management of the Sick configs (vitamin A, diarrhea/pneumonia)
+- Debug helper: `backend/scripts/inspect_excel.py`
+
+## Session (June 9 earlier) — Merge + Indicator Reports filter
 - Resolved diverged `main` (local office commit + 11 remote laptop commits)
 - Kept local: `main.py` (RBAC/audit), `IndicatorReports`, `Management` users/audit, `Home`
 - Kept remote: `Overview`, `Coverage`, `Rankings` (multi-indicator, HUC fixes)
@@ -40,13 +49,13 @@
 7. ✅ React frontend with DOH branding
 8. ✅ Dashboard pages (Home local; Overview/Coverage/Rankings remote build)
 9. ✅ Upload page (dry-run, staging, conflict resolution)
-10. ✅ Indicator Reports (local API-driven page + province filter)
-11. ⬜ Expand to remaining Child Care / program files (1+4 of 63 templates done)
+10. ✅ Indicator Reports (API-driven + province filter + computed columns + NIR rollup)
+11. 🔄 Child Care templates — Immunization 1+4, Nutrition 1–6, Sick 1–3 (remaining immunization + SBI annual)
 12. ⬜ GeoJSON maps in `frontend/public/geojson/`
 13. ⬜ ICTU deploy
 
 ## Remaining To Verify / Do
-- Push June 9 merge to GitHub for laptop sync
+- File 6 Nutritional Status upload/approve from Expanded NIR folder (if not completed)
 - Drop GeoJSON for Overview choropleths
 - Confirm HepaB >24h == HepaB <=24h in File 1 upload
 - Next template per `adding_templates.md`

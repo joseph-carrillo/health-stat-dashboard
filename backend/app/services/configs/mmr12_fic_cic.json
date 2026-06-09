@@ -1,0 +1,84 @@
+{
+  "template_id": "MMR12_FIC_CIC",
+  "template_version": "2026",
+  "program_code": "CHILD_CARE",
+  "source_file_pattern": "8_MMR12",
+  "frequency": "monthly",
+  "psgc_column": 0,
+  "location_column": 1,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000",
+    "Negros Island Region": "1800000000",
+    "Negros Island Region (NIR)": "1800000000",
+    "BARMM": "1800000000"
+  },
+
+  "display": {
+    "label": "File 8 - MMR 1/2, FIC, CIC",
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Name of City / Municipality" }
+    ]
+  },
+
+  "upload": {
+    "sub_program": "Immunization",
+    "file_number": 8
+  },
+
+  "sheet_map": {
+    "1": "Jan", "2": "Feb", "3": "Mar", "4": "Apr",
+    "5": "May", "6": "Jun", "7": "Jul", "8": "Aug",
+    "9": "Sep", "10": "Oct", "11": "Nov", "12": "Dec"
+  },
+
+  "aggregation": {
+    "quarterly": {
+      "1": [1, 2, 3],
+      "2": [4, 5, 6],
+      "3": [7, 8, 9],
+      "4": [10, 11, 12]
+    },
+    "annual": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+  },
+
+  "columns": [
+    { "index": 2, "indicator_code": "MMR_POP_2026", "is_computed": false, "year": "current" },
+    { "index": 3, "indicator_code": "MMR1_MALE", "is_computed": false, "year": "current" },
+    { "index": 4, "indicator_code": "MMR1_FEMALE", "is_computed": false, "year": "current" },
+    { "index": 5, "indicator_code": "MMR1_TOTAL", "is_computed": true, "formula": "MMR1_MALE + MMR1_FEMALE", "year": "current" },
+    { "index": 6, "indicator_code": "MMR1_PCT", "is_computed": true, "formula": "MMR1_TOTAL / MMR_POP_2026", "year": "current" },
+    { "index": 7, "indicator_code": "IMMUN_POP_0_11M_PREV", "is_computed": false, "year": "previous" },
+    { "index": 8, "indicator_code": "MMR1_PREV_MALE", "is_computed": false, "year": "previous" },
+    { "index": 9, "indicator_code": "MMR1_PREV_FEMALE", "is_computed": false, "year": "previous" },
+    { "index": 10, "indicator_code": "MMR1_PREV_TOTAL", "is_computed": true, "formula": "MMR1_PREV_MALE + MMR1_PREV_FEMALE", "year": "previous" },
+    { "index": 11, "indicator_code": "MMR1_PREV_PCT", "is_computed": true, "formula": "MMR1_PREV_TOTAL / IMMUN_POP_0_11M_PREV", "year": "previous" },
+    { "index": 12, "indicator_code": "MMR2_MALE", "is_computed": false, "year": "previous" },
+    { "index": 13, "indicator_code": "MMR2_FEMALE", "is_computed": false, "year": "previous" },
+    { "index": 14, "indicator_code": "MMR2_TOTAL", "is_computed": true, "formula": "MMR2_MALE + MMR2_FEMALE", "year": "previous" },
+    { "index": 15, "indicator_code": "MMR2_PCT", "is_computed": true, "formula": "MMR2_TOTAL / IMMUN_POP_0_11M_PREV", "year": "previous" },
+    { "index": 16, "indicator_code": "FIC_MALE", "is_computed": false, "year": "previous" },
+    { "index": 17, "indicator_code": "FIC_FEMALE", "is_computed": false, "year": "previous" },
+    { "index": 18, "indicator_code": "FIC_TOTAL", "is_computed": true, "formula": "FIC_MALE + FIC_FEMALE", "year": "previous" },
+    { "index": 19, "indicator_code": "FIC_PCT", "is_computed": true, "formula": "FIC_TOTAL / IMMUN_POP_0_11M_PREV", "year": "previous" },
+    { "index": 20, "indicator_code": "PREV_POP_MINUS_FIC", "is_computed": true, "formula": "IMMUN_POP_0_11M_PREV - FIC_TOTAL", "year": "previous" },
+    { "index": 21, "indicator_code": "CIC_MALE", "is_computed": false, "year": "previous" },
+    { "index": 22, "indicator_code": "CIC_FEMALE", "is_computed": false, "year": "previous" },
+    { "index": 23, "indicator_code": "CIC_TOTAL", "is_computed": true, "formula": "CIC_MALE + CIC_FEMALE", "year": "previous" },
+    { "index": 24, "indicator_code": "CIC_PCT", "is_computed": true, "formula": "CIC_TOTAL / PREV_POP_MINUS_FIC", "year": "previous" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "MMR1_PCT", "threshold": 2.0, "message": "MMR dose 1 percentage exceeds 200% of projected population" },
+    { "rule_type": "over_threshold", "indicator_code": "MMR1_PREV_PCT", "threshold": 2.0, "message": "MMR dose 1 (prev year) percentage exceeds 200%" },
+    { "rule_type": "over_threshold", "indicator_code": "MMR2_PCT", "threshold": 2.0, "message": "MMR dose 2 percentage exceeds 200%" },
+    { "rule_type": "over_threshold", "indicator_code": "FIC_PCT", "threshold": 2.0, "message": "FIC percentage exceeds 200%" },
+    { "rule_type": "over_threshold", "indicator_code": "CIC_PCT", "threshold": 2.0, "message": "CIC percentage exceeds 200%" }
+  ],
+
+  "notes": "Monthly data cols 2-24 per FHSIS layout. MMR2/FIC/CIC use previous-year population denominators per template formulas."
+}

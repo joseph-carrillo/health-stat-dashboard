@@ -1,0 +1,110 @@
+{
+  "template_id": "NUT_MAM_SAM_ANNUAL",
+  "template_version": "2026",
+  "program_code": "CHILD_CARE",
+  "source_file_pattern": "Nutritional Status",
+  "frequency": "annual",
+  "psgc_column": 0,
+  "location_column": 1,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000",
+    "Negros Island Region": "1800000000",
+    "Negros Island Region (NIR)": "1800000000",
+    "BARMM": "1800000000"
+  },
+
+  "display": {
+    "label": "File 6 - Nutritional Status (MAM & SAM, annual)",
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Name of City / Municipality" }
+    ]
+  },
+
+  "upload": {
+    "sub_program": "Nutrition",
+    "file_number": 6
+  },
+
+  "sheet_map": {
+    "annual": "MAM"
+  },
+
+  "columns": [
+    { "index": 2, "indicator_code": "NUT_MAM_SEEN_MALE", "is_computed": false },
+    { "index": 3, "indicator_code": "NUT_MAM_SEEN_FEMALE", "is_computed": false },
+    { "index": 4, "indicator_code": "NUT_MAM_SEEN_TOTAL", "is_computed": true, "formula": "NUT_MAM_SEEN_MALE + NUT_MAM_SEEN_FEMALE" },
+    { "index": 5, "indicator_code": "NUT_MAM_ID_MALE", "is_computed": false },
+    { "index": 6, "indicator_code": "NUT_MAM_ID_FEMALE", "is_computed": false },
+    { "index": 7, "indicator_code": "NUT_MAM_ID_TOTAL", "is_computed": true, "formula": "NUT_MAM_ID_MALE + NUT_MAM_ID_FEMALE" },
+    { "index": 8, "indicator_code": "NUT_MAM_ID_PCT", "is_computed": true, "formula": "NUT_MAM_ID_TOTAL / NUT_MAM_SEEN_TOTAL" },
+    { "index": 9, "indicator_code": "NUT_MAM_SFP_MALE", "is_computed": false },
+    { "index": 10, "indicator_code": "NUT_MAM_SFP_FEMALE", "is_computed": false },
+    { "index": 11, "indicator_code": "NUT_MAM_SFP_TOTAL", "is_computed": true, "formula": "NUT_MAM_SFP_MALE + NUT_MAM_SFP_FEMALE" },
+    { "index": 12, "indicator_code": "NUT_MAM_SFP_PCT", "is_computed": true, "formula": "NUT_MAM_SFP_TOTAL / NUT_MAM_SEEN_TOTAL" },
+    { "index": 13, "indicator_code": "NUT_MAM_CURED_MALE", "is_computed": false },
+    { "index": 14, "indicator_code": "NUT_MAM_CURED_FEMALE", "is_computed": false },
+    { "index": 15, "indicator_code": "NUT_MAM_CURED_TOTAL", "is_computed": true, "formula": "NUT_MAM_CURED_MALE + NUT_MAM_CURED_FEMALE" },
+    { "index": 16, "indicator_code": "NUT_MAM_CURED_PCT", "is_computed": true, "formula": "NUT_MAM_CURED_TOTAL / NUT_MAM_SEEN_TOTAL" },
+    { "index": 17, "indicator_code": "NUT_MAM_NONCURED_MALE", "is_computed": false },
+    { "index": 18, "indicator_code": "NUT_MAM_NONCURED_FEMALE", "is_computed": false },
+    { "index": 19, "indicator_code": "NUT_MAM_NONCURED_TOTAL", "is_computed": true, "formula": "NUT_MAM_NONCURED_MALE + NUT_MAM_NONCURED_FEMALE" },
+    { "index": 20, "indicator_code": "NUT_MAM_NONCURED_PCT", "is_computed": true, "formula": "NUT_MAM_NONCURED_TOTAL / NUT_MAM_SEEN_TOTAL" },
+    { "index": 21, "indicator_code": "NUT_MAM_DEFAULT_MALE", "is_computed": false },
+    { "index": 22, "indicator_code": "NUT_MAM_DEFAULT_FEMALE", "is_computed": false },
+    { "index": 23, "indicator_code": "NUT_MAM_DEFAULT_TOTAL", "is_computed": true, "formula": "NUT_MAM_DEFAULT_MALE + NUT_MAM_DEFAULT_FEMALE" },
+    { "index": 24, "indicator_code": "NUT_MAM_DEFAULT_PCT", "is_computed": true, "formula": "NUT_MAM_DEFAULT_TOTAL / NUT_MAM_SEEN_TOTAL" },
+    { "index": 25, "indicator_code": "NUT_MAM_DIED_MALE", "is_computed": false },
+    { "index": 26, "indicator_code": "NUT_MAM_DIED_FEMALE", "is_computed": false },
+    { "index": 27, "indicator_code": "NUT_MAM_DIED_TOTAL", "is_computed": true, "formula": "NUT_MAM_DIED_MALE + NUT_MAM_DIED_FEMALE" },
+    { "index": 28, "indicator_code": "NUT_MAM_DIED_PCT", "is_computed": true, "formula": "NUT_MAM_DIED_TOTAL / NUT_MAM_SEEN_TOTAL" }
+  ],
+
+  "extra_sheets": [
+    {
+      "sheet_name": "SAM",
+      "columns": [
+        { "index": 2, "indicator_code": "NUT_SAM_SEEN_MALE", "is_computed": false },
+        { "index": 3, "indicator_code": "NUT_SAM_SEEN_FEMALE", "is_computed": false },
+        { "index": 4, "indicator_code": "NUT_SAM_SEEN_TOTAL", "is_computed": true, "formula": "NUT_SAM_SEEN_MALE + NUT_SAM_SEEN_FEMALE" },
+        { "index": 5, "indicator_code": "NUT_SAM_ID_MALE", "is_computed": false },
+        { "index": 6, "indicator_code": "NUT_SAM_ID_FEMALE", "is_computed": false },
+        { "index": 7, "indicator_code": "NUT_SAM_ID_TOTAL", "is_computed": true, "formula": "NUT_SAM_ID_MALE + NUT_SAM_ID_FEMALE" },
+        { "index": 8, "indicator_code": "NUT_SAM_ID_PCT", "is_computed": true, "formula": "NUT_SAM_ID_TOTAL / NUT_SAM_SEEN_TOTAL" },
+        { "index": 9, "indicator_code": "NUT_SAM_OTC_MALE", "is_computed": false },
+        { "index": 10, "indicator_code": "NUT_SAM_OTC_FEMALE", "is_computed": false },
+        { "index": 11, "indicator_code": "NUT_SAM_OTC_TOTAL", "is_computed": true, "formula": "NUT_SAM_OTC_MALE + NUT_SAM_OTC_FEMALE" },
+        { "index": 12, "indicator_code": "NUT_SAM_OTC_PCT", "is_computed": true, "formula": "NUT_SAM_OTC_TOTAL / NUT_SAM_SEEN_TOTAL" },
+        { "index": 13, "indicator_code": "NUT_SAM_CURED_MALE", "is_computed": false },
+        { "index": 14, "indicator_code": "NUT_SAM_CURED_FEMALE", "is_computed": false },
+        { "index": 15, "indicator_code": "NUT_SAM_CURED_TOTAL", "is_computed": true, "formula": "NUT_SAM_CURED_MALE + NUT_SAM_CURED_FEMALE" },
+        { "index": 16, "indicator_code": "NUT_SAM_CURED_PCT", "is_computed": true, "formula": "NUT_SAM_CURED_TOTAL / NUT_SAM_SEEN_TOTAL" },
+        { "index": 17, "indicator_code": "NUT_SAM_NONCURED_MALE", "is_computed": false },
+        { "index": 18, "indicator_code": "NUT_SAM_NONCURED_FEMALE", "is_computed": false },
+        { "index": 19, "indicator_code": "NUT_SAM_NONCURED_TOTAL", "is_computed": true, "formula": "NUT_SAM_NONCURED_MALE + NUT_SAM_NONCURED_FEMALE" },
+        { "index": 20, "indicator_code": "NUT_SAM_NONCURED_PCT", "is_computed": true, "formula": "NUT_SAM_NONCURED_TOTAL / NUT_SAM_SEEN_TOTAL" },
+        { "index": 21, "indicator_code": "NUT_SAM_DEFAULT_MALE", "is_computed": false },
+        { "index": 22, "indicator_code": "NUT_SAM_DEFAULT_FEMALE", "is_computed": false },
+        { "index": 23, "indicator_code": "NUT_SAM_DEFAULT_TOTAL", "is_computed": true, "formula": "NUT_SAM_DEFAULT_MALE + NUT_SAM_DEFAULT_FEMALE" },
+        { "index": 24, "indicator_code": "NUT_SAM_DEFAULT_PCT", "is_computed": true, "formula": "NUT_SAM_DEFAULT_TOTAL / NUT_SAM_SEEN_TOTAL" },
+        { "index": 25, "indicator_code": "NUT_SAM_DIED_MALE", "is_computed": false },
+        { "index": 26, "indicator_code": "NUT_SAM_DIED_FEMALE", "is_computed": false },
+        { "index": 27, "indicator_code": "NUT_SAM_DIED_TOTAL", "is_computed": true, "formula": "NUT_SAM_DIED_MALE + NUT_SAM_DIED_FEMALE" },
+        { "index": 28, "indicator_code": "NUT_SAM_DIED_PCT", "is_computed": true, "formula": "NUT_SAM_DIED_TOTAL / NUT_SAM_SEEN_TOTAL" }
+      ]
+    }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "NUT_MAM_ID_PCT", "threshold": 1.0, "message": "MAM identified percentage exceeds 100% of children seen" },
+    { "rule_type": "over_threshold", "indicator_code": "NUT_MAM_SFP_PCT", "threshold": 1.0, "message": "MAM SFP enrollment percentage exceeds 100% of children seen" },
+    { "rule_type": "over_threshold", "indicator_code": "NUT_SAM_ID_PCT", "threshold": 1.0, "message": "SAM identified percentage exceeds 100% of children seen" },
+    { "rule_type": "over_threshold", "indicator_code": "NUT_SAM_OTC_PCT", "threshold": 1.0, "message": "SAM OTC admission percentage exceeds 100% of children seen" }
+  ],
+
+  "notes": "Annual file: Excel tabs are MAM and SAM (not quarter/month sheets). Choose the report year on upload; both tabs are parsed for that year."
+}

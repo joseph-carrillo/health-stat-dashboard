@@ -1,0 +1,67 @@
+{
+  "template_id": "IPV12",
+  "template_version": "2026",
+  "program_code": "CHILD_CARE",
+  "source_file_pattern": "6_IPV12",
+  "frequency": "monthly",
+  "psgc_column": 0,
+  "location_column": 1,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000",
+    "Negros Island Region": "1800000000",
+    "Negros Island Region (NIR)": "1800000000",
+    "BARMM": "1800000000"
+  },
+
+  "display": {
+    "label": "File 6 - IPV 1/2",
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Name of City / Municipality" }
+    ]
+  },
+
+  "upload": {
+    "sub_program": "Immunization",
+    "file_number": 6
+  },
+
+  "sheet_map": {
+    "1": "Jan", "2": "Feb", "3": "Mar", "4": "Apr",
+    "5": "May", "6": "Jun", "7": "Jul", "8": "Aug",
+    "9": "Sep", "10": "Oct", "11": "Nov", "12": "Dec"
+  },
+
+  "aggregation": {
+    "quarterly": {
+      "1": [1, 2, 3],
+      "2": [4, 5, 6],
+      "3": [7, 8, 9],
+      "4": [10, 11, 12]
+    },
+    "annual": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+  },
+
+  "columns": [
+    { "index": 2, "indicator_code": "IPV_POP_2026", "is_computed": false, "year": "current" },
+    { "index": 3, "indicator_code": "IPV1_MALE", "is_computed": false, "year": "current" },
+    { "index": 4, "indicator_code": "IPV1_FEMALE", "is_computed": false, "year": "current" },
+    { "index": 5, "indicator_code": "IPV1_TOTAL", "is_computed": true, "formula": "IPV1_MALE + IPV1_FEMALE", "year": "current" },
+    { "index": 6, "indicator_code": "IPV1_PCT", "is_computed": true, "formula": "IPV1_TOTAL / IPV_POP_2026", "year": "current" },
+    { "index": 7, "indicator_code": "IPV2_MALE", "is_computed": false, "year": "current" },
+    { "index": 8, "indicator_code": "IPV2_FEMALE", "is_computed": false, "year": "current" },
+    { "index": 9, "indicator_code": "IPV2_TOTAL", "is_computed": true, "formula": "IPV2_MALE + IPV2_FEMALE", "year": "current" },
+    { "index": 10, "indicator_code": "IPV2_PCT", "is_computed": true, "formula": "IPV2_TOTAL / IPV_POP_2026", "year": "current" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "IPV1_PCT", "threshold": 2.0, "message": "IPV dose 1 percentage exceeds 200% of projected population" },
+    { "rule_type": "over_threshold", "indicator_code": "IPV2_PCT", "threshold": 2.0, "message": "IPV dose 2 percentage exceeds 200% of projected population" }
+  ],
+
+  "notes": "Current-year columns only (cols 2-10). Previous-year cols 11-19 not imported in Phase 1."
+}

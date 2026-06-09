@@ -1,0 +1,60 @@
+{
+  "template_id": "NUT_BREASTFEEDING_LBW",
+  "template_version": "2026",
+  "program_code": "CHILD_CARE",
+  "source_file_pattern": "Breastfeeding and LBW",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 1,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000",
+    "Negros Island Region": "1800000000",
+    "Negros Island Region (NIR)": "1800000000",
+    "BARMM": "1800000000"
+  },
+
+  "display": {
+    "label": "File 1 - Breastfeeding and LBW",
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Name of City / Municipality" }
+    ]
+  },
+
+  "upload": {
+    "sub_program": "Nutrition",
+    "file_number": 1
+  },
+
+  "sheet_map": {
+    "1": "Q1",
+    "2": "Q2",
+    "3": "Q3",
+    "4": "Q4",
+    "annual": "Annual"
+  },
+
+  "columns": [
+    { "index": 2, "indicator_code": "NUT_BF_LIVE_BIRTHS", "is_computed": false },
+    { "index": 3, "indicator_code": "NUT_BF_1H_MALE", "is_computed": false },
+    { "index": 4, "indicator_code": "NUT_BF_1H_FEMALE", "is_computed": false },
+    { "index": 5, "indicator_code": "NUT_BF_1H_TOTAL", "is_computed": true, "formula": "NUT_BF_1H_MALE + NUT_BF_1H_FEMALE" },
+    { "index": 6, "indicator_code": "NUT_BF_1H_PCT", "is_computed": true, "formula": "NUT_BF_1H_TOTAL / NUT_BF_LIVE_BIRTHS" },
+    { "index": 7, "indicator_code": "NUT_LBW_COUNT", "is_computed": false },
+    { "index": 8, "indicator_code": "NUT_LBW_IRON_MALE", "is_computed": false },
+    { "index": 9, "indicator_code": "NUT_LBW_IRON_FEMALE", "is_computed": false },
+    { "index": 10, "indicator_code": "NUT_LBW_IRON_TOTAL", "is_computed": true, "formula": "NUT_LBW_IRON_MALE + NUT_LBW_IRON_FEMALE" },
+    { "index": 11, "indicator_code": "NUT_LBW_IRON_PCT", "is_computed": true, "formula": "NUT_LBW_IRON_TOTAL / NUT_LBW_COUNT" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "NUT_BF_1H_PCT", "threshold": 1.0, "message": "Breastfeeding within 1 hour percentage exceeds 100% of live births" },
+    { "rule_type": "over_threshold", "indicator_code": "NUT_LBW_IRON_PCT", "threshold": 1.0, "message": "LBW iron supplementation percentage exceeds 100% of LBW cases" }
+  ],
+
+  "notes": "Quarterly Q1–Q4 + Annual sheets. DQC threshold 100% per FHSIS template."
+}

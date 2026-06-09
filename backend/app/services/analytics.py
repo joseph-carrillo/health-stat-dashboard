@@ -38,6 +38,123 @@ def resolve_months(period_type: str, period_value):
     return []
 
 
+def resolve_slices_for_view(
+    data_frequency: str,
+    view_period_type: str,
+    view_period_value: int,
+) -> list[tuple[str, int]]:
+    """Map a report view period to stored (period_type, period_value) slices.
+
+    Examples:
+      quarterly view + monthly data + Q1 -> Jan, Feb, Mar
+      annual view + monthly data -> all 12 months
+      annual view + quarterly data -> Q1–Q4
+      monthly view + quarterly data -> containing quarter
+    """
+    data_frequency = data_frequency or "monthly"
+    view_period_type = view_period_type or data_frequency
+    view_period_value = int(view_period_value or 1)
+
+    if view_period_type == data_frequency:
+        return [(data_frequency, view_period_value)]
+
+    if view_period_type == "annual":
+        if data_frequency == "monthly":
+            return [("monthly", m) for m in range(1, 13)]
+        if data_frequency == "quarterly":
+            return [("quarterly", q) for q in range(1, 5)]
+        return [("annual", 1)]
+
+    if view_period_type == "quarterly" and data_frequency == "monthly":
+        months = QUARTER_MONTHS.get(view_period_value, [])
+        return [("monthly", m) for m in months]
+
+    if view_period_type == "monthly" and data_frequency == "quarterly":
+        quarter = (view_period_value - 1) // 3 + 1
+        return [("quarterly", quarter)]
+
+    if view_period_type == "monthly" and data_frequency == "annual":
+        return [("annual", 1)]
+
+    if view_period_type == "quarterly" and data_frequency == "annual":
+        return [("annual", 1)]
+
+    return [(data_frequency, view_period_value)]
+
+
+def _is_pop_indicator(code: str) -> bool:
+    """Population denominators should not be summed across time slices."""
+    return "_POP" in code
+
+
+def _combine_slice_values(
+    code: str,
+    values: list,
+    col_def: dict | None,
+) -> float | None:
+    """Aggregate one indicator across multiple stored periods."""
+    non_null = [float(v) for v in values if v is not None]
+    if not non_null:
+        return None
+    if col_def and col_def.get("is_computed"):
+        return None
+    if code.endswith("_PCT"):
+        return None
+    if _is_pop_indicator(code):
+        return max(non_null)
+    if len(non_null) == 1:
+        return non_null[0]
+    return sum(non_null)
+
+
+def _recompute_row_values(row_values: dict, col_defs: list) -> None:
+    """Apply template formulas after raw values are aggregated."""
+    from app.services.parser import compute_value
+
+    for col in col_defs:
+        if not col.get("is_computed"):
+            continue
+        formula = col.get("formula")
+        code = col.get("indicator_code")
+        if not formula or not code:
+            continue
+        row_values[code] = compute_value(formula, row_values)
+
+
+def _pct_as_ratio(value: float) -> float:
+    """Normalize a percentage to ratio scale for DQC (0.5 = 50%, 106.76 = 1.0676)."""
+    v = float(value)
+    if v > 1.5:
+        return v / 100.0
+    return v
+
+
+def _values_for_dqc(row_values: dict) -> dict:
+    """Build a value map on ratio scale so DQC thresholds (e.g. 1.0) work."""
+    out = {}
+    for code, val in row_values.items():
+        if val is None:
+            out[code] = None
+        elif code.endswith("_PCT"):
+            out[code] = _pct_as_ratio(float(val))
+        else:
+            out[code] = val
+    return out
+
+
+def _normalize_pct_display_values(rows: list) -> None:
+    """Convert stored percentage ratios to a 0–100 display scale.
+
+    Parser formulas and DQC rules use ratios (0.9551 = 95.51%, 1.05 = 105%).
+    The report API returns values ready to show with a trailing % sign.
+    """
+    for row in rows:
+        values = row.get("values") or {}
+        for code, val in values.items():
+            if code.endswith("_PCT") and val is not None:
+                values[code] = float(val) * 100
+
+
 def get_monthly_period_ids(cur, year: int, months: list) -> list:
     """Map a year + month numbers to monthly report_period ids."""
     if not months:
@@ -510,30 +627,68 @@ def _derive_group_sub(name: str):
 def list_templates() -> list:
     """Available Excel templates, read from the parser config directory."""
     import json
-    from app.services.parser import CONFIGS_DIR
+    from app.services.parser import CONFIGS_DIR, template_sort_order
     items = []
-    for path in sorted(CONFIGS_DIR.glob("*.json")):
+    for path in CONFIGS_DIR.glob("*.json"):
         try:
             with open(path, "r", encoding="utf-8") as fh:
                 cfg = json.load(fh)
         except Exception:
             continue
         display = cfg.get("display", {})
+        upload_meta = cfg.get("upload", {})
+        from app.services.upload_catalog import PROGRAMS
+        prog_names = {p["code"]: p["name"] for p in PROGRAMS}
+        prog_code = cfg.get("program_code")
+        from app.services.parser import report_sheets_from_config
         items.append({
             "id": path.stem,
             "label": display.get("label", cfg.get("label", path.stem)),
-            "program_code": cfg.get("program_code"),
+            "program_code": prog_code,
+            "program_name": prog_names.get(prog_code, prog_code),
+            "sub_program": upload_meta.get("sub_program"),
+            "frequency": cfg.get("frequency", "monthly"),
+            "sort_order": template_sort_order(cfg),
+            "report_sheets": report_sheets_from_config(cfg),
         })
+    items.sort(key=lambda t: (t["sort_order"], t["label"]))
     return items
 
 
+def _append_period_clause(
+    clauses: list,
+    params: list,
+    period_type: str,
+    period_value: int | None,
+) -> None:
+    """Match report_periods rows; annual rows use NULL period_value in the DB."""
+    if period_type == "annual":
+        clauses.append(
+            "(rp.period_type = %s AND (rp.period_value IS NULL OR rp.period_value = %s))"
+        )
+        params.extend([period_type, period_value if period_value is not None else 1])
+    elif period_value is None:
+        clauses.append("(rp.period_type = %s AND rp.period_value IS NULL)")
+        params.append(period_type)
+    else:
+        clauses.append("(rp.period_type = %s AND rp.period_value = %s)")
+        params.extend([period_type, period_value])
+
+
 def get_template_layout(template_id: str,
-                        include_sensitive: bool = True) -> dict:
+                        include_sensitive: bool = True,
+                        sheet_name: str | None = None) -> dict:
     """Column layout of a template in source-Excel order, with the grouped
     header / sub-column structure needed to recreate the original face."""
-    from app.services.parser import load_config
+    from app.services.parser import (
+        column_defs_for_sheet,
+        load_config,
+        report_sheets_from_config,
+    )
     config = load_config(template_id)
     program_code = config.get("program_code")
+    report_sheets = report_sheets_from_config(config)
+    active_sheet = sheet_name or (report_sheets[0]["id"] if report_sheets else None)
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -551,7 +706,7 @@ def get_template_layout(template_id: str,
     conn.close()
 
     columns = []
-    for col in config.get("columns", []):
+    for col in column_defs_for_sheet(config, active_sheet):
         code = col.get("indicator_code")
         m = meta.get(code, {})
         if m.get("is_sensitive") and not include_sensitive:
@@ -567,6 +722,7 @@ def get_template_layout(template_id: str,
             "is_computed": bool(
                 col.get("is_computed", m.get("is_computed", False))
             ),
+            "formula": col.get("formula"),
         })
 
     display = config.get("display", {})
@@ -580,60 +736,156 @@ def get_template_layout(template_id: str,
         "program_code": program_code,
         "id_columns": id_columns,
         "columns": columns,
+        "report_sheets": report_sheets,
+        "active_sheet": active_sheet,
     }
 
 
-def get_template_report(template_id: str, year: int, month: int,
-                        include_sensitive: bool = True,
-                        program_scope: str = None) -> dict:
-    """Layout + one row per LGU of committed monthly values, in the exact
-    column order of the source Excel. program_scope (a program code) limits
-    rows for roles that cannot view all programs."""
+def get_template_report(
+    template_id: str,
+    year: int,
+    month: int = 1,
+    include_sensitive: bool = True,
+    program_scope: str = None,
+    view_period_type: str | None = None,
+    period_value: int | None = None,
+    sheet_name: str | None = None,
+) -> dict:
+    """Layout + one row per LGU of committed values, in the exact column
+    order of the source Excel. program_scope (a program code) limits rows
+    for roles that cannot view all programs.
+
+    ``month`` is kept for backward compatibility (alias for period_value).
+    ``view_period_type`` is how the user wants to view the report: monthly,
+    quarterly, or annual. When it differs from the template's stored
+    frequency, values are aggregated across the covering slices.
+    """
+    from app.services.parser import column_defs_for_sheet, load_config, run_dqc_rules
+
     layout = get_template_layout(
-        template_id, include_sensitive=include_sensitive
+        template_id,
+        include_sensitive=include_sensitive,
+        sheet_name=sheet_name,
     )
     program_code = layout["program_code"]
+    config = load_config(template_id)
+    data_frequency = config.get("frequency", "monthly")
+    view_type = view_period_type or data_frequency
+    view_value = int(period_value if period_value is not None else month)
+    col_defs = column_defs_for_sheet(config, layout.get("active_sheet"))
+    col_def_by_code = {c["indicator_code"]: c for c in col_defs}
 
-    # A role scoped to one program can only see that program's file.
+    empty = {
+        **layout,
+        "year": year,
+        "month": view_value,
+        "period_type": data_frequency,
+        "view_period_type": view_type,
+        "view_period_value": view_value,
+        "aggregated": False,
+        "rows": [],
+    }
+
     if program_scope and program_scope != program_code:
-        return {**layout, "year": year, "month": month, "rows": []}
+        return empty
 
     codes = [c["indicator_code"] for c in layout["columns"]]
     if not codes:
-        return {**layout, "year": year, "month": month, "rows": []}
+        return empty
+
+    slices = resolve_slices_for_view(data_frequency, view_type, view_value)
+    aggregated = len(slices) > 1
 
     conn = get_db_connection()
     cur = conn.cursor()
+    period_clauses = []
+    params: list = [year]
+    for pt, pv in slices:
+        _append_period_clause(period_clauses, params, pt, pv)
+    params.append(codes)
+
     cur.execute(
-        """SELECT l.psgc, l.name, i.code, h.value
+        f"""SELECT l.psgc, l.name, i.code, h.value
            FROM health_data h
            JOIN locations l ON l.id = h.location_id
            JOIN indicators i ON i.id = h.indicator_id
            JOIN report_periods rp ON rp.id = h.period_id
            WHERE rp.year = %s
-             AND rp.period_type = 'monthly'
-             AND rp.period_value = %s
+             AND ({' OR '.join(period_clauses)})
              AND i.code = ANY(%s)
            ORDER BY l.psgc""",
-        (year, month, codes),
+        params,
     )
-    by_loc = {}
-    order = []
+
+    raw_by_loc: dict = {}
+    order: list = []
     for psgc, name, code, value in cur.fetchall():
-        if psgc not in by_loc:
-            by_loc[psgc] = {"psgc": psgc, "location": name, "values": {}}
+        if psgc not in raw_by_loc:
+            raw_by_loc[psgc] = {
+                "psgc": psgc,
+                "location": name,
+                "slices": {},
+            }
             order.append(psgc)
-        by_loc[psgc]["values"][code] = (
-            float(value) if value is not None else None
-        )
+        bucket = raw_by_loc[psgc]["slices"].setdefault(code, [])
+        bucket.append(float(value) if value is not None else None)
+
     cur.close()
     conn.close()
+
+    rows = []
+    for psgc in order:
+        loc = raw_by_loc[psgc]
+        values: dict = {}
+        for code in codes:
+            col_def = col_def_by_code.get(code)
+            if col_def and col_def.get("is_computed"):
+                continue
+            slice_vals = loc["slices"].get(code, [])
+            if not slice_vals:
+                values[code] = None
+                continue
+            values[code] = _combine_slice_values(
+                code, slice_vals, col_def
+            )
+        _recompute_row_values(values, col_defs)
+        rows.append({
+            "psgc": loc["psgc"],
+            "location": loc["location"],
+            "values": values,
+        })
+
+    display = config.get("display", {})
+    dqc_highlight = bool(display.get("dqc_highlight"))
+    dqc_rules = config.get("dqc_rules", []) if dqc_highlight else []
+    if dqc_rules:
+        for row in rows:
+            dqc_values = _values_for_dqc(row["values"])
+            staged = [
+                {"indicator_code": code, "value": val}
+                for code, val in dqc_values.items()
+            ]
+            issues = run_dqc_rules(staged, dqc_rules)
+            flags = {}
+            for issue in issues:
+                code = issue.get("indicator_code")
+                if code and code not in flags:
+                    flags[code] = issue.get("message", "DQC warning")
+            row["dqc"] = flags
+
+    _normalize_pct_display_values(rows)
 
     return {
         **layout,
         "year": year,
-        "month": month,
-        "rows": [by_loc[p] for p in order],
+        "month": view_value,
+        "period_type": data_frequency,
+        "view_period_type": view_type,
+        "view_period_value": view_value,
+        "aggregated": aggregated,
+        "dqc_highlight": dqc_highlight,
+        "dqc_rules": dqc_rules,
+        "rows": rows,
     }
 
 

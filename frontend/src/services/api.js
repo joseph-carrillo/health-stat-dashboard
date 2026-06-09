@@ -123,6 +123,11 @@ export const setIndicatorTarget = async (indicatorId, targetValue, targetYear) =
 // =====================================================
 // UPLOAD
 // =====================================================
+export const getUploadCatalog = async () => {
+  const response = await API.get('/upload-catalog')
+  return response.data
+}
+
 export const uploadFile = async (file, templateId, year, month, dryRun = false) => {
   const formData = new FormData()
   formData.append('file', file)
@@ -150,6 +155,15 @@ export const getConflicts = async (batchId) => {
 export const resolveConflict = async (stagingId, decision) => {
   const response = await API.post(
     `/staging/conflict/${stagingId}/resolve?decision=${decision}`
+  )
+  return response.data
+}
+
+export const resolveConflictsBulk = async (batchId, decision, stagingIds = null) => {
+  const body = stagingIds?.length ? { staging_ids: stagingIds } : {}
+  const response = await API.post(
+    `/staging/${batchId}/conflicts/resolve-bulk?decision=${decision}`,
+    body
   )
   return response.data
 }

@@ -3,6 +3,7 @@
 # DOH-NIR CHD Health Statistics Dashboard
 
 import json
+import re
 import uuid
 import math
 from pathlib import Path
@@ -27,6 +28,131 @@ def load_config(template_id: str) -> dict:
         raise FileNotFoundError(f"Config not found: {config_file}")
     with open(config_file, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def report_sheets_from_config(config: dict) -> list[dict]:
+    """Excel sheet tabs that map to distinct report views (e.g. MAM / SAM)."""
+    sheets: list[dict] = []
+    sheet_map = config.get("sheet_map") or {}
+    if config.get("frequency") == "annual":
+        primary = sheet_map.get("annual")
+        if primary:
+            sheets.append({"id": primary, "label": primary})
+    for extra in config.get("extra_sheets") or []:
+        name = extra.get("sheet_name")
+        if name and not any(s["id"] == name for s in sheets):
+            sheets.append({"id": name, "label": name})
+    return sheets
+
+
+def column_defs_for_sheet(config: dict, sheet_name: str | None = None) -> list:
+    """Column mapping for the primary or extra Excel sheet."""
+    if not sheet_name:
+        return config.get("columns") or []
+    sheets = report_sheets_from_config(config)
+    if sheets and sheet_name == sheets[0]["id"]:
+        return config.get("columns") or []
+    for extra in config.get("extra_sheets") or []:
+        if extra.get("sheet_name") == sheet_name:
+            return extra.get("columns") or []
+    return config.get("columns") or []
+
+
+def template_sort_order(config: dict) -> int:
+    """FHSIS file number for ordering dropdowns (File 1, 4, 5, …)."""
+    upload = config.get("upload") or {}
+    file_number = upload.get("file_number")
+    if file_number is not None:
+        return int(file_number)
+
+    pattern = str(config.get("source_file_pattern", ""))
+    digits = ""
+    for ch in pattern:
+        if ch.isdigit():
+            digits += ch
+        elif digits:
+            break
+    if digits:
+        return int(digits)
+
+    label = (config.get("display") or {}).get("label", "")
+    match = re.search(r"File\s+(\d+)", label, re.IGNORECASE)
+    if match:
+        return int(match.group(1))
+
+    return 9999
+
+
+def _normalize_match_text(value: str) -> str:
+    return "".join(ch for ch in value.lower() if ch.isalnum())
+
+
+def validate_upload_filename(filename: str, config: dict) -> str | None:
+    """Return an error message when the filename does not match the template."""
+    pattern = config.get("source_file_pattern")
+    if not pattern or not filename:
+        return None
+
+    if _normalize_match_text(pattern) not in _normalize_match_text(filename):
+        display = config.get("display", {}).get(
+            "label", config.get("template_id", "selected template")
+        )
+        return (
+            f"The uploaded file '{filename}' does not match {display}. "
+            f"Expected the filename to contain '{pattern}'."
+        )
+    return None
+
+
+def resolve_sheet_and_period(config: dict, year: int, period_value: int) -> dict:
+    """Map UI period selection to Excel sheet and report_period row."""
+    frequency = config.get("frequency", "monthly")
+    sheet_map = config["sheet_map"]
+
+    if frequency == "quarterly":
+        sheet_name = sheet_map.get(str(period_value)) or sheet_map.get(f"Q{period_value}")
+        if not sheet_name:
+            return {
+                "ok": False,
+                "error": f"No sheet mapping found for quarter {period_value}",
+            }
+        return {
+            "ok": True,
+            "sheet_name": sheet_name,
+            "period_type": "quarterly",
+            "period_value": period_value,
+            "period_label": f"Q{period_value} {year}",
+        }
+
+    if frequency == "annual":
+        sheet_name = (
+            sheet_map.get("annual")
+            or sheet_map.get("1")
+            or next(iter(sheet_map.values()), None)
+        )
+        if not sheet_name:
+            return {"ok": False, "error": "No sheet mapping found for annual report"}
+        return {
+            "ok": True,
+            "sheet_name": sheet_name,
+            "period_type": "annual",
+            "period_value": None,
+            "period_label": str(year),
+        }
+
+    sheet_name = sheet_map.get(str(period_value))
+    if not sheet_name:
+        return {
+            "ok": False,
+            "error": f"No sheet mapping found for month {period_value}",
+        }
+    return {
+        "ok": True,
+        "sheet_name": sheet_name,
+        "period_type": "monthly",
+        "period_value": period_value,
+        "period_label": f"{period_value}/{year}",
+    }
 
 
 def validate_config(config: dict) -> list:
@@ -92,6 +218,96 @@ def validate_config(config: dict) -> list:
     return problems
 
 
+def _normalize_location_name(name) -> str:
+    """Lowercase location label for alias / DB name matching."""
+    return " ".join(str(name).strip().lower().split())
+
+
+def _resolve_by_label(cur, config: dict, label) -> tuple | None:
+    """Map a location label (NIR, province name, etc.) to (location_id, psgc)."""
+    if is_blank(label):
+        return None
+
+    name_key = _normalize_location_name(label)
+    aliases = config.get("location_aliases", {})
+    for alias_name, alias_psgc in aliases.items():
+        if _normalize_location_name(alias_name) == name_key:
+            location_id = get_location_id(cur, alias_psgc)
+            if location_id:
+                return location_id, str(alias_psgc)
+
+    # Common NIR spellings in FHSIS row 2
+    if name_key in ("nir", "negros island region", "negros island region (nir)"):
+        location_id = get_location_id(cur, "1800000000")
+        if location_id:
+            return location_id, "1800000000"
+
+    cur.execute(
+        "SELECT id, psgc FROM locations WHERE LOWER(TRIM(name)) = %s",
+        (name_key,),
+    )
+    match = cur.fetchone()
+    if match:
+        return match[0], match[1]
+
+    cur.execute(
+        """SELECT id, psgc FROM locations
+           WHERE level = 'region'
+             AND LOWER(TRIM(name)) LIKE %s
+           LIMIT 1""",
+        (f"%{name_key}%",),
+    )
+    match = cur.fetchone()
+    if match:
+        return match[0], match[1]
+
+    return None
+
+
+def resolve_location_row(cur, config: dict, row, psgc_raw):
+    """Resolve a sheet row to (location_id, psgc).
+
+    FHSIS row 2 (NIR total) is messy across templates: PSGC may be blank,
+    hold a label like 'NIR'/'BARMM', or sit in the location column instead.
+    """
+    if not is_blank(psgc_raw):
+        location_id = get_location_id(cur, psgc_raw)
+        if location_id:
+            raw = str(psgc_raw).strip().replace(",", "").replace(" ", "")
+            if "." in raw:
+                raw = raw.split(".", 1)[0]
+            psgc_clean = "".join(ch for ch in raw if ch.isdigit())
+            return location_id, psgc_clean
+
+        # PSGC column sometimes contains the region label, not a code
+        by_psgc_label = _resolve_by_label(cur, config, psgc_raw)
+        if by_psgc_label:
+            return by_psgc_label
+
+    loc_col = config.get("location_column")
+    if loc_col is None:
+        return None, None
+
+    location_name = row.iloc[loc_col]
+    if is_blank(location_name):
+        return None, None
+
+    # Location column may hold the numeric PSGC while the label is in col A
+    location_id = get_location_id(cur, location_name)
+    if location_id:
+        raw = str(location_name).strip().replace(",", "").replace(" ", "")
+        if "." in raw:
+            raw = raw.split(".", 1)[0]
+        psgc_clean = "".join(ch for ch in raw if ch.isdigit())
+        return location_id, psgc_clean
+
+    by_name = _resolve_by_label(cur, config, location_name)
+    if by_name:
+        return by_name
+
+    return None, None
+
+
 def get_location_id(cur, psgc) -> int | None:
     """
     Look up location id by PSGC code.
@@ -102,8 +318,20 @@ def get_location_id(cur, psgc) -> int | None:
     plain digits-only string before lookup.
     """
     raw = str(psgc).strip().replace(",", "").replace(" ", "")
+    if not raw:
+        return None
+
+    # Excel scientific notation (e.g. 1.8E+10) when read without dtype=str
+    if "e" in raw.lower():
+        try:
+            raw = str(int(float(raw)))
+        except (ValueError, OverflowError):
+            return None
+
     if "." in raw:
-        raw = raw.split(".", 1)[0]      # drop any decimal part
+        whole, frac = raw.split(".", 1)
+        if not frac or set(frac) <= {"0"}:
+            raw = whole
     psgc_clean = "".join(ch for ch in raw if ch.isdigit())
     if not psgc_clean:
         return None
@@ -128,16 +356,72 @@ def get_indicator_id(cur, code: str) -> int | None:
 def get_period_id(cur, year: int, period_type: str,
                   period_value: int | None) -> int | None:
     """Look up report period id."""
-    cur.execute(
-        """SELECT id FROM report_periods
-           WHERE year = %s
-           AND period_type = %s
-           AND (period_value = %s OR
-               (period_value IS NULL AND %s IS NULL))""",
-        (year, period_type, period_value, period_value)
-    )
+    if period_type == "annual":
+        cur.execute(
+            """SELECT id FROM report_periods
+               WHERE year = %s
+                 AND period_type = 'annual'
+                 AND (period_value IS NULL OR period_value = 1)
+               LIMIT 1""",
+            (year,),
+        )
+    else:
+        cur.execute(
+            """SELECT id FROM report_periods
+               WHERE year = %s
+               AND period_type = %s
+               AND (period_value = %s OR
+                   (period_value IS NULL AND %s IS NULL))""",
+            (year, period_type, period_value, period_value),
+        )
     result = cur.fetchone()
     return result[0] if result else None
+
+
+_MONTH_NAMES = (
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+)
+
+
+def _period_row_label(year: int, period_type: str,
+                      period_value: int | None) -> str:
+    if period_type == "annual":
+        return f"Annual {year}"
+    if period_type == "quarterly":
+        return f"Q{period_value} {year}"
+    if period_value and 1 <= period_value <= 12:
+        return f"{_MONTH_NAMES[period_value - 1]} {year}"
+    return f"{period_value}/{year}"
+
+
+def ensure_period_id(cur, conn, year: int, period_type: str,
+                     period_value: int | None) -> int:
+    """Return report_period id, creating the row when missing (e.g. new year)."""
+    pid = get_period_id(cur, year, period_type, period_value)
+    if pid:
+        return pid
+
+    stored_value = None if period_type == "annual" else period_value
+    label = _period_row_label(year, period_type, period_value)
+    cur.execute(
+        """INSERT INTO report_periods (year, period_type, period_value, label)
+           VALUES (%s, %s, %s, %s)
+           RETURNING id""",
+        (year, period_type, stored_value, label),
+    )
+    row = cur.fetchone()
+    if row:
+        conn.commit()
+        return row[0]
+
+    conn.rollback()
+    pid = get_period_id(cur, year, period_type, period_value)
+    if pid:
+        return pid
+    raise RuntimeError(
+        f"Could not resolve report period: {label} ({period_type})"
+    )
 
 
 def is_blank(value) -> bool:
@@ -253,7 +537,8 @@ def parse_file(
     year: int,
     month: int,
     uploaded_by: int = None,
-    dry_run: bool = False
+    dry_run: bool = False,
+    source_filename: str | None = None,
 ) -> dict:
     """
     Parse an FHSIS Excel file and store data in staging.
@@ -262,10 +547,11 @@ def parse_file(
         file_path: Path to the uploaded Excel file
         template_id: Config template ID (e.g. 'cpab_bcg_hepa')
         year: Reporting year (e.g. 2026)
-        month: Reporting month number (1-12)
+        month: Period value — month (1-12), quarter (1-4), or 1 for annual
         uploaded_by: User ID of uploader
         dry_run: If True, parse and validate only — no database writes.
                  Used to test new template configs safely.
+        source_filename: Original uploaded filename for template matching
 
     Returns:
         dict with keys: batch_id, rows_processed,
@@ -275,28 +561,30 @@ def parse_file(
     # --- Load config ---
     config = load_config(template_id)
 
-    # --- Get sheet name from month number ---
-    sheet_map = config["sheet_map"]
-    sheet_name = sheet_map.get(str(month))
-    if not sheet_name:
-        return {
-            "success": False,
-            "error": f"No sheet mapping found for month {month}"
-        }
+    filename = source_filename or Path(file_path).name
+    name_error = validate_upload_filename(filename, config)
+    if name_error:
+        return {"success": False, "error": name_error}
 
-    # --- Read the Excel file ---
-    try:
-        df = pd.read_excel(
-            file_path,
-            sheet_name=sheet_name,
-            header=config["header_row"],
-            dtype=str  # read everything as string first
-        )
-    except Exception as e:
-        return {
-            "success": False,
-            "error": f"Could not read Excel file: {str(e)}"
-        }
+    period_info = resolve_sheet_and_period(config, year, month)
+    if not period_info.get("ok"):
+        return {"success": False, "error": period_info["error"]}
+
+    sheet_name = period_info["sheet_name"]
+    period_type = period_info["period_type"]
+    period_value = period_info["period_value"]
+
+    sheet_specs = [{
+        "sheet_name": sheet_name,
+        "columns": config["columns"],
+        "dqc_rules": config.get("dqc_rules", []),
+    }]
+    for extra in config.get("extra_sheets", []):
+        sheet_specs.append({
+            "sheet_name": extra["sheet_name"],
+            "columns": extra["columns"],
+            "dqc_rules": extra.get("dqc_rules", config.get("dqc_rules", [])),
+        })
 
     # --- Connect to database ---
     conn = get_db_connection()
@@ -305,21 +593,17 @@ def parse_file(
     # --- Generate a unique batch ID for this upload ---
     batch_id = str(uuid.uuid4())
 
-    # --- Get period ID ---
-    period_id = get_period_id(cur, year, "monthly", month)
-    if not period_id:
+    # --- Get period ID (create annual / missing periods on demand) ---
+    try:
+        period_id = ensure_period_id(cur, conn, year, period_type, period_value)
+    except RuntimeError as exc:
+        cur.close()
         conn.close()
-        return {
-            "success": False,
-            "error": f"Period not found: {month}/{year} monthly"
-        }
-
-    # --- Get column definitions from config ---
-    col_defs = config["columns"]
-    dqc_rules = config.get("dqc_rules", [])
+        return {"success": False, "error": str(exc)}
 
     psgc_col = config["psgc_column"]
     data_start = config["data_start_row"]
+    loc_col = config.get("location_column")
 
     rows_processed = 0
     rows_staged = 0
@@ -327,152 +611,196 @@ def parse_file(
     errors = []
     preview = []
 
-    # --- Process each row ---
-    # Blank-PSGC rows can appear MID-SHEET (province summary/total rows,
-    # visual separators between regions, etc.). We skip them individually
-    # rather than break — otherwise an LGU placed after a separator (e.g.
-    # City of Bacolod HUC, which sits below the Siquijor block in the
-    # FHSIS template) is silently dropped.
-    #
-    # Safety: stop only when we hit many consecutive blanks in a row,
-    # which signals the real end of the data.
-    MAX_CONSECUTIVE_BLANKS = 15
-    consecutive_blanks = 0
+    for sheet_spec in sheet_specs:
+        try:
+            df = pd.read_excel(
+                file_path,
+                sheet_name=sheet_spec["sheet_name"],
+                header=config["header_row"],
+                dtype=str,
+            )
+        except Exception as e:
+            conn.close()
+            return {
+                "success": False,
+                "error": (
+                    f"Could not read sheet '{sheet_spec['sheet_name']}': {str(e)}"
+                ),
+            }
 
-    for row_idx in range(data_start, len(df)):
-        row = df.iloc[row_idx]
-        psgc_raw = row.iloc[psgc_col]
+        col_defs = sheet_spec["columns"]
+        dqc_rules = sheet_spec["dqc_rules"]
 
-        if is_blank(psgc_raw):
-            consecutive_blanks += 1
-            if consecutive_blanks >= MAX_CONSECUTIVE_BLANKS:
-                break
-            continue
+        # --- Process each row ---
+        # Blank-PSGC rows can appear MID-SHEET (province summary/total rows,
+        # visual separators between regions, etc.). We skip them individually
+        # rather than break — otherwise an LGU placed after a separator (e.g.
+        # City of Bacolod HUC, which sits below the Siquijor block in the
+        # FHSIS template) is silently dropped.
+        MAX_CONSECUTIVE_BLANKS = 15
         consecutive_blanks = 0
 
-        # Look up location
-        location_id = get_location_id(cur, psgc_raw)
-        if not location_id:
-            errors.append({
-                "row": row_idx,
-                "psgc": str(psgc_raw),
-                "error": "PSGC not found in locations table"
-            })
-            rows_processed += 1
-            continue
+        for row_idx in range(data_start, len(df)):
+            row = df.iloc[row_idx]
+            psgc_raw = row.iloc[psgc_col]
+            location_id, resolved_psgc = resolve_location_row(cur, config, row, psgc_raw)
 
-        rows_processed += 1
-
-        # --- Extract raw values for this row ---
-        row_values = {}
-        staged_rows = []
-
-        # First pass: extract raw (non-computed) values
-        for col_def in col_defs:
-            if col_def["is_computed"]:
-                continue
-            col_idx = col_def["index"]
-            indicator_code = col_def["indicator_code"]
-            raw_value = safe_float(row.iloc[col_idx])
-            row_values[indicator_code] = raw_value
-
-        # Second pass: compute derived values
-        for col_def in col_defs:
-            if not col_def["is_computed"]:
-                continue
-            indicator_code = col_def["indicator_code"]
-            formula = col_def.get("formula", "")
-            computed_value = compute_value(formula, row_values)
-            row_values[indicator_code] = computed_value
-
-        # --- Run DQC rules for this row ---
-        row_issues = run_dqc_rules(
-            [{"indicator_code": k, "value": v}
-             for k, v in row_values.items()],
-            dqc_rules
-        )
-        if row_issues:
-            for issue in row_issues:
-                issue["row"] = row_idx
-                issue["psgc"] = psgc_raw
-            all_issues.extend(row_issues)
-
-        # --- Stage all values ---
-        validation_status = "failed" if row_issues else "passed"
-
-        for indicator_code, value in row_values.items():
-            indicator_id = get_indicator_id(cur, indicator_code)
-            if not indicator_id:
+            if not location_id:
+                if is_blank(psgc_raw) and (
+                    loc_col is None or is_blank(row.iloc[loc_col])
+                ):
+                    consecutive_blanks += 1
+                    if consecutive_blanks >= MAX_CONSECUTIVE_BLANKS:
+                        break
+                    continue
+                location_label = (
+                    str(row.iloc[loc_col]).strip()
+                    if loc_col is not None and not is_blank(row.iloc[loc_col])
+                    else str(psgc_raw)
+                )
                 errors.append({
                     "row": row_idx,
-                    "indicator_code": indicator_code,
-                    "error": "Indicator not found in database"
+                    "sheet": sheet_spec["sheet_name"],
+                    "psgc": str(psgc_raw),
+                    "location": location_label,
+                    "error": "Location not found (check PSGC or location name)",
                 })
+                rows_processed += 1
                 continue
 
-            # Check for existing data (conflict detection)
-            cur.execute(
-                """SELECT value FROM health_data
-                   WHERE indicator_id = %s
-                   AND location_id = %s
-                   AND period_id = %s""",
-                (indicator_id, location_id, period_id)
-            )
-            existing = cur.fetchone()
-            existing_value = existing[0] if existing else None
-            conflict_status = "pending_review" if existing else "none"
+            consecutive_blanks = 0
+            psgc_raw = resolved_psgc
 
-            # Insert into staging
-            is_computed = next(
-                (c["is_computed"] for c in col_defs
-                 if c["indicator_code"] == indicator_code),
-                False
-            )
+            rows_processed += 1
 
-            if not dry_run:
+            row_values = {}
+
+            for col_def in col_defs:
+                if col_def["is_computed"]:
+                    continue
+                col_idx = col_def["index"]
+                indicator_code = col_def["indicator_code"]
+                raw_value = safe_float(row.iloc[col_idx])
+                row_values[indicator_code] = raw_value
+
+            for col_def in col_defs:
+                if not col_def["is_computed"]:
+                    continue
+                indicator_code = col_def["indicator_code"]
+                formula = col_def.get("formula", "")
+                computed_value = compute_value(formula, row_values)
+                row_values[indicator_code] = computed_value
+
+            row_issues = run_dqc_rules(
+                [{"indicator_code": k, "value": v}
+                 for k, v in row_values.items()],
+                dqc_rules
+            )
+            if row_issues:
+                for issue in row_issues:
+                    issue["row"] = row_idx
+                    issue["sheet"] = sheet_spec["sheet_name"]
+                    issue["psgc"] = psgc_raw
+                all_issues.extend(row_issues)
+
+            validation_status = "failed" if row_issues else "passed"
+
+            for indicator_code, value in row_values.items():
+                indicator_id = get_indicator_id(cur, indicator_code)
+                if not indicator_id:
+                    errors.append({
+                        "row": row_idx,
+                        "sheet": sheet_spec["sheet_name"],
+                        "indicator_code": indicator_code,
+                        "error": "Indicator not found in database"
+                    })
+                    continue
+
                 cur.execute(
-                    """INSERT INTO staging_health_data (
-                        batch_id, indicator_id, location_id, period_id,
-                        value, validation_status, conflict_status,
-                        existing_value, is_computed, uploaded_by, source_file
-                    ) VALUES (
-                        %s, %s, %s, %s,
-                        %s, %s, %s,
-                        %s, %s, %s, %s
-                    )""",
-                    (
-                        batch_id, indicator_id, location_id, period_id,
-                        value, validation_status, conflict_status,
-                        existing_value, is_computed, uploaded_by,
-                        Path(file_path).name
-                    )
+                    """SELECT value FROM health_data
+                       WHERE indicator_id = %s
+                       AND location_id = %s
+                       AND period_id = %s""",
+                    (indicator_id, location_id, period_id)
                 )
-            rows_staged += 1
+                existing = cur.fetchone()
+                existing_value = existing[0] if existing else None
+                conflict_status = "pending_review" if existing else "none"
 
-            if len(preview) < 25:
-                preview.append({
-                    "psgc": str(psgc_raw),
-                    "indicator_code": indicator_code,
-                    "value": value,
-                    "validation_status": validation_status,
-                    "conflict_status": conflict_status,
-                    "existing_value": (
-                        float(existing_value)
-                        if existing_value is not None else None
-                    ),
-                })
+                is_computed = next(
+                    (c["is_computed"] for c in col_defs
+                     if c["indicator_code"] == indicator_code),
+                    False
+                )
+
+                if not dry_run:
+                    cur.execute(
+                        """INSERT INTO staging_health_data (
+                            batch_id, indicator_id, location_id, period_id,
+                            value, validation_status, conflict_status,
+                            existing_value, is_computed, uploaded_by, source_file
+                        ) VALUES (
+                            %s, %s, %s, %s,
+                            %s, %s, %s,
+                            %s, %s, %s, %s
+                        )""",
+                        (
+                            batch_id, indicator_id, location_id, period_id,
+                            value, validation_status, conflict_status,
+                            existing_value, is_computed, uploaded_by,
+                            Path(file_path).name
+                        )
+                    )
+                rows_staged += 1
+
+                if len(preview) < 25:
+                    preview.append({
+                        "psgc": str(psgc_raw),
+                        "indicator_code": indicator_code,
+                        "value": value,
+                        "validation_status": validation_status,
+                        "conflict_status": conflict_status,
+                        "existing_value": (
+                            float(existing_value)
+                            if existing_value is not None else None
+                        ),
+                    })
 
     if not dry_run:
         conn.commit()
     cur.close()
     conn.close()
 
+    if not dry_run and rows_staged == 0:
+        hint = "Indicators may not be seeded for this template."
+        if errors:
+            first = errors[0]
+            hint = first.get("error") or first.get("indicator_code") or hint
+        return {
+            "success": False,
+            "error": (
+                f"No data was staged ({rows_processed} rows parsed, 0 saved). "
+                f"{hint}"
+            ),
+            "batch_id": batch_id,
+            "dry_run": dry_run,
+            "template_id": template_id,
+            "period": period_info["period_label"],
+            "rows_processed": rows_processed,
+            "rows_staged": rows_staged,
+            "dqc_issues": len(all_issues),
+            "errors": len(errors),
+            "issues_detail": all_issues,
+            "errors_detail": errors,
+            "preview": preview,
+        }
+
     return {
         "success": True,
         "batch_id": None if dry_run else batch_id,
         "dry_run": dry_run,
         "template_id": template_id,
-        "period": f"{month}/{year}",
+        "period": period_info["period_label"],
         "rows_processed": rows_processed,
         "rows_staged": rows_staged,
         "dqc_issues": len(all_issues),

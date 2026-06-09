@@ -10,6 +10,41 @@ export const TEMPLATES = [
     label: "File 1 — CPAB / BCG / HepaB (Birth Dose)",
     program_code: "CHILD_CARE",
   },
+  {
+    id: "dpt_hib_hepb123",
+    label: "File 4 — DPT-HiB-HepB 1/2/3",
+    program_code: "CHILD_CARE",
+  },
+  {
+    id: "opv123",
+    label: "File 5 — OPV 1/2/3",
+    program_code: "CHILD_CARE",
+  },
+  {
+    id: "ipv12",
+    label: "File 6 — IPV 1/2",
+    program_code: "CHILD_CARE",
+  },
+  {
+    id: "pcv123",
+    label: "File 7 — PCV 1/2/3",
+    program_code: "CHILD_CARE",
+  },
+  {
+    id: "mmr12_fic_cic",
+    label: "File 8 — MMR 1/2, FIC, CIC",
+    program_code: "CHILD_CARE",
+  },
+  {
+    id: "sick_vitamin_a",
+    label: "File 1 — Sick Children Given Vitamin A",
+    program_code: "CHILD_CARE",
+  },
+  {
+    id: "sick_diarrhea_pneumonia",
+    label: "File 2-3 — Diarrhea & Pneumonia Treatment",
+    program_code: "CHILD_CARE",
+  },
 ];
 
 export const MONTHS = [
@@ -28,6 +63,13 @@ export const MONTHS = [
 ];
 
 export const YEARS = [2025, 2026];
+
+export const QUARTERS = [
+  { value: 1, label: "Q1 (Jan–Mar)" },
+  { value: 2, label: "Q2 (Apr–Jun)" },
+  { value: 3, label: "Q3 (Jul–Sep)" },
+  { value: 4, label: "Q4 (Oct–Dec)" },
+];
 
 // Coverage status colors used across dashboards.
 export const STATUS_COLORS = {

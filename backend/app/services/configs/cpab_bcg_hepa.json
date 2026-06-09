@@ -10,12 +10,24 @@
   "data_start_row": 1,
   "stop_at_blank_psgc": true,
 
+  "location_aliases": {
+    "NIR": "1800000000",
+    "Negros Island Region": "1800000000",
+    "Negros Island Region (NIR)": "1800000000",
+    "BARMM": "1800000000"
+  },
+
   "display": {
     "label": "File 1 - CPAB / BCG / HepaB (Birth Dose)",
     "id_columns": [
       { "key": "psgc", "label": "PSGC" },
       { "key": "location", "label": "Name of City / Municipality" }
     ]
+  },
+
+  "upload": {
+    "sub_program": "Immunization",
+    "file_number": 1
   },
 
   "sheet_map": {
