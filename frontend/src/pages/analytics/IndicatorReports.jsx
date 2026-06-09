@@ -8,6 +8,32 @@ import Navbar from "../../components/Navbar";
 import { getTemplates, getTemplateReport } from "../../services/api";
 import { MONTHS, YEARS } from "../../services/constants";
 
+const NIR_AREA_FILTERS = [
+  { id: "all", label: "All NIR" },
+  { id: "negros_occidental", label: "Negros Occidental", psgcPrefix: "18045" },
+  { id: "negros_oriental", label: "Negros Oriental", psgcPrefix: "18046" },
+  { id: "siquijor", label: "Siquijor", psgcPrefix: "18061" },
+  { id: "bacolod_huc", label: "City of Bacolod (HUC)", psgcPrefix: "18302" },
+];
+
+const PROVINCE_HUC_PSGCS = new Set([
+  "1804500000",
+  "1804600000",
+  "1806100000",
+  "1830200000",
+]);
+
+function isProvinceHucRow(psgc) {
+  return PROVINCE_HUC_PSGCS.has(String(psgc));
+}
+
+function filterRowsByArea(rows, areaId) {
+  if (areaId === "all") return rows;
+  const area = NIR_AREA_FILTERS.find((a) => a.id === areaId);
+  if (!area?.psgcPrefix) return rows;
+  return rows.filter((r) => String(r.psgc).startsWith(area.psgcPrefix));
+}
+
 // Group consecutive columns that share the same header group so we can render
 // the two-row "merged header" face of the original Excel sheet.
 function buildSegments(columns) {
@@ -44,6 +70,7 @@ export default function IndicatorReports() {
   const [month, setMonth] = useState(1);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [areaFilter, setAreaFilter] = useState("all");
 
   useEffect(() => {
     getTemplates()
@@ -71,7 +98,12 @@ export default function IndicatorReports() {
   const columns = report?.columns || [];
   const idColumns = report?.id_columns || [];
   const rows = report?.rows || [];
+  const filteredRows = useMemo(
+    () => filterRowsByArea(rows, areaFilter),
+    [rows, areaFilter]
+  );
   const segments = useMemo(() => buildSegments(columns), [columns]);
+  const areaLabel = NIR_AREA_FILTERS.find((a) => a.id === areaFilter)?.label;
   const periodLabel = MONTHS.find((m) => m.value === month)?.label;
   const totalCols = idColumns.length + columns.length;
 
@@ -108,13 +140,32 @@ export default function IndicatorReports() {
               <option key={m.value} value={m.value}>{m.label}</option>
             ))}
           </select>
+          <select
+            style={{ ...styles.select, minWidth: "220px" }}
+            value={areaFilter}
+            onChange={(e) => setAreaFilter(e.target.value)}
+          >
+            {NIR_AREA_FILTERS.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.label}
+              </option>
+            ))}
+          </select>
           {loading && <span style={styles.loadingTag}>Loading...</span>}
         </div>
 
         <div style={styles.metaRow}>
           <span style={styles.metaItem}>
-            <strong>{rows.length}</strong> LGU{rows.length === 1 ? "" : "s"}
+            <strong>{filteredRows.length}</strong> row{filteredRows.length === 1 ? "" : "s"}
+            {areaFilter !== "all" && rows.length !== filteredRows.length && (
+              <> (of <strong>{rows.length}</strong> total)</>
+            )}
           </span>
+          {areaFilter !== "all" && (
+            <span style={styles.metaItem}>
+              Area: <strong>{areaLabel}</strong>
+            </span>
+          )}
           <span style={styles.metaItem}>
             <strong>{columns.length}</strong> data column{columns.length === 1 ? "" : "s"}
           </span>
@@ -136,6 +187,10 @@ export default function IndicatorReports() {
           ) : rows.length === 0 ? (
             <p style={styles.empty}>
               No data uploaded for {periodLabel} {year} in this template.
+            </p>
+          ) : filteredRows.length === 0 ? (
+            <p style={styles.empty}>
+              No rows for {areaLabel} in {periodLabel} {year}.
             </p>
           ) : (
             <div style={styles.tableScroll}>
@@ -188,10 +243,20 @@ export default function IndicatorReports() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r, ri) => (
-                    <tr key={r.psgc} style={ri % 2 ? styles.trAlt : styles.tr}>
+                  {filteredRows.map((r, ri) => {
+                    const highlighted = isProvinceHucRow(r.psgc);
+                    const rowStyle = highlighted
+                      ? styles.trProvinceHuc
+                      : ri % 2
+                        ? styles.trAlt
+                        : styles.tr;
+                    const idCellStyle = highlighted
+                      ? styles.tdIdProvinceHuc
+                      : styles.tdId;
+                    return (
+                    <tr key={r.psgc} style={rowStyle}>
                       {idColumns.map((c) => (
-                        <td key={c.key} style={styles.tdId}>
+                        <td key={c.key} style={idCellStyle}>
                           {r[c.key]}
                         </td>
                       ))}
@@ -217,7 +282,8 @@ export default function IndicatorReports() {
                         );
                       })}
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -226,8 +292,9 @@ export default function IndicatorReports() {
 
         <p style={styles.legend}>
           Layout mirrors the source Excel file: {totalCols} columns total. A dash
-          (—) means no value was uploaded for that LGU. Hover a sub-column header
-          to see its full indicator name.
+          (—) means no value was uploaded for that location. Province and HUC
+          summary rows are highlighted in blue. Use the area filter to show one
+          province (or Bacolod HUC) and its LGUs only.
         </p>
       </div>
     </div>
@@ -257,7 +324,9 @@ const styles = {
   thComputed: { backgroundColor: "#3A5B9E" },
   tr: { backgroundColor: "#fff" },
   trAlt: { backgroundColor: "#F8FAFC" },
+  trProvinceHuc: { backgroundColor: "#E8F0FE" },
   tdId: { position: "sticky", left: 0, backgroundColor: "inherit", padding: "7px 12px", fontSize: "12px", color: "#1F2A45", fontWeight: "600", borderRight: "1px solid #E2E8F0", borderBottom: "1px solid #F0F4F8" },
+  tdIdProvinceHuc: { position: "sticky", left: 0, backgroundColor: "#E8F0FE", padding: "7px 12px", fontSize: "12px", color: "#0B4BAA", fontWeight: "700", borderRight: "1px solid #CBD5E1", borderBottom: "1px solid #D6E4FF", borderLeft: "3px solid #0B4BAA" },
   tdNum: { padding: "7px 10px", fontSize: "12px", color: "#1F2A45", textAlign: "right", borderBottom: "1px solid #F0F4F8" },
   tdComputed: { backgroundColor: COMPUTED_TINT },
   groupStart: { borderLeft: "2px solid #CBD5E1" },

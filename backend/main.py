@@ -319,7 +319,9 @@ def approve_staging_batch(
 ):
     """Approve a batch and commit data to health_data."""
     result = approve_batch(
-        batch_id=batch_id, approved_by=current_user.get("user_id")
+        batch_id=batch_id,
+        approved_by=current_user.get("user_id"),
+        force=True,
     )
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result.get("error"))
@@ -859,6 +861,181 @@ def deactivate_user(
     return {
         "success": True,
         "message": f"User {result[0]} deactivated successfully.",
+    }
+
+
+# =====================================================
+# PROVINCE DASHBOARD — coverage summary / breakdown / batch history
+# (powers Overview, Coverage, Rankings from origin/main)
+# =====================================================
+@app.get("/api/coverage-summary")
+def get_coverage_summary(
+    year: int = 2026,
+    month: int = 1,
+    indicator_code: str = "CPAB_PCT",
+    current_user: dict = Depends(get_current_user),
+):
+    """Per-LGU coverage values for maps. PCT stored as decimal ratios."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT l.name, h.value
+        FROM health_data h
+        JOIN locations l ON l.id = h.location_id
+        JOIN indicators i ON i.id = h.indicator_id
+        JOIN report_periods rp ON rp.id = h.period_id
+        WHERE i.code = %s
+          AND rp.year = %s
+          AND rp.period_value = %s
+          AND rp.period_type = 'monthly'
+        ORDER BY l.name
+        """,
+        (indicator_code, year, month),
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    data = [
+        {
+            "location": r[0].strip(),
+            "value": float(r[1]) if r[1] is not None else None,
+        }
+        for r in rows
+    ]
+    return {
+        "indicator_code": indicator_code,
+        "year": year,
+        "month": month,
+        "count": len(data),
+        "data": data,
+    }
+
+
+@app.get("/api/batches/history")
+def get_batch_history(current_user: dict = Depends(get_current_user)):
+    """Uploaded batches with approval status (Management history tab)."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT
+            s.batch_id,
+            MIN(s.uploaded_at)   AS uploaded_at,
+            MAX(s.approved_at)   AS approved_at,
+            COUNT(*)             AS total_rows,
+            MAX(s.source_file)   AS source_file,
+            COUNT(CASE WHEN s.conflict_status IN ('accepted','rejected') THEN 1 END)
+                                 AS conflicts_resolved,
+            COUNT(CASE WHEN s.conflict_status = 'pending_review' THEN 1 END)
+                                 AS conflicts_pending
+        FROM staging_health_data s
+        GROUP BY s.batch_id
+        ORDER BY MIN(s.uploaded_at) DESC
+        LIMIT 50
+        """
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    batches = []
+    for row in rows:
+        (
+            batch_id,
+            uploaded_at,
+            approved_at,
+            total_rows,
+            source_file,
+            conflicts_resolved,
+            conflicts_pending,
+        ) = row
+        batches.append({
+            "batch_id": str(batch_id),
+            "uploaded_at": str(uploaded_at),
+            "approved_at": str(approved_at) if approved_at else None,
+            "total_rows": total_rows,
+            "source_file": source_file or "—",
+            "conflicts_resolved": conflicts_resolved,
+            "conflicts_pending": conflicts_pending,
+            "status": "approved" if approved_at else "pending",
+        })
+    return {"total": len(batches), "batches": batches}
+
+
+@app.get("/api/coverage-breakdown")
+def get_coverage_breakdown(
+    year: int = 2026,
+    month: int = 1,
+    total_code: str = "CPAB_TOTAL",
+    pct_code: str = "CPAB_PCT",
+    denom_code: str = "IMMUN_POP_0_11M",
+    current_user: dict = Depends(get_current_user),
+):
+    """Per-LGU numerator, denominator, and PCT for Coverage/Rankings."""
+    from collections import defaultdict
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT
+            l.name       AS location,
+            l.psgc,
+            l.is_huc,
+            p.name       AS province,
+            i.code       AS indicator_code,
+            h.value
+        FROM health_data h
+        JOIN locations l ON l.id = h.location_id
+        LEFT JOIN locations p
+            ON p.psgc = l.parent_psgc AND p.level = 'province'
+        JOIN indicators i ON i.id = h.indicator_id
+        JOIN report_periods rp ON rp.id = h.period_id
+        WHERE i.code = ANY(%s)
+          AND rp.year = %s
+          AND rp.period_value = %s
+          AND rp.period_type = 'monthly'
+        ORDER BY p.name, l.name
+        """,
+        ([total_code, pct_code, denom_code], year, month),
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    loc_data = defaultdict(dict)
+    for location, psgc, is_huc, province, code, value in rows:
+        key = location.strip()
+        loc_data[key]["psgc"] = psgc
+        loc_data[key]["is_huc"] = is_huc
+        loc_data[key]["province"] = (
+            "HUC" if is_huc else (province.strip() if province else "Unknown")
+        )
+        loc_data[key][code] = float(value) if value is not None else None
+
+    result = [
+        {
+            "location": name,
+            "psgc": d.get("psgc"),
+            "is_huc": d.get("is_huc", False),
+            "province": d.get("province", "Unknown"),
+            "numerator": d.get(total_code),
+            "denominator": d.get(denom_code),
+            "pct": d.get(pct_code),
+        }
+        for name, d in sorted(
+            loc_data.items(),
+            key=lambda x: (x[1].get("province", ""), x[0]),
+        )
+    ]
+    return {
+        "year": year,
+        "month": month,
+        "total_code": total_code,
+        "pct_code": pct_code,
+        "denom_code": denom_code,
+        "count": len(result),
+        "data": result,
     }
 
 

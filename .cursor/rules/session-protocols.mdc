@@ -1,0 +1,19 @@
+---
+description: Chat trigger phrases for startup, shutdown, and health check
+alwaysApply: true
+---
+
+# Session Protocols
+
+When the user says **exactly** one of these phrases, follow `docs/SESSION-PROTOCOLS.md`:
+
+| Phrase | Actions (in order) |
+|--------|-------------------|
+| `run startup protocols` | `scripts/sync.ps1` (stop if non-zero; never `git merge --abort`) → read `session-handoff.md`, `activeContext.md`, `progress.md`, `CLAUDE.md` → `scripts/start.ps1` → brief goal / done / next / blockers |
+| `run shutdown protocols` | Summarize session → update `session-handoff.md`, `activeContext.md`, `progress.md` → commit & push memory/docs changes → `scripts/stop.ps1` |
+| `run session health check` | `scripts/health-check.ps1` → report DB / backend :8000 / frontend :5173 → one next action |
+
+- If `scripts/sync.ps1` fails (diverged/dirty/merge in progress), stop and help resolve before coding. Never auto-abort merges during startup.
+- Use `Get-NetTCPConnection` for port checks on Windows (not `Test-NetConnection`).
+- Do not auto-open the browser unless the user asks.
+- Track 1 scope only unless the user explicitly asks for Track 2 (LGU parsers, 62 templates).

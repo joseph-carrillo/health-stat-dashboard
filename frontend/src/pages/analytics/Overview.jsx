@@ -1,91 +1,95 @@
 // frontend/src/pages/analytics/Overview.jsx
-// Regional overview: choropleth maps + LGU ranking driven by live coverage.
 
-import { useEffect, useState } from "react";
+import Navbar from "../../components/Navbar";
+import { useEffect, useState, useMemo } from "react";
 import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import Navbar from "../../components/Navbar";
-import { getCoverage, getIndicators } from "../../services/api";
-import { MONTHS, YEARS, coverageColor } from "../../services/constants";
+import {
+  buildCoverageLookup,
+  resolveGeoLookupKey,
+} from "../../utils/locationNames";
+import {
+  DEFAULT_OVERVIEW_INDICATOR,
+  findOverviewIndicator,
+  OVERVIEW_INDICATOR_GROUPS,
+} from "../../config/overviewIndicators";
 
-const DEFAULT_INDICATOR = "CPAB_PCT";
+const MONTHS = [
+  { value: 1, label: "January" }, { value: 2, label: "February" },
+  { value: 3, label: "March" },   { value: 4, label: "April" },
+  { value: 5, label: "May" },     { value: 6, label: "June" },
+  { value: 7, label: "July" },    { value: 8, label: "August" },
+  { value: 9, label: "September" },{ value: 10, label: "October" },
+  { value: 11, label: "November" },{ value: 12, label: "December" },
+];
+
+// PCT values are stored as decimal ratios (0.915 = 91.5%)
+function getCoverageColor(ratio) {
+  if (ratio === null || ratio === undefined) return "#CBD5E1";
+  if (ratio >= 0.95) return "#16A34A";
+  if (ratio >= 0.80) return "#EAB308";
+  return "#DC2626";
+}
 
 export default function Overview() {
   const [nirGeo, setNirGeo] = useState(null);
   const [hucGeo, setHucGeo] = useState(null);
-
-  const [indicators, setIndicators] = useState([]);
-  const [indicatorCode, setIndicatorCode] = useState(DEFAULT_INDICATOR);
   const [year, setYear] = useState(2026);
-  const [month, setMonth] = useState(1);
-
-  const [coverageByName, setCoverageByName] = useState({});
-  const [ranking, setRanking] = useState([]);
+  const [month, setMonth] = useState(1); // Jan 2026 — latest committed Immunization period in DB
+  const [indicatorCode, setIndicatorCode] = useState(DEFAULT_OVERVIEW_INDICATOR);
+  const [coverageData, setCoverageData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // Load GeoJSON once.
+  // Load GeoJSON files once
   useEffect(() => {
-    fetch("/geojson/NIR.geojson").then((r) => r.json()).then(setNirGeo).catch(() => {});
-    fetch("/geojson/HUC.geojson").then((r) => r.json()).then(setHucGeo).catch(() => {});
+    fetch("/geojson/NIR.geojson").then((r) => r.json()).then(setNirGeo)
+      .catch(() => console.error("Could not load NIR.geojson"));
+    fetch("/geojson/HUC.geojson").then((r) => r.json()).then(setHucGeo)
+      .catch(() => console.error("Could not load HUC.geojson"));
   }, []);
 
-  // Load the list of percentage indicators for the selector.
+  // Fetch coverage from API whenever year/month changes
   useEffect(() => {
-    getIndicators()
-      .then((res) => {
-        const pct = (res.indicators || []).filter(
-          (i) => i.formula_type === "percentage"
-        );
-        setIndicators(pct);
-        if (!pct.find((i) => i.code === DEFAULT_INDICATOR) && pct[0]) {
-          setIndicatorCode(pct[0].code);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  // Load coverage whenever the selection changes.
-  useEffect(() => {
-    if (!indicatorCode) return;
-    let active = true;
+    const token = localStorage.getItem("token");
     setLoading(true);
-    getCoverage({
-      indicator_code: indicatorCode,
-      year,
-      period_type: "monthly",
-      period_value: month,
-    })
-      .then((res) => {
-        if (!active) return;
-        const byName = {};
-        (res.data || []).forEach((d) => {
-          byName[d.location] = d.value;
-        });
-        setCoverageByName(byName);
-        const ranked = (res.data || [])
-          .filter((d) => d.value !== null)
-          .sort((a, b) => b.value - a.value);
-        setRanking(ranked);
+    setError("");
+    fetch(
+      `/api/coverage-summary?year=${year}&month=${month}&indicator_code=${encodeURIComponent(indicatorCode)}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    )
+      .then((r) => {
+        if (!r.ok) throw new Error("coverage fetch failed");
+        return r.json();
       })
-      .catch(() => {
-        if (active) {
-          setCoverageByName({});
-          setRanking([]);
-        }
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [indicatorCode, year, month]);
+      .then((d) => setCoverageData(d.data || []))
+      .catch(() => setError("Could not load coverage data."))
+      .finally(() => setLoading(false));
+  }, [year, month, indicatorCode]);
+
+  const selectedIndicator = findOverviewIndicator(indicatorCode);
+
+  const coverageLookup = useMemo(
+    () => buildCoverageLookup(coverageData),
+    [coverageData]
+  );
+
+  // Summary counts
+  const onTarget   = coverageData.filter((d) => d.value !== null && d.value >= 0.95).length;
+  const nearTarget = coverageData.filter((d) => d.value !== null && d.value >= 0.80 && d.value < 0.95).length;
+  const belowTarget= coverageData.filter((d) => d.value !== null && d.value < 0.80).length;
+  const noData     = 63 - coverageData.filter((d) => d.value !== null).length;
+
+  function getRatioForGeoName(geoName) {
+    const key = resolveGeoLookupKey(geoName, coverageLookup);
+    return coverageLookup[key] ?? null;
+  }
 
   function styleFeature(feature) {
-    const name = feature.properties.ADM3_EN || "";
+    const ratio = getRatioForGeoName(feature.properties.ADM3_EN || "");
     return {
-      fillColor: coverageColor(coverageByName[name]),
-      fillOpacity: 0.7,
+      fillColor: getCoverageColor(ratio),
+      fillOpacity: 0.75,
       color: "#ffffff",
       weight: 1,
     };
@@ -93,125 +97,192 @@ export default function Overview() {
 
   function onEachFeature(feature, layer) {
     const name = feature.properties.ADM3_EN || "Unknown";
-    const coverage = coverageByName[name];
-    const display = coverage !== undefined ? `${coverage}%` : "No data";
+    const ratio = getRatioForGeoName(name);
+    const display = ratio !== null ? `${(ratio * 100).toFixed(1)}%` : "No data";
     layer.bindTooltip(`${name}: ${display}`, { sticky: true });
   }
 
-  const values = Object.values(coverageByName).filter((v) => v !== null && v !== undefined);
-  const onTarget = values.filter((v) => v >= 95).length;
-  const nearTarget = values.filter((v) => v >= 80 && v < 95).length;
-  const belowTarget = values.filter((v) => v < 80).length;
-  const maxValue = ranking[0]?.value || 100;
+  // Ranking uses the raw DB data, sorted by value desc
+  const ranking = [...coverageData]
+    .filter((d) => d.value !== null)
+    .sort((a, b) => b.value - a.value);
+  const maxValue = ranking[0]?.value || 1;
 
   return (
     <div style={styles.page}>
       <Navbar />
       <div style={styles.body}>
-        {/* Filters */}
-        <div style={styles.filterBar}>
-          <select
-            style={styles.select}
-            value={indicatorCode}
-            onChange={(e) => setIndicatorCode(e.target.value)}
-          >
-            {indicators.map((i) => (
-              <option key={i.code} value={i.code}>
-                {i.name}
-              </option>
-            ))}
-          </select>
-          <select style={styles.select} value={year} onChange={(e) => setYear(Number(e.target.value))}>
-            {YEARS.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-          <select style={styles.select} value={month} onChange={(e) => setMonth(Number(e.target.value))}>
-            {MONTHS.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-          {loading && <span style={styles.loadingTag}>Loading...</span>}
+
+        {/* Page header + period selector */}
+        <div style={styles.topRow}>
+          <div>
+            <h1 style={styles.pageTitle}>Analytics — Overview</h1>
+            <p style={styles.pageSub}>
+              {selectedIndicator.group
+                ? `${selectedIndicator.group} · ${selectedIndicator.label} coverage`
+                : "Child Care — Immunization coverage"}
+            </p>
+          </div>
+          <div style={styles.filterRow}>
+            <div style={styles.filterGroup}>
+              <label style={styles.filterLabel}>Indicator</label>
+              <select
+                style={styles.select}
+                value={indicatorCode}
+                onChange={(e) => setIndicatorCode(e.target.value)}
+              >
+                {OVERVIEW_INDICATOR_GROUPS.map((g) => (
+                  <optgroup key={g.group} label={g.group}>
+                    {g.options.map((o) => (
+                      <option key={o.code} value={o.code}>{o.label}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+            <div style={styles.filterGroup}>
+              <label style={styles.filterLabel}>Month</label>
+              <select style={styles.select} value={month}
+                onChange={(e) => setMonth(Number(e.target.value))}>
+                {MONTHS.map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+            </div>
+            <div style={styles.filterGroup}>
+              <label style={styles.filterLabel}>Year</label>
+              <select style={styles.select} value={year}
+                onChange={(e) => setYear(Number(e.target.value))}>
+                {[2025, 2026, 2027].map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
+
+        {error && <div style={styles.errorBox}>{error}</div>}
 
         {/* Summary Cards */}
         <div style={styles.cardRow}>
-          <Card label="LGUs With Data" value={values.length} border="#0B4BAA" />
-          <Card label="On Target (≥95%)" value={onTarget} border="#16A34A" color="#16A34A" />
-          <Card label="Near Target (80–94%)" value={nearTarget} border="#EAB308" color="#EAB308" />
-          <Card label="Below Target (<80%)" value={belowTarget} border="#DC2626" color="#DC2626" />
+          <div style={{ ...styles.card, borderTop: "4px solid #0B4BAA" }}>
+            <p style={styles.cardLabel}>Total LGUs</p>
+            <p style={styles.cardNumber}>63</p>
+          </div>
+          <div style={{ ...styles.card, borderTop: "4px solid #16A34A" }}>
+            <p style={styles.cardLabel}>On Target (≥95%)</p>
+            <p style={{ ...styles.cardNumber, color: "#16A34A" }}>
+              {loading ? "—" : onTarget}
+            </p>
+          </div>
+          <div style={{ ...styles.card, borderTop: "4px solid #EAB308" }}>
+            <p style={styles.cardLabel}>Near Target (80–94%)</p>
+            <p style={{ ...styles.cardNumber, color: "#EAB308" }}>
+              {loading ? "—" : nearTarget}
+            </p>
+          </div>
+          <div style={{ ...styles.card, borderTop: "4px solid #DC2626" }}>
+            <p style={styles.cardLabel}>Below Target (&lt;80%)</p>
+            <p style={{ ...styles.cardNumber, color: "#DC2626" }}>
+              {loading ? "—" : belowTarget}
+            </p>
+          </div>
         </div>
 
-        {/* Maps */}
+        {/* Two Maps */}
         <div style={styles.mapsRow}>
-          <MapCard title="Negros Island Region" badge="REGIONAL" sub="LGUs across the region" geo={nirGeo} bounds={[[9.0, 122.3], [11.0, 123.5]]} styleFeature={styleFeature} onEachFeature={onEachFeature} />
-          <MapCard title="Bacolod City" badge="HUC" badgeColors={{ bg: "#EDE9FE", color: "#6D28D9" }} sub="Highly Urbanized City — barangays" geo={hucGeo} bounds={[[10.55, 122.88], [10.75, 123.05]]} styleFeature={styleFeature} onEachFeature={onEachFeature} />
+          <div style={styles.mapCard}>
+            <h2 style={styles.mapTitle}>
+              Negros Island Region
+              <span style={styles.mapBadge}>REGIONAL</span>
+            </h2>
+            <p style={styles.mapSub}>63 LGUs across 3 provinces</p>
+            <div style={styles.mapBox}>
+              {nirGeo ? (
+                <MapContainer
+                  style={{ height: "100%", width: "100%" }}
+                  bounds={[[9.0, 122.3], [11.0, 123.5]]}
+                  scrollWheelZoom={false}
+                >
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="© OpenStreetMap" />
+                  <GeoJSON key={`nir-${year}-${month}-${indicatorCode}`} data={nirGeo} style={styleFeature} onEachFeature={onEachFeature} />
+                </MapContainer>
+              ) : (
+                <div style={styles.mapLoading}>Loading map…</div>
+              )}
+            </div>
+            <div style={styles.legend}>
+              <span style={{ ...styles.legendDot, background: "#16A34A" }} /> On Target (≥95%)
+              <span style={{ ...styles.legendDot, background: "#EAB308", marginLeft: 12 }} /> Near (80–94%)
+              <span style={{ ...styles.legendDot, background: "#DC2626", marginLeft: 12 }} /> Below (&lt;80%)
+              <span style={{ ...styles.legendDot, background: "#CBD5E1", marginLeft: 12 }} /> No Data
+            </div>
+          </div>
+
+          <div style={styles.mapCard}>
+            <h2 style={styles.mapTitle}>
+              Bacolod City
+              <span style={{ ...styles.mapBadge, background: "#EDE9FE", color: "#6D28D9" }}>HUC</span>
+            </h2>
+            <p style={styles.mapSub}>61 barangays — Highly Urbanized City</p>
+            <div style={styles.mapBox}>
+              {hucGeo ? (
+                <MapContainer
+                  style={{ height: "100%", width: "100%" }}
+                  bounds={[[10.55, 122.88], [10.75, 123.05]]}
+                  scrollWheelZoom={false}
+                >
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="© OpenStreetMap" />
+                  <GeoJSON key={`huc-${year}-${month}-${indicatorCode}`} data={hucGeo} style={styleFeature} onEachFeature={onEachFeature} />
+                </MapContainer>
+              ) : (
+                <div style={styles.mapLoading}>Loading map…</div>
+              )}
+            </div>
+            <div style={styles.legend}>
+              <span style={{ ...styles.legendDot, background: "#16A34A" }} /> On Target (≥95%)
+              <span style={{ ...styles.legendDot, background: "#EAB308", marginLeft: 12 }} /> Near (80–94%)
+              <span style={{ ...styles.legendDot, background: "#DC2626", marginLeft: 12 }} /> Below (&lt;80%)
+              <span style={{ ...styles.legendDot, background: "#CBD5E1", marginLeft: 12 }} /> No Data
+            </div>
+          </div>
         </div>
 
         {/* Ranking */}
         <div style={styles.rankingCard}>
           <h2 style={styles.mapTitle}>LGU Ranking</h2>
-          <p style={styles.mapSub}>LGUs ranked by coverage rate</p>
+          <p style={styles.mapSub}>
+            {loading ? "Loading…"
+              : ranking.length > 0
+                ? `${ranking.length} LGUs with data — ${selectedIndicator.label} (${indicatorCode}), ${MONTHS.find(m => m.value === month)?.label} ${year}`
+                : "No data available for this period. Upload data to see rankings."
+            }
+          </p>
+          {ranking.length === 0 && !loading && (
+            <div style={styles.noData}>
+              <p>No coverage data uploaded yet for this period.</p>
+            </div>
+          )}
           <div style={styles.rankingList}>
-            {ranking.length === 0 && <p style={styles.mapSub}>No data for this selection.</p>}
-            {ranking.map((row, index) => (
-              <div key={row.psgc} style={styles.rankingRow}>
+            {ranking.map(({ location, value }, index) => (
+              <div key={location} style={styles.rankingRow}>
                 <span style={styles.rankNum}>{index + 1}</span>
-                <span style={styles.rankName}>{row.location}</span>
+                <span style={styles.rankName}>{location}</span>
                 <div style={styles.barTrack}>
-                  <div style={{ ...styles.barFill, width: `${(row.value / maxValue) * 100}%`, backgroundColor: coverageColor(row.value) }} />
+                  <div style={{
+                    ...styles.barFill,
+                    width: `${(value / maxValue) * 100}%`,
+                    backgroundColor: getCoverageColor(value),
+                  }} />
                 </div>
-                <span style={{ ...styles.rankValue, color: coverageColor(row.value) }}>
-                  {row.value}%
+                <span style={{ ...styles.rankValue, color: getCoverageColor(value) }}>
+                  {(value * 100).toFixed(1)}%
                 </span>
               </div>
             ))}
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
 
-function Card({ label, value, border, color }) {
-  return (
-    <div style={{ ...styles.card, borderTop: `4px solid ${border}` }}>
-      <p style={styles.cardLabel}>{label}</p>
-      <p style={{ ...styles.cardNumber, color: color || "#1F2A45" }}>{value}</p>
-    </div>
-  );
-}
-
-function MapCard({ title, badge, badgeColors, sub, geo, bounds, styleFeature, onEachFeature }) {
-  const badgeStyle = badgeColors
-    ? { ...styles.mapBadge, background: badgeColors.bg, color: badgeColors.color }
-    : styles.mapBadge;
-  return (
-    <div style={styles.mapCard}>
-      <h2 style={styles.mapTitle}>
-        {title}
-        <span style={badgeStyle}>{badge}</span>
-      </h2>
-      <p style={styles.mapSub}>{sub}</p>
-      <div style={styles.mapBox}>
-        {geo ? (
-          <MapContainer style={{ height: "100%", width: "100%" }} bounds={bounds} scrollWheelZoom={false} key={JSON.stringify(bounds)}>
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="© OpenStreetMap" />
-            <GeoJSON data={geo} style={styleFeature} onEachFeature={onEachFeature} />
-          </MapContainer>
-        ) : (
-          <div style={styles.mapLoading}>Loading map...</div>
-        )}
-      </div>
-      <div style={styles.legend}>
-        <span style={{ ...styles.legendDot, background: "#16A34A" }} /> On Target (≥95%)
-        <span style={{ ...styles.legendDot, background: "#EAB308", marginLeft: 12 }} /> Near (80–94%)
-        <span style={{ ...styles.legendDot, background: "#DC2626", marginLeft: 12 }} /> Below (&lt;80%)
-        <span style={{ ...styles.legendDot, background: "#CBD5E1", marginLeft: 12 }} /> No Data
       </div>
     </div>
   );
@@ -220,9 +291,14 @@ function MapCard({ title, badge, badgeColors, sub, geo, bounds, styleFeature, on
 const styles = {
   page: { minHeight: "100vh", backgroundColor: "#F0F4F8", fontFamily: "'Barlow', sans-serif" },
   body: { padding: "24px 32px", marginLeft: "240px" },
-  filterBar: { display: "flex", gap: "10px", marginBottom: "20px", alignItems: "center", flexWrap: "wrap" },
-  select: { padding: "8px 12px", borderRadius: "6px", border: "1px solid #CBD5E1", fontSize: "13px", color: "#1F2A45", backgroundColor: "#fff", outline: "none", minWidth: "160px" },
-  loadingTag: { fontSize: "12px", color: "#5A6A85" },
+  topRow: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "24px", flexWrap: "wrap", gap: "12px" },
+  pageTitle: { fontFamily: "'Montserrat', sans-serif", fontSize: "22px", fontWeight: "700", color: "#1F2A45", margin: "0 0 4px 0" },
+  pageSub: { fontSize: "13px", color: "#5A6A85", margin: 0 },
+  filterRow: { display: "flex", gap: "16px", alignItems: "flex-end" },
+  filterGroup: { display: "flex", flexDirection: "column", gap: "6px" },
+  filterLabel: { fontSize: "12px", fontWeight: "600", color: "#1F2A45" },
+  select: { padding: "8px 14px", borderRadius: "6px", border: "1px solid #CBD5E1", fontSize: "13px", color: "#1F2A45", backgroundColor: "#ffffff", outline: "none" },
+  errorBox: { backgroundColor: "#FEE2E2", color: "#991B1B", padding: "12px 16px", borderRadius: "6px", fontSize: "13px", marginBottom: "16px" },
   cardRow: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" },
   card: { backgroundColor: "#ffffff", borderRadius: "10px", padding: "20px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.07)" },
   cardLabel: { fontSize: "11px", color: "#5A6A85", margin: "0 0 8px 0", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" },
@@ -237,8 +313,9 @@ const styles = {
   legend: { marginTop: "10px", fontSize: "11px", color: "#5A6A85", display: "flex", alignItems: "center", flexWrap: "wrap", gap: "4px" },
   legendDot: { display: "inline-block", width: "10px", height: "10px", borderRadius: "50%", marginRight: "4px" },
   rankingCard: { backgroundColor: "#ffffff", borderRadius: "10px", padding: "20px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.07)" },
+  noData: { padding: "24px", textAlign: "center", color: "#94A3B8", fontSize: "13px" },
   rankingList: { display: "flex", flexDirection: "column", gap: "8px", marginTop: "12px" },
-  rankingRow: { display: "grid", gridTemplateColumns: "28px 180px 1fr 52px", alignItems: "center", gap: "10px" },
+  rankingRow: { display: "grid", gridTemplateColumns: "28px 200px 1fr 60px", alignItems: "center", gap: "10px" },
   rankNum: { fontSize: "12px", color: "#94A3B8", fontWeight: "700", textAlign: "right" },
   rankName: { fontSize: "13px", color: "#1F2A45", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
   barTrack: { backgroundColor: "#F0F4F8", borderRadius: "4px", height: "14px", overflow: "hidden" },

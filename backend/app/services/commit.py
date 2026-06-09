@@ -8,6 +8,19 @@ from datetime import datetime
 from app.core.db import get_db_connection
 
 
+def _savepoint_execute(cur, sql, params):
+    """Run SQL inside a savepoint so one failure does not abort the whole batch."""
+    cur.execute("SAVEPOINT commit_row")
+    try:
+        cur.execute(sql, params)
+        cur.execute("RELEASE SAVEPOINT commit_row")
+        return True
+    except Exception:
+        cur.execute("ROLLBACK TO SAVEPOINT commit_row")
+        cur.execute("RELEASE SAVEPOINT commit_row")
+        return False
+
+
 # =====================================================
 # GET BATCH SUMMARY
 # Returns a summary of what is in staging for a batch
@@ -194,10 +207,7 @@ def resolve_conflict(
 # Moves approved data from staging to health_data
 # =====================================================
 
-def approve_batch(
-    batch_id: str,
-    approved_by: int = None
-) -> dict:
+def approve_batch(batch_id: str, approved_by=None, force=False):
     """
     Approve a batch and commit data to health_data.
 
@@ -220,12 +230,10 @@ def approve_batch(
         (batch_id,)
     )
     unresolved = cur.fetchone()[0]
-    if unresolved > 0:
-        conn.close()
+    if unresolved > 0 and not force:
         return {
             "success": False,
-            "error": f"{unresolved} conflicts still pending review. "
-                     f"Resolve all conflicts before approving."
+            "error": f"{unresolved} conflicts still pending review. Resolve all conflicts before approving."
         }
 
     # Check for failed validation
@@ -236,7 +244,7 @@ def approve_batch(
         (batch_id,)
     )
     failed = cur.fetchone()[0]
-    if failed > 0:
+    if failed > 0 and not force:
         conn.close()
         return {
             "success": False,
@@ -245,6 +253,10 @@ def approve_batch(
         }
 
     # Get all rows to commit
+    # NOTE: We do NOT filter out NULL values here in SQL.
+    # NULL handling happens in Python below so we can:
+    #   1. Count how many were blank (skipped_null)
+    #   2. Protect previously-committed real values from being overwritten
     cur.execute(
         """SELECT
                indicator_id, location_id, period_id,
@@ -260,14 +272,32 @@ def approve_batch(
     inserted = 0
     updated = 0
     skipped = 0
+    skipped_null = 0    # blank cells from Excel — intentionally not written
+    auto_resolved = 0   # pending_review conflicts auto-accepted under force=True
 
     for row in rows:
         (indicator_id, location_id, period_id,
          value, is_computed, source_file,
          conflict_status) = row
 
-        if conflict_status == "accepted":
-            # Overwrite existing data
+        # Skip blank values (NULL from Excel empty cells).
+        # Protects existing committed data from being overwritten with blanks.
+        if value is None:
+            skipped_null += 1
+            continue
+
+        # When force=True (the UI's "Approve and Commit" path), unresolved
+        # conflicts are treated as accepted — use the incoming value.
+        # Without this, pending_review rows fall through every branch below
+        # and silently never reach health_data — which leaves stale data
+        # (including stale NULLs from previous buggy uploads) in place.
+        effective_status = conflict_status
+        if force and conflict_status == "pending_review":
+            effective_status = "accepted"
+            auto_resolved += 1
+
+        if effective_status == "accepted":
+            # Overwrite existing row (or insert if somehow absent)
             cur.execute(
                 """UPDATE health_data
                    SET value = %s,
@@ -280,26 +310,73 @@ def approve_batch(
                 (value, approved_by, datetime.now(), source_file,
                  indicator_id, location_id, period_id)
             )
-            updated += 1
-
-        elif conflict_status == "none":
-            # Insert new data
-            try:
-                cur.execute(
+            if cur.rowcount == 0:
+                insert_sql = (
                     """INSERT INTO health_data (
                            indicator_id, location_id, period_id,
                            value, is_computed,
                            uploaded_by, uploaded_at, source_file
-                       ) VALUES (
-                           %s, %s, %s, %s, %s, %s, %s, %s
-                       )""",
-                    (indicator_id, location_id, period_id,
-                     value, is_computed,
-                     approved_by, datetime.now(), source_file)
+                       ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
                 )
+                insert_params = (
+                    indicator_id, location_id, period_id,
+                    value, is_computed,
+                    approved_by, datetime.now(), source_file,
+                )
+                if _savepoint_execute(cur, insert_sql, insert_params):
+                    inserted += 1
+                else:
+                    cur.execute(
+                        """UPDATE health_data
+                           SET value = %s,
+                               uploaded_by = %s,
+                               uploaded_at = %s,
+                               source_file = %s
+                           WHERE indicator_id = %s
+                           AND location_id = %s
+                           AND period_id = %s""",
+                        (value, approved_by, datetime.now(), source_file,
+                         indicator_id, location_id, period_id),
+                    )
+                    if cur.rowcount:
+                        updated += 1
+                    else:
+                        skipped += 1
+            else:
+                updated += 1
+
+        elif effective_status == "none":
+            insert_sql = (
+                """INSERT INTO health_data (
+                       indicator_id, location_id, period_id,
+                       value, is_computed,
+                       uploaded_by, uploaded_at, source_file
+                   ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
+            )
+            insert_params = (
+                indicator_id, location_id, period_id,
+                value, is_computed,
+                approved_by, datetime.now(), source_file,
+            )
+            if _savepoint_execute(cur, insert_sql, insert_params):
                 inserted += 1
-            except Exception as e:
-                skipped += 1
+            else:
+                cur.execute(
+                    """UPDATE health_data
+                       SET value = %s,
+                           uploaded_by = %s,
+                           uploaded_at = %s,
+                           source_file = %s
+                       WHERE indicator_id = %s
+                       AND location_id = %s
+                       AND period_id = %s""",
+                    (value, approved_by, datetime.now(), source_file,
+                     indicator_id, location_id, period_id),
+                )
+                if cur.rowcount:
+                    updated += 1
+                else:
+                    skipped += 1
 
     # Mark batch as approved in staging
     cur.execute(
@@ -319,7 +396,9 @@ def approve_batch(
         "batch_id": batch_id,
         "inserted": inserted,
         "updated": updated,
-        "skipped": skipped,
+        "auto_resolved": auto_resolved,  # pending_review conflicts auto-accepted under force=True
+        "skipped": skipped,              # DB insert errors
+        "skipped_null": skipped_null,    # Blank cells from Excel — intentionally not written
         "total_committed": inserted + updated
     }
 

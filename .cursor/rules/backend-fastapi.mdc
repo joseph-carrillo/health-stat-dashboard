@@ -1,0 +1,14 @@
+---
+description: FastAPI backend and parser conventions
+globs: backend/**/*
+alwaysApply: false
+---
+
+# Backend Rules
+
+- Routes live in `backend/main.py`; business logic in `backend/app/services/`.
+- New Excel templates = new JSON under `backend/app/services/configs/`, not parser rewrites unless DQC/type changes.
+- DB access uses `DB_CONFIG` in `main.py` (move to env for production).
+- Protected routes use `require_permission` / `get_current_user` from `app.core.auth`.
+- Upload flow: `parse_file` → `staging_health_data` → `approve_batch` → `health_data`.
+- Province/analytics endpoints to reuse: `/api/coverage-summary`, `/api/coverage-breakdown`, `/api/health-data`.

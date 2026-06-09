@@ -64,7 +64,7 @@
       "index": 6,
       "indicator_code": "CPAB_PCT",
       "is_computed": true,
-      "formula": "CPAB_TOTAL / IMMUN_POP_0_11M * 100",
+      "formula": "CPAB_TOTAL / IMMUN_POP_0_11M",
       "year": "current"
     },
     {
@@ -90,7 +90,7 @@
       "index": 10,
       "indicator_code": "BCG_24H_PCT",
       "is_computed": true,
-      "formula": "BCG_24H_TOTAL / IMMUN_POP_0_11M * 100",
+      "formula": "BCG_24H_TOTAL / IMMUN_POP_0_11M",
       "year": "current"
     },
     {
@@ -116,7 +116,7 @@
       "index": 14,
       "indicator_code": "BCG_GT24H_PCT",
       "is_computed": true,
-      "formula": "BCG_GT24H_TOTAL / IMMUN_POP_0_11M * 100",
+      "formula": "BCG_GT24H_TOTAL / IMMUN_POP_0_11M",
       "year": "current"
     },
     {
@@ -142,7 +142,7 @@
       "index": 18,
       "indicator_code": "HEPAB_24H_PCT",
       "is_computed": true,
-      "formula": "HEPAB_24H_TOTAL / IMMUN_POP_0_11M * 100",
+      "formula": "HEPAB_24H_TOTAL / IMMUN_POP_0_11M",
       "year": "current"
     },
     {
@@ -168,7 +168,7 @@
       "index": 22,
       "indicator_code": "HEPAB_GT24H_PCT",
       "is_computed": true,
-      "formula": "HEPAB_GT24H_TOTAL / IMMUN_POP_0_11M * 100",
+      "formula": "HEPAB_GT24H_TOTAL / IMMUN_POP_0_11M",
       "year": "current"
     }
   ],
@@ -177,31 +177,31 @@
     {
       "rule_type": "over_threshold",
       "indicator_code": "CPAB_PCT",
-      "threshold": 200,
+      "threshold": 2.0,
       "message": "CPAB percentage exceeds 200% of projected population"
     },
     {
       "rule_type": "over_threshold",
       "indicator_code": "BCG_24H_PCT",
-      "threshold": 200,
+      "threshold": 2.0,
       "message": "BCG within 24h percentage exceeds 200% of projected population"
     },
     {
       "rule_type": "over_threshold",
       "indicator_code": "BCG_GT24H_PCT",
-      "threshold": 200,
+      "threshold": 2.0,
       "message": "BCG >24h percentage exceeds 200% of projected population"
     },
     {
       "rule_type": "over_threshold",
       "indicator_code": "HEPAB_24H_PCT",
-      "threshold": 200,
+      "threshold": 2.0,
       "message": "HepaB within 24h percentage exceeds 200% of projected population"
     },
     {
       "rule_type": "over_threshold",
       "indicator_code": "HEPAB_GT24H_PCT",
-      "threshold": 200,
+      "threshold": 2.0,
       "message": "HepaB >24h percentage exceeds 200% of projected population"
     }
   ],

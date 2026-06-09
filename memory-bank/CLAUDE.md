@@ -36,5 +36,10 @@ Repo: health-stat-dashboard (private)
 See progress.md
 
 ## Session Start Protocol
+Run `git pull --ff-only` before reading memory files.
 Always read activeContext.md first before doing anything.
 This tells you what was last completed and what to do next.
+Also read session-handoff.md for the shortest current summary.
+
+## Session Shutdown Protocol
+After updating memory files, commit and push those updates to GitHub.

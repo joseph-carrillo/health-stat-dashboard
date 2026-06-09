@@ -1,124 +1,330 @@
-// frontend/src/pages/analytics/Rankings.jsx
-// LGU ranking by coverage rate, top or bottom performers.
-
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import api from "../../services/api";
 import Navbar from "../../components/Navbar";
-import { getCoverage, getIndicators } from "../../services/api";
-import {
-  MONTHS,
-  YEARS,
-  STATUS_COLORS,
-  statusLabel,
-  coverageColor,
-} from "../../services/constants";
 
-const DEFAULT_INDICATOR = "CPAB_PCT";
+const PROGRAMS = [
+  { label: "CPAB",         totalCode: "CPAB_TOTAL",        pctCode: "CPAB_PCT",        denomCode: "IMMUN_POP_0_11M" },
+  { label: "BCG ≤24H",    totalCode: "BCG_24H_TOTAL",     pctCode: "BCG_24H_PCT",     denomCode: "IMMUN_POP_0_11M" },
+  { label: "BCG >24H",    totalCode: "BCG_GT24H_TOTAL",   pctCode: "BCG_GT24H_PCT",   denomCode: "IMMUN_POP_0_11M" },
+  { label: "HepaB ≤24H",  totalCode: "HEPAB_24H_TOTAL",   pctCode: "HEPAB_24H_PCT",   denomCode: "IMMUN_POP_0_11M" },
+  { label: "HepaB >24H",  totalCode: "HEPAB_GT24H_TOTAL", pctCode: "HEPAB_GT24H_PCT", denomCode: "IMMUN_POP_0_11M" },
+  { label: "CIC",          totalCode: "CIC_TOTAL",          pctCode: "CIC_PCT",          denomCode: "IMMUN_POP_0_11M" },
+  { label: "FIC",          totalCode: "FIC_TOTAL",          pctCode: "FIC_PCT",          denomCode: "IMMUN_POP_0_11M" },
+  { label: "DPT1",         totalCode: "DPT1_TOTAL",         pctCode: "DPT1_PCT",         denomCode: "DPT_POP_2026" },
+  { label: "DPT2",         totalCode: "DPT2_TOTAL",         pctCode: "DPT2_PCT",         denomCode: "DPT_POP_2026" },
+  { label: "DPT3",         totalCode: "DPT3_TOTAL",         pctCode: "DPT3_PCT",         denomCode: "DPT_POP_2026" },
+];
+
+const MONTHS = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December"
+];
+
+const MEDAL = ["🥇", "🥈", "🥉"];
+
+function pctColor(pct) {
+  if (pct === null || pct === undefined) return "#9ca3af";
+  if (pct >= 0.90) return "#16a34a";
+  if (pct >= 0.75) return "#d97706";
+  return "#dc2626";
+}
+
+function fmtPct(pct) {
+  if (pct === null || pct === undefined) return "—";
+  return (pct * 100).toFixed(1) + "%";
+}
+
+function fmtNum(n) {
+  if (n === null || n === undefined) return "—";
+  return Number(n).toLocaleString();
+}
+
+function RankBadge({ rank, total }) {
+  if (rank <= 3) return (
+    <span style={styles.medal}>{MEDAL[rank - 1]}</span>
+  );
+  if (rank > total - 3) return (
+    <span style={{ ...styles.rankNum, color: "#dc2626", background: "#fef2f2" }}>
+      #{rank}
+    </span>
+  );
+  return <span style={styles.rankNum}>#{rank}</span>;
+}
+
+function CoverageBar({ pct }) {
+  const w = pct != null ? Math.min(Math.max(pct * 100, 0), 100) : 0;
+  const color = pctColor(pct);
+  return (
+    <div style={styles.barTrack}>
+      <div style={{ ...styles.barFill, width: `${w}%`, background: color }} />
+    </div>
+  );
+}
 
 export default function Rankings() {
-  const [indicators, setIndicators] = useState([]);
-  const [indicatorCode, setIndicatorCode] = useState(DEFAULT_INDICATOR);
+  const [program, setProgram] = useState(0);
   const [year, setYear] = useState(2026);
   const [month, setMonth] = useState(1);
-  const [order, setOrder] = useState("desc");
-  const [rows, setRows] = useState([]);
+  const [sort, setSort] = useState("desc");
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [loaded, setLoaded] = useState(false);
 
-  useEffect(() => {
-    getIndicators()
-      .then((res) => {
-        const pct = (res.indicators || []).filter((i) => i.formula_type === "percentage");
-        setIndicators(pct);
-        if (!pct.find((i) => i.code === DEFAULT_INDICATOR) && pct[0]) {
-          setIndicatorCode(pct[0].code);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (!indicatorCode) return;
-    let active = true;
+  async function load() {
+    const prog = PROGRAMS[program];
     setLoading(true);
-    getCoverage({ indicator_code: indicatorCode, year, period_type: "monthly", period_value: month })
-      .then((res) => active && setRows((res.data || []).filter((d) => d.value !== null)))
-      .catch(() => active && setRows([]))
-      .finally(() => active && setLoading(false));
-    return () => { active = false; };
-  }, [indicatorCode, year, month]);
+    setError(null);
+    try {
+      const res = await api.get("/api/coverage-breakdown", {
+        params: {
+          year, month,
+          total_code: prog.totalCode,
+          pct_code: prog.pctCode,
+          denom_code: prog.denomCode,
+        }
+      });
+      setData(res.data.data || []);
+      setLoaded(true);
+    } catch (e) {
+      setError("Failed to load data.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const sorted = [...rows].sort((a, b) =>
-    order === "desc" ? b.value - a.value : a.value - b.value
+  useEffect(() => { load(); }, [program, year, month]);
+
+  const prog = PROGRAMS[program];
+  const withData = data.filter(r => r.pct !== null && r.pct !== undefined);
+  const sorted = [...withData].sort((a, b) =>
+    sort === "desc" ? b.pct - a.pct : a.pct - b.pct
   );
-  const maxValue = Math.max(100, ...rows.map((r) => r.value));
+
+  const total = sorted.length;
+  const highest = total > 0 ? sorted[0] : null;
+  const lowest  = total > 0 ? sorted[total - 1] : null;
+  const avgPct  = total > 0 ? withData.reduce((s, r) => s + r.pct, 0) / total : null;
+  const above90 = withData.filter(r => r.pct >= 0.90).length;
 
   return (
     <div style={styles.page}>
       <Navbar />
-      <div style={styles.body}>
-        <h1 style={styles.title}>Rankings</h1>
-        <p style={styles.subtitle}>LGUs ranked by coverage rate.</p>
-
-        <div style={styles.filterBar}>
-          <select style={styles.select} value={indicatorCode} onChange={(e) => setIndicatorCode(e.target.value)}>
-            {indicators.map((i) => (
-              <option key={i.code} value={i.code}>{i.name}</option>
-            ))}
-          </select>
-          <select style={styles.select} value={year} onChange={(e) => setYear(Number(e.target.value))}>
-            {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
-          </select>
-          <select style={styles.select} value={month} onChange={(e) => setMonth(Number(e.target.value))}>
-            {MONTHS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-          </select>
-          <select style={styles.select} value={order} onChange={(e) => setOrder(e.target.value)}>
-            <option value="desc">Top performers first</option>
-            <option value="asc">Bottom performers first</option>
-          </select>
-          {loading && <span style={styles.loadingTag}>Loading...</span>}
+      <div style={styles.content}>
+        {/* Header */}
+        <div style={styles.header}>
+          <h1 style={styles.title}>Rankings</h1>
+          <p style={styles.subtitle}>LGU ranking by coverage rate — top and bottom performers</p>
         </div>
 
-        <div style={styles.section}>
-          {sorted.length === 0 ? (
-            <p style={styles.empty}>No data for this selection.</p>
-          ) : (
-            <div style={styles.list}>
-              {sorted.map((row, index) => (
-                <div key={row.psgc} style={styles.row}>
-                  <span style={styles.rankNum}>{index + 1}</span>
-                  <span style={styles.rankName}>{row.location}</span>
-                  <div style={styles.barTrack}>
-                    <div style={{ ...styles.barFill, width: `${(row.value / maxValue) * 100}%`, backgroundColor: coverageColor(row.value) }} />
-                  </div>
-                  <span style={{ ...styles.rankValue, color: coverageColor(row.value) }}>{row.value}%</span>
-                  <span style={{ ...styles.badge, backgroundColor: STATUS_COLORS[row.status] + "20", color: STATUS_COLORS[row.status], border: `1px solid ${STATUS_COLORS[row.status]}` }}>
-                    {statusLabel(row.status)}
-                  </span>
-                </div>
+        {/* Filters */}
+        <div style={styles.filterRow}>
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Program</label>
+            <select
+              style={styles.select}
+              value={program}
+              onChange={e => setProgram(Number(e.target.value))}
+            >
+              {PROGRAMS.map((p, i) => (
+                <option key={p.label} value={i}>{p.label}</option>
               ))}
-            </div>
-          )}
+            </select>
+          </div>
+
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Year</label>
+            <select
+              style={styles.select}
+              value={year}
+              onChange={e => setYear(Number(e.target.value))}
+            >
+              {[2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Month</label>
+            <select
+              style={styles.select}
+              value={month}
+              onChange={e => setMonth(Number(e.target.value))}
+            >
+              {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+            </select>
+          </div>
+
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Order</label>
+            <select
+              style={styles.select}
+              value={sort}
+              onChange={e => setSort(e.target.value)}
+            >
+              <option value="desc">Highest First</option>
+              <option value="asc">Lowest First</option>
+            </select>
+          </div>
+
+          <button style={styles.loadBtn} onClick={load} disabled={loading}>
+            {loading ? "Loading…" : "Load"}
+          </button>
         </div>
+
+        {error && <div style={styles.errorBox}>{error}</div>}
+
+        {loaded && data.length === 0 && (
+          <div style={styles.emptyBox}>
+            No data found for {MONTHS[month - 1]} {year} — {prog.label}.
+            Upload the report first via Management → Upload.
+          </div>
+        )}
+
+        {loaded && total > 0 && (
+          <>
+            {/* Summary strip */}
+            <div style={styles.summaryStrip}>
+              <div style={styles.summaryItem}>
+                <span style={styles.summaryLabel}>LGUs Ranked</span>
+                <span style={styles.summaryValue}>{total}</span>
+              </div>
+              <div style={styles.summaryDivider} />
+              <div style={styles.summaryItem}>
+                <span style={styles.summaryLabel}>Average Coverage</span>
+                <span style={{ ...styles.summaryValue, color: pctColor(avgPct) }}>
+                  {fmtPct(avgPct)}
+                </span>
+              </div>
+              <div style={styles.summaryDivider} />
+              <div style={styles.summaryItem}>
+                <span style={styles.summaryLabel}>≥90% Target</span>
+                <span style={{ ...styles.summaryValue, color: above90 === total ? "#16a34a" : "#d97706" }}>
+                  {above90} / {total} LGUs
+                </span>
+              </div>
+              <div style={styles.summaryDivider} />
+              <div style={styles.summaryItem}>
+                <span style={styles.summaryLabel}>Top Performer</span>
+                <span style={{ ...styles.summaryValue, fontSize: 15 }}>
+                  {highest ? `${highest.location} (${fmtPct(highest.pct)})` : "—"}
+                </span>
+              </div>
+              <div style={styles.summaryDivider} />
+              <div style={styles.summaryItem}>
+                <span style={styles.summaryLabel}>Needs Attention</span>
+                <span style={{ ...styles.summaryValue, fontSize: 15, color: "#dc2626" }}>
+                  {lowest ? `${lowest.location} (${fmtPct(lowest.pct)})` : "—"}
+                </span>
+              </div>
+            </div>
+
+            {/* Rankings table */}
+            <div style={styles.tableWrap}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.thRank}>Rank</th>
+                    <th style={styles.thLgu}>LGU</th>
+                    <th style={styles.thProv}>Province</th>
+                    <th style={styles.thNum}>Numerator</th>
+                    <th style={styles.thNum}>Denominator</th>
+                    <th style={styles.thPct}>Coverage %</th>
+                    <th style={styles.thBar}>Visual</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sorted.map((row, idx) => {
+                    const rank = idx + 1;
+                    const isTop = rank <= 3;
+                    const isBottom = rank > total - 3;
+                    const rowBg = isTop ? "#f0fdf4" : isBottom ? "#fef2f2" : idx % 2 === 0 ? "#fff" : "#fafafa";
+                    return (
+                      <tr key={row.psgc || row.location} style={{ ...styles.tableRow, background: rowBg }}>
+                        <td style={styles.tdRank}>
+                          <RankBadge rank={rank} total={total} />
+                        </td>
+                        <td style={styles.tdLgu}>
+                          {row.location}
+                          {row.is_huc && <span style={styles.hucBadge}>HUC</span>}
+                        </td>
+                        <td style={styles.tdProv}>{row.province}</td>
+                        <td style={styles.tdNum}>{fmtNum(row.numerator)}</td>
+                        <td style={styles.tdNum}>{fmtNum(row.denominator)}</td>
+                        <td style={{ ...styles.tdPct, color: pctColor(row.pct), fontWeight: 700 }}>
+                          {fmtPct(row.pct)}
+                        </td>
+                        <td style={styles.tdBar}>
+                          <CoverageBar pct={row.pct} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={styles.legend}>
+              <span style={{ ...styles.legendDot, background: "#16a34a" }} /> ≥90%
+              <span style={{ ...styles.legendDot, background: "#d97706", marginLeft: 16 }} /> 75–89%
+              <span style={{ ...styles.legendDot, background: "#dc2626", marginLeft: 16 }} /> &lt;75%
+              <span style={{ marginLeft: 24, color: "#64748b" }}>
+                🥇🥈🥉 Top 3 performers highlighted green · Bottom 3 highlighted red
+              </span>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
 const styles = {
-  page: { minHeight: "100vh", backgroundColor: "#F0F4F8", fontFamily: "'Barlow', sans-serif" },
-  body: { padding: "24px 32px", marginLeft: "240px" },
-  title: { fontFamily: "'Montserrat', sans-serif", fontSize: "22px", fontWeight: "700", color: "#1F2A45", margin: "0 0 4px 0" },
-  subtitle: { fontSize: "13px", color: "#5A6A85", margin: "0 0 20px 0" },
-  filterBar: { display: "flex", gap: "10px", marginBottom: "20px", alignItems: "center", flexWrap: "wrap" },
-  select: { padding: "8px 12px", borderRadius: "6px", border: "1px solid #CBD5E1", fontSize: "13px", color: "#1F2A45", backgroundColor: "#fff", outline: "none", minWidth: "160px" },
-  loadingTag: { fontSize: "12px", color: "#5A6A85" },
-  section: { backgroundColor: "#fff", borderRadius: "10px", padding: "20px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.07)" },
-  empty: { fontSize: "13px", color: "#94A3B8", textAlign: "center", padding: "40px 0" },
-  list: { display: "flex", flexDirection: "column", gap: "10px" },
-  row: { display: "grid", gridTemplateColumns: "32px 200px 1fr 56px 110px", alignItems: "center", gap: "12px" },
-  rankNum: { fontSize: "13px", color: "#94A3B8", fontWeight: "700", textAlign: "right" },
-  rankName: { fontSize: "13px", color: "#1F2A45", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
-  barTrack: { backgroundColor: "#F0F4F8", borderRadius: "4px", height: "16px", overflow: "hidden" },
-  barFill: { height: "100%", borderRadius: "4px", transition: "width 0.4s ease" },
-  rankValue: { fontSize: "13px", fontWeight: "700", textAlign: "right" },
-  badge: { padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: "700", textAlign: "center" },
+  page:           { display: "flex", minHeight: "100vh", background: "#f8fafc", fontFamily: "system-ui, sans-serif" },
+  content:        { flex: 1, padding: "32px 40px", maxWidth: 1200, margin: "0 auto", width: "100%" },
+  header:         { marginBottom: 28 },
+  title:          { fontSize: 26, fontWeight: 700, color: "#0f172a", margin: 0 },
+  subtitle:       { fontSize: 14, color: "#64748b", marginTop: 4 },
+
+  filterRow:      { display: "flex", alignItems: "flex-end", gap: 16, marginBottom: 28, flexWrap: "wrap" },
+  filterGroup:    { display: "flex", flexDirection: "column", gap: 4 },
+  filterLabel:    { fontSize: 12, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" },
+  select:         { padding: "8px 12px", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 14, background: "#fff", color: "#1e293b", cursor: "pointer" },
+  loadBtn:        { padding: "9px 24px", background: "#2563eb", color: "#fff", border: "none", borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: "pointer", alignSelf: "flex-end" },
+
+  errorBox:       { padding: "12px 16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6, color: "#dc2626", marginBottom: 24, fontSize: 14 },
+  emptyBox:       { padding: "40px 24px", textAlign: "center", background: "#fff", borderRadius: 8, border: "1px solid #e2e8f0", color: "#64748b", fontSize: 14, lineHeight: 1.6 },
+
+  summaryStrip:   { display: "flex", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "16px 24px", marginBottom: 24, gap: 0, flexWrap: "wrap", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" },
+  summaryItem:    { display: "flex", flexDirection: "column", gap: 4, padding: "0 24px", flex: 1, minWidth: 140 },
+  summaryLabel:   { fontSize: 11, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" },
+  summaryValue:   { fontSize: 17, fontWeight: 700, color: "#0f172a" },
+  summaryDivider: { width: 1, background: "#e2e8f0", margin: "0 0" },
+
+  tableWrap:      { background: "#fff", borderRadius: 8, border: "1px solid #e2e8f0", overflowX: "auto", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" },
+  table:          { width: "100%", borderCollapse: "collapse", fontSize: 13 },
+  tableRow:       { borderBottom: "1px solid #f1f5f9" },
+
+  thRank:         { padding: "10px 12px", textAlign: "center", background: "#f8fafc", color: "#64748b", fontWeight: 600, borderBottom: "1px solid #e2e8f0", fontSize: 12, textTransform: "uppercase", width: 60 },
+  thLgu:          { padding: "10px 16px", textAlign: "left",   background: "#f8fafc", color: "#64748b", fontWeight: 600, borderBottom: "1px solid #e2e8f0", fontSize: 12, textTransform: "uppercase" },
+  thProv:         { padding: "10px 16px", textAlign: "left",   background: "#f8fafc", color: "#64748b", fontWeight: 600, borderBottom: "1px solid #e2e8f0", fontSize: 12, textTransform: "uppercase" },
+  thNum:          { padding: "10px 16px", textAlign: "right",  background: "#f8fafc", color: "#64748b", fontWeight: 600, borderBottom: "1px solid #e2e8f0", fontSize: 12, textTransform: "uppercase", whiteSpace: "nowrap" },
+  thPct:          { padding: "10px 16px", textAlign: "right",  background: "#f8fafc", color: "#64748b", fontWeight: 600, borderBottom: "1px solid #e2e8f0", fontSize: 12, textTransform: "uppercase" },
+  thBar:          { padding: "10px 16px", textAlign: "left",   background: "#f8fafc", color: "#64748b", fontWeight: 600, borderBottom: "1px solid #e2e8f0", fontSize: 12, textTransform: "uppercase", width: 160 },
+
+  tdRank:         { padding: "9px 12px", textAlign: "center" },
+  tdLgu:          { padding: "9px 16px", color: "#1e293b", fontWeight: 500 },
+  tdProv:         { padding: "9px 16px", color: "#64748b", fontSize: 12 },
+  tdNum:          { padding: "9px 16px", textAlign: "right", color: "#475569", fontVariantNumeric: "tabular-nums" },
+  tdPct:          { padding: "9px 16px", textAlign: "right", fontVariantNumeric: "tabular-nums" },
+  tdBar:          { padding: "9px 16px" },
+
+  rankNum:        { display: "inline-block", fontSize: 12, fontWeight: 700, color: "#64748b", background: "#f1f5f9", padding: "2px 6px", borderRadius: 4 },
+  medal:          { fontSize: 18 },
+  hucBadge:       { marginLeft: 6, background: "#ede9fe", color: "#7c3aed", fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4 },
+
+  barTrack:       { background: "#e2e8f0", borderRadius: 4, height: 10, width: "100%", minWidth: 80, overflow: "hidden" },
+  barFill:        { height: "100%", borderRadius: 4, transition: "width 0.4s ease" },
+
+  legend:         { display: "flex", alignItems: "center", gap: 6, marginTop: 16, fontSize: 12, color: "#64748b", flexWrap: "wrap" },
+  legendDot:      { display: "inline-block", width: 10, height: 10, borderRadius: "50%" },
 };

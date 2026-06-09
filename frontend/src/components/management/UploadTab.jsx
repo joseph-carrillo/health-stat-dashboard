@@ -1,0 +1,664 @@
+// frontend/src/components/management/UploadTab.jsx
+// Upload page — Child Care > Immunization (Monthly)
+// Add more programs here as we expand
+
+import { useState } from "react";
+
+// ── Program structure ─────────────────────────────────────────
+// Add new programs here when ready
+const PROGRAM_STRUCTURE = [
+  {
+    program: "Child Care",
+    subPrograms: [
+      {
+        name: "Immunization",
+        reportType: "monthly",
+        files: [
+          { label: "CPAB / BCG / HepaB (File 1)", value: "cpab_bcg_hepa" },
+          { label: "DPT-HiB-HepB 1/2/3 (File 4)", value: "dpt_hib_hepb123" },
+        ]
+      }
+    ]
+  }
+];
+
+const MONTHS = [
+  { value: 1, label: "January" },
+  { value: 2, label: "February" },
+  { value: 3, label: "March" },
+  { value: 4, label: "April" },
+  { value: 5, label: "May" },
+  { value: 6, label: "June" },
+  { value: 7, label: "July" },
+  { value: 8, label: "August" },
+  { value: 9, label: "September" },
+  { value: 10, label: "October" },
+  { value: 11, label: "November" },
+  { value: 12, label: "December" },
+];
+
+const YEARS = [2025, 2026, 2027];
+
+export default function UploadTab() {
+  const [selectedProgram, setSelectedProgram] = useState(null);
+  const [selectedSubProgram, setSelectedSubProgram] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [month, setMonth] = useState("");
+  const [year, setYear] = useState(2026);
+  const [file, setFile] = useState(null);
+  const [status, setStatus] = useState(null);
+  const [result, setResult] = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  // When program changes reset sub-program
+  function handleProgramChange(e) {
+    const found = PROGRAM_STRUCTURE.find(p => p.program === e.target.value);
+    setSelectedProgram(found || null);
+    setSelectedSubProgram(null);
+    setSelectedFile(null);
+    setFile(null);
+    setErrorMsg("");
+  }
+
+  // When sub-program changes reset file
+  function handleSubProgramChange(e) {
+    const found = selectedProgram?.subPrograms.find(s => s.name === e.target.value);
+    setSelectedSubProgram(found || null);
+    setSelectedFile(found?.files?.[0] || null);
+    setFile(null);
+    setErrorMsg("");
+  }
+
+  function handleFileChange(e) {
+    const selected = e.target.files[0];
+    if (!selected) return;
+    if (!selected.name.endsWith(".xlsx") && !selected.name.endsWith(".xls")) {
+      setErrorMsg("Only Excel files (.xlsx or .xls) are accepted.");
+      setFile(null);
+      return;
+    }
+    setErrorMsg("");
+    setFile(selected);
+  }
+
+  async function handleUpload() {
+    if (!selectedProgram) { setErrorMsg("Please select a program."); return; }
+    if (!selectedSubProgram) { setErrorMsg("Please select a sub-program."); return; }
+    if (!month) { setErrorMsg("Please select a month."); return; }
+    if (!selectedFile) { setErrorMsg("Please select which FHSIS file you are uploading."); return; }
+    if (!file) { setErrorMsg("Please select an Excel file."); return; }
+
+    setErrorMsg("");
+    setStatus("loading");
+    setResult(null);
+
+    try {
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(
+        `/api/upload?template_id=${selectedFile.value}&year=${year}&month=${month}`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        }
+      );
+
+      let data = {};
+      const text = await response.text();
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        setStatus("error");
+        setErrorMsg(
+          response.ok
+            ? "Upload returned an invalid response."
+            : `Server error (${response.status}). Check backend logs.`
+        );
+        return;
+      }
+
+      if (!response.ok) {
+        setStatus("error");
+        const detail = data.detail;
+        setErrorMsg(
+          typeof detail === "string"
+            ? detail
+            : Array.isArray(detail)
+              ? detail.map((d) => d.msg || JSON.stringify(d)).join("; ")
+              : `Upload failed (${response.status}).`
+        );
+        return;
+      }
+
+      setStatus("success");
+      setResult(data);
+
+    } catch (err) {
+      setStatus("error");
+      setErrorMsg(err?.message || "Cannot connect to server. Is the API running?");
+    }
+  }
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(result.batch_id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      // Clipboard API can fail on insecure contexts or when permissions are denied.
+      // We don't show "Copied!" in that case — better than lying to the user.
+      console.error("Copy to clipboard failed:", err);
+    }
+  }
+
+  function handleReset() {
+    setSelectedProgram(null);
+    setSelectedSubProgram(null);
+    setSelectedFile(null);
+    setMonth("");
+    setYear(2026);
+    setFile(null);
+    setStatus(null);
+    setResult(null);
+    setErrorMsg("");
+  }
+
+  return (
+    <div style={styles.wrapper}>
+      <h2 style={styles.title}>Upload FHSIS File</h2>
+      <p style={styles.sub}>
+        Select the program, sub-program, reporting period, and Excel file to upload.
+      </p>
+
+      <div style={styles.form}>
+
+        {/* Program */}
+        <div style={styles.field}>
+          <label style={styles.label}>Program</label>
+          <select
+            style={styles.select}
+            value={selectedProgram?.program || ""}
+            onChange={handleProgramChange}
+            disabled={status === "loading"}
+          >
+            <option value="">Select program...</option>
+            {PROGRAM_STRUCTURE.map((p) => (
+              <option key={p.program} value={p.program}>{p.program}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Sub-Program — only shows when program is selected */}
+        {selectedProgram && (
+          <div style={styles.field}>
+            <label style={styles.label}>Sub-Program</label>
+            <select
+              style={styles.select}
+              value={selectedSubProgram?.name || ""}
+              onChange={handleSubProgramChange}
+              disabled={status === "loading"}
+            >
+              <option value="">Select sub-program...</option>
+              {selectedProgram.subPrograms.map((s) => (
+                <option key={s.name} value={s.name}>{s.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* FHSIS file — when sub-program has multiple templates */}
+        {selectedSubProgram && selectedSubProgram.files?.length > 0 && (
+          <div style={styles.field}>
+            <label style={styles.label}>FHSIS File</label>
+            <select
+              style={styles.select}
+              value={selectedFile?.value || ""}
+              onChange={(e) => {
+                const found = selectedSubProgram.files.find(f => f.value === e.target.value);
+                setSelectedFile(found || null);
+                setFile(null);
+                setErrorMsg("");
+              }}
+              disabled={status === "loading"}
+            >
+              <option value="">Select file...</option>
+              {selectedSubProgram.files.map((f) => (
+                <option key={f.value} value={f.value}>{f.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Period — only shows when sub-program is selected */}
+        {selectedSubProgram && selectedFile && (
+          <div style={styles.row}>
+
+            {/* Monthly selector */}
+            {selectedSubProgram.reportType === "monthly" && (
+              <div style={{ ...styles.field, flex: 1 }}>
+                <label style={styles.label}>Month</label>
+                <select
+                  style={styles.select}
+                  value={month}
+                  onChange={(e) => setMonth(e.target.value)}
+                  disabled={status === "loading"}
+                >
+                  <option value="">Select month...</option>
+                  {MONTHS.map((m) => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Year */}
+            <div style={{ ...styles.field, flex: 1 }}>
+              <label style={styles.label}>Year</label>
+              <select
+                style={styles.select}
+                value={year}
+                onChange={(e) => setYear(Number(e.target.value))}
+                disabled={status === "loading"}
+              >
+                {YEARS.map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+
+          </div>
+        )}
+
+        {/* File picker — only shows when period is selected */}
+        {selectedSubProgram && selectedFile && month && (
+          <div style={styles.field}>
+            <label style={styles.label}>Excel File</label>
+            <div style={styles.filePicker}>
+              <label style={status === "loading" ? styles.fileBtnDisabled : styles.fileBtn}>
+                Browse File
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleFileChange}
+                  disabled={status === "loading"}
+                  style={styles.fileInputHidden}
+                />
+              </label>
+              {file
+                ? <p style={styles.fileName}>✅ {file.name}</p>
+                : <p style={styles.fileHint}>No file chosen</p>
+              }
+            </div>
+          </div>
+        )}
+
+        {/* Summary of selection */}
+        {selectedSubProgram && month && file && (
+          <div style={styles.summaryPreview}>
+            <p style={styles.summaryLine}>
+              <strong>Program:</strong> {selectedProgram.program}
+            </p>
+            <p style={styles.summaryLine}>
+              <strong>Sub-Program:</strong> {selectedSubProgram.name}
+            </p>
+            <p style={styles.summaryLine}>
+              <strong>Template:</strong> {selectedFile?.label}
+            </p>
+            <p style={styles.summaryLine}>
+              <strong>Period:</strong> {MONTHS.find(m => m.value === Number(month))?.label} {year}
+            </p>
+            <p style={styles.summaryLine}>
+              <strong>File:</strong> {file.name}
+            </p>
+          </div>
+        )}
+
+        {/* Error */}
+        {errorMsg && (
+          <div style={styles.errorBox}>{errorMsg}</div>
+        )}
+
+        {/* Upload button */}
+        {status !== "success" && selectedSubProgram && (
+          <button
+            style={status === "loading" ? styles.btnDisabled : styles.btn}
+            onClick={handleUpload}
+            disabled={status === "loading"}
+          >
+            {status === "loading" ? "Uploading and parsing..." : "📤 Upload File"}
+          </button>
+        )}
+
+      </div>
+
+      {/* Success result */}
+      {status === "success" && result && (
+        <div style={styles.successBox}>
+          <h3 style={styles.successTitle}>✅ Upload Successful</h3>
+          <p style={styles.successText}>
+            The file was parsed and staged for review.
+          </p>
+          <div style={styles.resultGrid}>
+            <div style={styles.resultItem}>
+              <span style={styles.resultLabel}>Batch ID</span>
+              <div style={styles.batchIdRow}>
+                <span style={{ ...styles.resultValue, fontSize: "12px", wordBreak: "break-all" }}>
+                  {result.batch_id}
+                </span>
+                <button
+                  style={copied ? styles.copyBtnDone : styles.copyBtn}
+                  onClick={handleCopy}
+                  title="Copy Batch ID"
+                  aria-label={copied ? "Copied" : "Copy Batch ID to clipboard"}
+                >
+                  {copied ? (
+                    <>
+                      {/* Green checkmark — shown for 2 seconds after click */}
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    /* Clipboard icon — gray #5A6A85 */
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
+            <div style={styles.resultItem}>
+              <span style={styles.resultLabel}>Rows Parsed</span>
+              <span style={styles.resultValue}>{result.rows_processed || 0}</span>
+            </div>
+            <div style={styles.resultItem}>
+              <span style={styles.resultLabel}>Rows Staged</span>
+              <span style={styles.resultValue}>{result.rows_staged || 0}</span>
+            </div>
+            <div style={styles.resultItem}>
+              <span style={styles.resultLabel}>Conflicts</span>
+              <span style={styles.resultValue}>{result.conflicts || 0}</span>
+            </div>
+          </div>
+          <p style={styles.successNote}>
+            Go to <strong>Staging Review</strong> tab to approve this batch.
+            <br />
+            Your Batch ID is: <strong>{result.batch_id}</strong>
+          </p>
+
+          {result.errors_detail?.length > 0 && (
+            <div style={styles.warnBox}>
+              <p style={styles.warnTitle}>
+                ⚠ {result.errors_detail.length} row{result.errors_detail.length !== 1 ? "s" : ""} were skipped
+              </p>
+              <ul style={styles.warnList}>
+                {result.errors_detail.map((err, i) => (
+                  <li key={i} style={styles.warnItem}>
+                    <strong>PSGC {err.psgc}</strong> (row {err.row}) — {err.error}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <button style={styles.btn} onClick={handleReset}>
+            Upload Another File
+          </button>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+const styles = {
+  wrapper: { maxWidth: "640px" },
+  title: {
+    fontFamily: "'Montserrat', sans-serif",
+    fontSize: "18px",
+    fontWeight: "700",
+    color: "#1F2A45",
+    margin: "0 0 6px 0",
+  },
+  sub: {
+    fontSize: "13px",
+    color: "#5A6A85",
+    margin: "0 0 28px 0",
+    lineHeight: "1.5",
+  },
+  form: { display: "flex", flexDirection: "column", gap: "20px" },
+  field: { display: "flex", flexDirection: "column", gap: "6px" },
+  row: { display: "flex", gap: "16px" },
+  label: {
+    fontSize: "13px",
+    fontWeight: "600",
+    color: "#1F2A45",
+  },
+  select: {
+    padding: "10px 14px",
+    borderRadius: "6px",
+    border: "1px solid #CBD5E1",
+    fontSize: "14px",
+    color: "#1F2A45",
+    backgroundColor: "#ffffff",
+    outline: "none",
+  },
+  filePicker: {
+    border: "2px dashed #CBD5E1",
+    borderRadius: "8px",
+    padding: "20px",
+    textAlign: "center",
+    backgroundColor: "#F8FAFC",
+  },
+  fileInputHidden: { display: "none" },
+  fileBtn: {
+    display: "inline-block",
+    padding: "10px 24px",
+    backgroundColor: "#0B4BAA",
+    color: "#ffffff",
+    borderRadius: "6px",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "pointer",
+    fontFamily: "'Montserrat', sans-serif",
+    marginBottom: "10px",
+  },
+  fileBtnDisabled: {
+    display: "inline-block",
+    padding: "10px 24px",
+    backgroundColor: "#93B4DC",
+    color: "#ffffff",
+    borderRadius: "6px",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "not-allowed",
+    fontFamily: "'Montserrat', sans-serif",
+    marginBottom: "10px",
+  },
+  fileHint: {
+    fontSize: "12px",
+    color: "#94A3B8",
+    margin: 0,
+  },
+  fileName: {
+    fontSize: "13px",
+    color: "#16A34A",
+    margin: 0,
+    fontWeight: "600",
+  },
+  summaryPreview: {
+    backgroundColor: "#EFF6FF",
+    border: "1px solid #BFDBFE",
+    borderRadius: "8px",
+    padding: "16px 20px",
+  },
+  summaryLine: {
+    fontSize: "13px",
+    color: "#1E40AF",
+    margin: "0 0 4px 0",
+  },
+  errorBox: {
+    backgroundColor: "#FEE2E2",
+    color: "#991B1B",
+    padding: "12px 16px",
+    borderRadius: "6px",
+    fontSize: "13px",
+  },
+  btn: {
+    padding: "12px 24px",
+    backgroundColor: "#0B4BAA",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "14px",
+    fontWeight: "600",
+    cursor: "pointer",
+    fontFamily: "'Montserrat', sans-serif",
+    alignSelf: "flex-start",
+  },
+  btnDisabled: {
+    padding: "12px 24px",
+    backgroundColor: "#93B4DC",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "14px",
+    fontWeight: "600",
+    cursor: "not-allowed",
+    fontFamily: "'Montserrat', sans-serif",
+    alignSelf: "flex-start",
+  },
+  successBox: {
+    marginTop: "24px",
+    backgroundColor: "#F0FDF4",
+    border: "1px solid #16A34A",
+    borderRadius: "10px",
+    padding: "24px",
+  },
+  successTitle: {
+    fontFamily: "'Montserrat', sans-serif",
+    fontSize: "16px",
+    fontWeight: "700",
+    color: "#15803D",
+    margin: "0 0 8px 0",
+  },
+  successText: {
+    fontSize: "13px",
+    color: "#15803D",
+    margin: "0 0 20px 0",
+  },
+  resultGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "12px",
+    marginBottom: "20px",
+  },
+  resultItem: {
+    backgroundColor: "#ffffff",
+    borderRadius: "8px",
+    padding: "12px 16px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+  },
+  resultLabel: {
+    fontSize: "11px",
+    color: "#5A6A85",
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+  },
+  resultValue: {
+    fontSize: "20px",
+    fontWeight: "700",
+    color: "#1F2A45",
+    fontFamily: "'Montserrat', sans-serif",
+  },
+  successNote: {
+    fontSize: "13px",
+    color: "#5A6A85",
+    margin: "0 0 20px 0",
+    lineHeight: "1.6",
+  },
+  batchIdRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "8px",
+  },
+  copyBtn: {
+    flexShrink: 0,
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    padding: 0,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "4px",
+    color: "#5A6A85",
+    fontFamily: "inherit",
+    fontSize: "12px",
+    lineHeight: 1,
+  },
+  copyBtnDone: {
+    flexShrink: 0,
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    padding: 0,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "4px",
+    color: "#16A34A",
+    fontFamily: "inherit",
+    fontSize: "12px",
+    fontWeight: "600",
+    lineHeight: 1,
+  },
+  warnBox: {
+    backgroundColor: "#FFFBEB",
+    border: "1px solid #FCD34D",
+    borderRadius: "8px",
+    padding: "16px 20px",
+    marginBottom: "20px",
+  },
+  warnTitle: {
+    fontSize: "13px",
+    fontWeight: "700",
+    color: "#92400E",
+    margin: "0 0 10px 0",
+  },
+  warnList: {
+    margin: 0,
+    paddingLeft: "20px",
+  },
+  warnItem: {
+    fontSize: "12px",
+    color: "#92400E",
+    marginBottom: "4px",
+    lineHeight: "1.5",
+  },
+};

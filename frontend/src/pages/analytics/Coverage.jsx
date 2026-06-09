@@ -1,176 +1,362 @@
-// frontend/src/pages/analytics/Coverage.jsx
-// Per-LGU coverage breakdown: numerator, denominator, and coverage %.
-
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import api from "../../services/api";
 import Navbar from "../../components/Navbar";
-import { getCoverageDetail, getIndicators } from "../../services/api";
-import {
-  MONTHS,
-  YEARS,
-  STATUS_COLORS,
-  statusLabel,
-  coverageColor,
-} from "../../services/constants";
 
-const DEFAULT_INDICATOR = "CPAB_PCT";
+const PROGRAMS = [
+  { label: "CPAB",         totalCode: "CPAB_TOTAL",        pctCode: "CPAB_PCT",        denomCode: "IMMUN_POP_0_11M" },
+  { label: "BCG ≤24H",    totalCode: "BCG_24H_TOTAL",     pctCode: "BCG_24H_PCT",     denomCode: "IMMUN_POP_0_11M" },
+  { label: "BCG >24H",    totalCode: "BCG_GT24H_TOTAL",   pctCode: "BCG_GT24H_PCT",   denomCode: "IMMUN_POP_0_11M" },
+  { label: "HepaB ≤24H",  totalCode: "HEPAB_24H_TOTAL",   pctCode: "HEPAB_24H_PCT",   denomCode: "IMMUN_POP_0_11M" },
+  { label: "HepaB >24H",  totalCode: "HEPAB_GT24H_TOTAL", pctCode: "HEPAB_GT24H_PCT", denomCode: "IMMUN_POP_0_11M" },
+  { label: "CIC",          totalCode: "CIC_TOTAL",          pctCode: "CIC_PCT",          denomCode: "IMMUN_POP_0_11M" },
+  { label: "FIC",          totalCode: "FIC_TOTAL",          pctCode: "FIC_PCT",          denomCode: "IMMUN_POP_0_11M" },
+  { label: "DPT1",         totalCode: "DPT1_TOTAL",         pctCode: "DPT1_PCT",         denomCode: "DPT_POP_2026" },
+  { label: "DPT2",         totalCode: "DPT2_TOTAL",         pctCode: "DPT2_PCT",         denomCode: "DPT_POP_2026" },
+  { label: "DPT3",         totalCode: "DPT3_TOTAL",         pctCode: "DPT3_PCT",         denomCode: "DPT_POP_2026" },
+];
+
+const MONTHS = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December"
+];
+
+const PROVINCE_ORDER = ["Negros Occidental", "Negros Oriental", "Siquijor", "HUC"];
+
+function pctColor(pct) {
+  if (pct === null || pct === undefined) return "#9ca3af";
+  if (pct >= 0.90) return "#16a34a";
+  if (pct >= 0.75) return "#d97706";
+  return "#dc2626";
+}
+
+function fmtPct(pct) {
+  if (pct === null || pct === undefined) return "—";
+  return (pct * 100).toFixed(1) + "%";
+}
+
+function fmtNum(n) {
+  if (n === null || n === undefined) return "—";
+  return Number(n).toLocaleString();
+}
+
+function CoverageBar({ pct }) {
+  const w = pct != null ? Math.min(Math.max(pct * 100, 0), 100) : 0;
+  const color = pctColor(pct);
+  return (
+    <div style={styles.barTrack}>
+      <div style={{ ...styles.barFill, width: `${w}%`, background: color }} />
+    </div>
+  );
+}
+
+function groupByProvince(rows) {
+  const groups = {};
+  for (const row of rows) {
+    const prov = row.province || "Unknown";
+    if (!groups[prov]) groups[prov] = [];
+    groups[prov].push(row);
+  }
+  return groups;
+}
+
+function provinceSubtotal(rows) {
+  const num = rows.reduce((s, r) => s + (r.numerator ?? 0), 0);
+  const den = rows.reduce((s, r) => s + (r.denominator ?? 0), 0);
+  return { numerator: num, denominator: den, pct: den > 0 ? num / den : null };
+}
+
+function SummaryCard({ label, value, sub }) {
+  return (
+    <div style={styles.card}>
+      <div style={styles.cardLabel}>{label}</div>
+      <div style={styles.cardValue}>{value}</div>
+      {sub && <div style={styles.cardSub}>{sub}</div>}
+    </div>
+  );
+}
 
 export default function Coverage() {
-  const [indicators, setIndicators] = useState([]);
-  const [indicatorCode, setIndicatorCode] = useState(DEFAULT_INDICATOR);
+  const [program, setProgram] = useState(0);
   const [year, setYear] = useState(2026);
   const [month, setMonth] = useState(1);
-  const [result, setResult] = useState(null);
+  const [provinceFilter, setProvinceFilter] = useState("all");
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [loaded, setLoaded] = useState(false);
 
-  useEffect(() => {
-    getIndicators()
-      .then((res) => {
-        const pct = (res.indicators || []).filter((i) => i.formula_type === "percentage");
-        setIndicators(pct);
-        if (!pct.find((i) => i.code === DEFAULT_INDICATOR) && pct[0]) {
-          setIndicatorCode(pct[0].code);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (!indicatorCode) return;
-    let active = true;
+  async function load() {
+    const prog = PROGRAMS[program];
     setLoading(true);
-    getCoverageDetail({ indicator_code: indicatorCode, year, period_type: "monthly", period_value: month })
-      .then((res) => active && setResult(res))
-      .catch(() => active && setResult(null))
-      .finally(() => active && setLoading(false));
-    return () => { active = false; };
-  }, [indicatorCode, year, month]);
+    setError(null);
+    try {
+      const res = await api.get("/api/coverage-breakdown", {
+        params: {
+          year, month,
+          total_code: prog.totalCode,
+          pct_code: prog.pctCode,
+          denom_code: prog.denomCode,
+        }
+      });
+      setData(res.data.data || []);
+      setLoaded(true);
+    } catch (e) {
+      setError("Failed to load data.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const rows = result?.data || [];
-  const withData = rows.filter((r) => r.coverage !== null);
-  const avg = withData.length
-    ? (withData.reduce((s, r) => s + r.coverage, 0) / withData.length).toFixed(1)
+  useEffect(() => { load(); }, [program, year, month]);
+
+  const prog = PROGRAMS[program];
+
+  const displayRows = provinceFilter === "all"
+    ? data
+    : data.filter(r => r.province === provinceFilter || (provinceFilter === "HUC" && r.is_huc));
+
+  const groups = groupByProvince(displayRows);
+  const orderedProvs = PROVINCE_ORDER.filter(p => groups[p]);
+  const otherProvs = Object.keys(groups).filter(p => !PROVINCE_ORDER.includes(p));
+
+  const nir = provinceSubtotal(data.filter(r => r.denominator != null && r.numerator != null));
+  const lguCount = data.filter(r => r.pct != null).length;
+  const avgPct = lguCount > 0
+    ? data.filter(r => r.pct != null).reduce((s, r) => s + r.pct, 0) / lguCount
     : null;
-  const maxCoverage = Math.max(100, ...withData.map((r) => r.coverage));
 
   return (
     <div style={styles.page}>
       <Navbar />
-      <div style={styles.body}>
-        <h1 style={styles.title}>Coverage Analysis</h1>
-        <p style={styles.subtitle}>
-          Numerator, denominator, and coverage rate per LGU.
-        </p>
-
-        <div style={styles.filterBar}>
-          <select style={styles.select} value={indicatorCode} onChange={(e) => setIndicatorCode(e.target.value)}>
-            {indicators.map((i) => (
-              <option key={i.code} value={i.code}>{i.name}</option>
-            ))}
-          </select>
-          <select style={styles.select} value={year} onChange={(e) => setYear(Number(e.target.value))}>
-            {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
-          </select>
-          <select style={styles.select} value={month} onChange={(e) => setMonth(Number(e.target.value))}>
-            {MONTHS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-          </select>
-          {loading && <span style={styles.loadingTag}>Loading...</span>}
+      <div style={styles.content}>
+        {/* Header */}
+        <div style={styles.header}>
+          <h1 style={styles.title}>Coverage</h1>
+          <p style={styles.subtitle}>Numerator · Denominator · Coverage % per LGU</p>
         </div>
 
-        <div style={styles.statRow}>
-          <Stat label="LGUs With Data" value={withData.length} />
-          <Stat label="Average Coverage" value={avg !== null ? `${avg}%` : "—"} />
-          <Stat label="On Target" value={withData.filter((r) => r.status === "on").length} color="#16A34A" />
-          <Stat label="Below Target" value={withData.filter((r) => r.status === "below").length} color="#DC2626" />
+        {/* Filters */}
+        <div style={styles.filterRow}>
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Program</label>
+            <select
+              style={styles.select}
+              value={program}
+              onChange={e => setProgram(Number(e.target.value))}
+            >
+              {PROGRAMS.map((p, i) => (
+                <option key={p.label} value={i}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Province</label>
+            <select
+              style={styles.select}
+              value={provinceFilter}
+              onChange={e => setProvinceFilter(e.target.value)}
+            >
+              <option value="all">All</option>
+              {PROVINCE_ORDER.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Year</label>
+            <select
+              style={styles.select}
+              value={year}
+              onChange={e => setYear(Number(e.target.value))}
+            >
+              {[2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Month</label>
+            <select
+              style={styles.select}
+              value={month}
+              onChange={e => setMonth(Number(e.target.value))}
+            >
+              {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+            </select>
+          </div>
+
+          <button style={styles.loadBtn} onClick={load} disabled={loading}>
+            {loading ? "Loading…" : "Load"}
+          </button>
         </div>
 
-        <div style={styles.section}>
-          <h2 style={styles.sectionTitle}>
-            {result?.indicator_name || "Coverage"} — by LGU
-          </h2>
-          {loading ? (
-            <p style={styles.loadingTag}>Loading...</p>
-          ) : rows.length === 0 ? (
-            <p style={styles.empty}>No data for this selection.</p>
-          ) : (
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>LGU</th>
-                  <th style={styles.thNum}>Numerator</th>
-                  <th style={styles.thNum}>Denominator</th>
-                  <th style={styles.th}>Coverage</th>
-                  <th style={styles.th}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.psgc} style={styles.tr}>
-                    <td style={styles.td}>{r.location}</td>
-                    <td style={styles.tdNum}>{fmt(r.numerator)}</td>
-                    <td style={styles.tdNum}>{fmt(r.denominator)}</td>
-                    <td style={styles.tdBar}>
-                      <div style={styles.barWrap}>
-                        <div style={styles.barTrack}>
-                          <div style={{ ...styles.barFill, width: `${Math.min(100, (r.coverage / maxCoverage) * 100 || 0)}%`, backgroundColor: coverageColor(r.coverage) }} />
-                        </div>
-                        <span style={styles.barValue}>{r.coverage !== null ? `${r.coverage}%` : "—"}</span>
-                      </div>
-                    </td>
-                    <td style={styles.td}>
-                      <span style={{ ...styles.badge, backgroundColor: STATUS_COLORS[r.status] + "20", color: STATUS_COLORS[r.status], border: `1px solid ${STATUS_COLORS[r.status]}` }}>
-                        {statusLabel(r.status)}
-                      </span>
-                    </td>
+        {error && <div style={styles.errorBox}>{error}</div>}
+
+        {loaded && data.length === 0 && (
+          <div style={styles.emptyBox}>
+            No data found for {MONTHS[month - 1]} {year} — {prog.label}.
+            Upload the report first via Management → Upload.
+          </div>
+        )}
+
+        {loaded && data.length > 0 && (
+          <>
+            {/* Summary cards */}
+            <div style={styles.cardRow}>
+              <SummaryCard
+                label="NIR Numerator"
+                value={fmtNum(nir.numerator)}
+                sub={prog.totalCode}
+              />
+              <SummaryCard
+                label="NIR Denominator"
+                value={fmtNum(nir.denominator)}
+                sub={prog.denomCode}
+              />
+              <SummaryCard
+                label="NIR Coverage"
+                value={fmtPct(nir.pct)}
+                sub="sum(num) / sum(denom)"
+              />
+              <SummaryCard
+                label="LGUs w/ Data"
+                value={lguCount}
+                sub={`Avg: ${fmtPct(avgPct)}`}
+              />
+            </div>
+
+            {/* Table */}
+            <div style={styles.tableWrap}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.thLgu}>LGU</th>
+                    <th style={styles.thNum}>Numerator</th>
+                    <th style={styles.thNum}>Denominator</th>
+                    <th style={styles.thPct}>Coverage %</th>
+                    <th style={styles.thBar}>Visual</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+                </thead>
+                <tbody>
+                  {[...orderedProvs, ...otherProvs].map(prov => {
+                    const rows = groups[prov] || [];
+                    const sub = provinceSubtotal(
+                      rows.filter(r => r.numerator != null && r.denominator != null)
+                    );
+                    const isHucProv = prov === "HUC";
+                    return [
+                      // Province header row
+                      <tr key={`hdr-${prov}`} style={isHucProv ? styles.hucHeader : styles.provHeader}>
+                        <td colSpan={2} style={isHucProv ? styles.hucHeaderCell : styles.provHeaderCell}>
+                          {isHucProv ? "City of Bacolod (HUC)" : prov}
+                          {isHucProv && (
+                            <span style={styles.hucBadge}>HUC</span>
+                          )}
+                        </td>
+                        <td style={styles.subTotCell}>{fmtNum(sub.denominator)}</td>
+                        <td style={styles.subTotCell}>{fmtPct(sub.pct)}</td>
+                        <td style={styles.subTotCell}>
+                          <CoverageBar pct={sub.pct} />
+                        </td>
+                      </tr>,
+                      // LGU rows (skip if HUC — it IS the header)
+                      ...(isHucProv ? [] : rows.map(row => (
+                        <tr key={row.psgc} style={styles.lguRow}>
+                          <td style={styles.tdLgu}>{row.location}</td>
+                          <td style={styles.tdNum}>{fmtNum(row.numerator)}</td>
+                          <td style={styles.tdNum}>{fmtNum(row.denominator)}</td>
+                          <td style={{ ...styles.tdPct, color: pctColor(row.pct), fontWeight: 600 }}>
+                            {fmtPct(row.pct)}
+                          </td>
+                          <td style={styles.tdBar}>
+                            <CoverageBar pct={row.pct} />
+                          </td>
+                        </tr>
+                      ))),
+                      // Province subtotal row (not shown for HUC since it only has one row)
+                      ...(isHucProv ? [] : [
+                        <tr key={`sub-${prov}`} style={styles.subtotalRow}>
+                          <td style={styles.tdSubtotalLabel}>
+                            {prov} Total
+                          </td>
+                          <td style={styles.tdSubtotalNum}>{fmtNum(sub.numerator)}</td>
+                          <td style={styles.tdSubtotalNum}>{fmtNum(sub.denominator)}</td>
+                          <td style={{ ...styles.tdSubtotalPct, color: pctColor(sub.pct) }}>
+                            {fmtPct(sub.pct)}
+                          </td>
+                          <td style={styles.tdBar}>
+                            <CoverageBar pct={sub.pct} />
+                          </td>
+                        </tr>
+                      ])
+                    ];
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={styles.legend}>
+              <span style={{ ...styles.legendDot, background: "#16a34a" }} /> ≥90%
+              <span style={{ ...styles.legendDot, background: "#d97706", marginLeft: 16 }} /> 75–89%
+              <span style={{ ...styles.legendDot, background: "#dc2626", marginLeft: 16 }} /> &lt;75%
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
-function fmt(v) {
-  if (v === null || v === undefined) return "—";
-  return Number(v).toLocaleString();
-}
-
-function Stat({ label, value, color }) {
-  return (
-    <div style={styles.stat}>
-      <p style={styles.statLabel}>{label}</p>
-      <p style={{ ...styles.statValue, color: color || "#1F2A45" }}>{value}</p>
-    </div>
-  );
-}
-
 const styles = {
-  page: { minHeight: "100vh", backgroundColor: "#F0F4F8", fontFamily: "'Barlow', sans-serif" },
-  body: { padding: "24px 32px", marginLeft: "240px" },
-  title: { fontFamily: "'Montserrat', sans-serif", fontSize: "22px", fontWeight: "700", color: "#1F2A45", margin: "0 0 4px 0" },
-  subtitle: { fontSize: "13px", color: "#5A6A85", margin: "0 0 20px 0" },
-  filterBar: { display: "flex", gap: "10px", marginBottom: "20px", alignItems: "center", flexWrap: "wrap" },
-  select: { padding: "8px 12px", borderRadius: "6px", border: "1px solid #CBD5E1", fontSize: "13px", color: "#1F2A45", backgroundColor: "#fff", outline: "none", minWidth: "160px" },
-  loadingTag: { fontSize: "12px", color: "#5A6A85" },
-  statRow: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" },
-  stat: { backgroundColor: "#fff", borderRadius: "10px", padding: "18px 22px", boxShadow: "0 2px 8px rgba(0,0,0,0.07)" },
-  statLabel: { fontSize: "11px", color: "#5A6A85", margin: "0 0 6px 0", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" },
-  statValue: { fontSize: "26px", fontWeight: "700", margin: 0, fontFamily: "'Montserrat', sans-serif" },
-  section: { backgroundColor: "#fff", borderRadius: "10px", padding: "20px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.07)" },
-  sectionTitle: { fontFamily: "'Montserrat', sans-serif", fontSize: "15px", fontWeight: "700", color: "#1F2A45", margin: "0 0 16px 0" },
-  empty: { fontSize: "13px", color: "#94A3B8", textAlign: "center", padding: "20px 0" },
-  table: { width: "100%", borderCollapse: "collapse" },
-  th: { fontSize: "11px", fontWeight: "700", color: "#5A6A85", textTransform: "uppercase", letterSpacing: "0.5px", padding: "8px 12px", textAlign: "left", borderBottom: "2px solid #F0F4F8" },
-  thNum: { fontSize: "11px", fontWeight: "700", color: "#5A6A85", textTransform: "uppercase", letterSpacing: "0.5px", padding: "8px 12px", textAlign: "right", borderBottom: "2px solid #F0F4F8" },
-  tr: { borderBottom: "1px solid #F0F4F8" },
-  td: { padding: "9px 12px", fontSize: "13px", color: "#1F2A45" },
-  tdNum: { padding: "9px 12px", fontSize: "13px", color: "#1F2A45", textAlign: "right" },
-  tdBar: { padding: "9px 12px", width: "240px" },
-  barWrap: { display: "flex", alignItems: "center", gap: "10px" },
-  barTrack: { flex: 1, backgroundColor: "#F0F4F8", borderRadius: "4px", height: "14px", overflow: "hidden" },
-  barFill: { height: "100%", borderRadius: "4px", transition: "width 0.4s ease" },
-  barValue: { fontSize: "12px", fontWeight: "700", color: "#1F2A45", width: "46px", textAlign: "right" },
-  badge: { padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: "700" },
+  page:            { display: "flex", minHeight: "100vh", background: "#f8fafc", fontFamily: "system-ui, sans-serif" },
+  content:         { flex: 1, padding: "32px 40px", maxWidth: 1200, margin: "0 auto", width: "100%" },
+  header:          { marginBottom: 28 },
+  title:           { fontSize: 26, fontWeight: 700, color: "#0f172a", margin: 0 },
+  subtitle:        { fontSize: 14, color: "#64748b", marginTop: 4 },
+
+  filterRow:       { display: "flex", alignItems: "flex-end", gap: 16, marginBottom: 28, flexWrap: "wrap" },
+  filterGroup:     { display: "flex", flexDirection: "column", gap: 4 },
+  filterLabel:     { fontSize: 12, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" },
+  select:          { padding: "8px 12px", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 14, background: "#fff", color: "#1e293b", cursor: "pointer" },
+  loadBtn:         { padding: "9px 24px", background: "#2563eb", color: "#fff", border: "none", borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: "pointer", alignSelf: "flex-end" },
+
+  errorBox:        { padding: "12px 16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6, color: "#dc2626", marginBottom: 24, fontSize: 14 },
+  emptyBox:        { padding: "40px 24px", textAlign: "center", background: "#fff", borderRadius: 8, border: "1px solid #e2e8f0", color: "#64748b", fontSize: 14, lineHeight: 1.6 },
+
+  cardRow:         { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 28 },
+  card:            { background: "#fff", borderRadius: 8, padding: "16px 20px", border: "1px solid #e2e8f0", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" },
+  cardLabel:       { fontSize: 11, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 },
+  cardValue:       { fontSize: 24, fontWeight: 700, color: "#0f172a" },
+  cardSub:         { fontSize: 11, color: "#94a3b8", marginTop: 4 },
+
+  tableWrap:       { background: "#fff", borderRadius: 8, border: "1px solid #e2e8f0", overflowX: "auto", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" },
+  table:           { width: "100%", borderCollapse: "collapse", fontSize: 13 },
+
+  thLgu:           { padding: "10px 16px", textAlign: "left",  background: "#f8fafc", color: "#64748b", fontWeight: 600, borderBottom: "1px solid #e2e8f0", fontSize: 12, textTransform: "uppercase" },
+  thNum:           { padding: "10px 16px", textAlign: "right", background: "#f8fafc", color: "#64748b", fontWeight: 600, borderBottom: "1px solid #e2e8f0", fontSize: 12, textTransform: "uppercase", whiteSpace: "nowrap" },
+  thPct:           { padding: "10px 16px", textAlign: "right", background: "#f8fafc", color: "#64748b", fontWeight: 600, borderBottom: "1px solid #e2e8f0", fontSize: 12, textTransform: "uppercase" },
+  thBar:           { padding: "10px 16px", textAlign: "left",  background: "#f8fafc", color: "#64748b", fontWeight: 600, borderBottom: "1px solid #e2e8f0", fontSize: 12, textTransform: "uppercase", width: 180 },
+
+  provHeader:      { background: "#1e40af" },
+  provHeaderCell:  { padding: "8px 16px", color: "#fff", fontWeight: 700, fontSize: 13 },
+  hucHeader:       { background: "#6d28d9" },
+  hucHeaderCell:   { padding: "8px 16px", color: "#fff", fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", gap: 8 },
+  hucBadge:        { background: "#a78bfa", color: "#fff", fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4 },
+  subTotCell:      { padding: "8px 16px", textAlign: "right", color: "#e0e7ff", fontWeight: 600, fontSize: 13 },
+
+  lguRow:          { borderBottom: "1px solid #f1f5f9", transition: "background 0.1s" },
+  tdLgu:           { padding: "9px 16px", color: "#1e293b", fontSize: 13 },
+  tdNum:           { padding: "9px 16px", textAlign: "right", color: "#475569", fontVariantNumeric: "tabular-nums" },
+  tdPct:           { padding: "9px 16px", textAlign: "right", fontVariantNumeric: "tabular-nums" },
+  tdBar:           { padding: "9px 16px" },
+
+  subtotalRow:     { background: "#f0f9ff", borderTop: "2px solid #bae6fd", borderBottom: "2px solid #bae6fd" },
+  tdSubtotalLabel: { padding: "8px 16px", fontWeight: 700, color: "#0369a1", fontSize: 13 },
+  tdSubtotalNum:   { padding: "8px 16px", textAlign: "right", fontWeight: 700, color: "#0369a1", fontVariantNumeric: "tabular-nums" },
+  tdSubtotalPct:   { padding: "8px 16px", textAlign: "right", fontWeight: 700, fontVariantNumeric: "tabular-nums" },
+
+  barTrack:        { background: "#e2e8f0", borderRadius: 4, height: 10, width: "100%", minWidth: 80, overflow: "hidden" },
+  barFill:         { height: "100%", borderRadius: 4, transition: "width 0.4s ease" },
+
+  legend:          { display: "flex", alignItems: "center", gap: 6, marginTop: 16, fontSize: 12, color: "#64748b" },
+  legendDot:       { display: "inline-block", width: 10, height: 10, borderRadius: "50%" },
 };

@@ -1,0 +1,14 @@
+---
+description: React frontend pages and API wiring
+globs: frontend/src/**/*
+alwaysApply: false
+---
+
+# Frontend Rules
+
+- Router and RBAC in `frontend/src/App.jsx`; API client in `frontend/src/services/api.js`.
+- Pages use `fetch` or `api` with `Authorization: Bearer ${localStorage.getItem("token")}`.
+- Indicator Report location order is fixed in `LOCATION_ORDER` — names must match DB `locations.name`.
+- Analytics: `Overview.jsx`, `Coverage.jsx`, `Rankings.jsx`, `IndicatorReport.jsx`; Management tabs in `components/management/`.
+- After upload, user must approve in Staging before reports show new committed data.
+- Match year/month filters to the upload period when verifying numbers.

@@ -1,0 +1,24 @@
+---
+description: DOH-NIR dashboard context, memory bank, and Track 1 focus
+alwaysApply: true
+---
+
+# Project Context
+
+**Product:** DOH Region VII health statistics dashboard — Excel (FHSIS) → parse → stage → approve → PostgreSQL → React.
+
+**Before non-trivial work:** Read `memory-bank/session-handoff.md`, then `activeContext.md`.
+
+**Current priority (Track 1):** Province-level dashboard live for internal feedback — real maps/cards, trusted Immunization upload, ICTU deploy. Defer Track 2 (barangay maps, 62 Excel configs, template fixes) unless asked.
+
+**Stack:** React 19 + Vite (`frontend/`), FastAPI (`backend/main.py`), PostgreSQL in Docker (`docker-compose.yml`).
+
+**Dev URLs:** Frontend `http://localhost:5173`, API `http://localhost:8000/docs`.
+
+**Upload path:** Management → Upload → Staging approve → data in `health_data`. Indicator Report reads `/api/health-data?year=&month=`.
+
+**Conventions:** Inline `styles` objects in JSX (no Tailwind in components). Parser configs in `backend/app/services/configs/*.json`. RBAC on API, not frontend-only.
+
+**Builder:** Data analyst learning while building — explain plainly, minimal scope, match existing patterns.
+
+**Never commit:** secrets, `.env` with real passwords. Remove `dev`/`dev` bypass before go-live.
