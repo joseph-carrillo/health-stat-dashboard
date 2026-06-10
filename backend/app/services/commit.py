@@ -148,9 +148,49 @@ def get_conflicts(batch_id: str) -> list:
             "location": row[1],
             "indicator_code": row[2],
             "indicator_name": row[3],
-            "existing_value": row[4],
-            "incoming_value": row[5],
-            "conflict_status": row[6]
+            "existing_value": float(row[4]) if row[4] is not None else None,
+            "incoming_value": float(row[5]) if row[5] is not None else None,
+            "is_percentage": str(row[2] or "").endswith("_PCT"),
+            "conflict_status": row[6],
+        }
+        for row in rows
+    ]
+
+
+def get_staged_rows(batch_id: str, limit: int = 500) -> list:
+    """All values in a batch (new/changed only — unchanged are not staged)."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """SELECT
+               s.id,
+               l.name as location,
+               i.code as indicator,
+               s.value,
+               s.validation_status,
+               s.conflict_status,
+               s.existing_value
+           FROM staging_health_data s
+           JOIN locations l ON l.id = s.location_id
+           JOIN indicators i ON i.id = s.indicator_id
+           WHERE s.batch_id = %s
+           ORDER BY l.name, i.code
+           LIMIT %s""",
+        (batch_id, limit),
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return [
+        {
+            "staging_id": row[0],
+            "location": row[1],
+            "indicator_code": row[2],
+            "value": float(row[3]) if row[3] is not None else None,
+            "validation_status": row[4],
+            "conflict_status": row[5],
+            "existing_value": float(row[6]) if row[6] is not None else None,
+            "is_percentage": str(row[2] or "").endswith("_PCT"),
         }
         for row in rows
     ]

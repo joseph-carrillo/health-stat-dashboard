@@ -152,6 +152,11 @@ export const getConflicts = async (batchId) => {
   return response.data
 }
 
+export const getStagedRows = async (batchId) => {
+  const response = await API.get(`/staging/${batchId}/rows`)
+  return response.data
+}
+
 export const resolveConflict = async (stagingId, decision) => {
   const response = await API.post(
     `/staging/conflict/${stagingId}/resolve?decision=${decision}`

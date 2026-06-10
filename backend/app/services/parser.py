@@ -424,6 +424,34 @@ def ensure_period_id(cur, conn, year: int, period_type: str,
     )
 
 
+def _pct_as_ratio(value: float) -> float:
+    """Normalize stored/display percentages to ratio (0.0185 = 1.85%)."""
+    v = float(value)
+    if v > 1.5:
+        return v / 100.0
+    return v
+
+
+def _staging_values_match(
+    existing, incoming, indicator_code: str | None = None
+) -> bool:
+    """True when incoming matches committed data — skip conflict review."""
+    if existing is None and incoming is None:
+        return True
+    if existing is None or incoming is None:
+        return False
+    try:
+        a, b = float(existing), float(incoming)
+    except (TypeError, ValueError):
+        return existing == incoming
+    if indicator_code and indicator_code.endswith("_PCT"):
+        a, b = _pct_as_ratio(a), _pct_as_ratio(b)
+    if a == b:
+        return True
+    # Match DB DECIMAL(15,4) precision and Excel round-trip noise
+    return round(a, 4) == round(b, 4)
+
+
 def is_blank(value) -> bool:
     """Check if a cell value is blank or NaN."""
     if value is None:
@@ -499,6 +527,20 @@ def run_dqc_rules(staged_rows: list, dqc_rules: list) -> list:
 # COMPUTED VALUE CALCULATOR
 # =====================================================
 
+def _zero_division_result(formula: str, row_values: dict) -> float | None:
+    """FHSIS shows 0% when both numerator and denominator are zero."""
+    if "/" not in formula:
+        return None
+    num_code, _, den_code = formula.partition("/")
+    num_code = num_code.strip()
+    den_code = den_code.strip()
+    num = row_values.get(num_code)
+    den = row_values.get(den_code)
+    if num is not None and den is not None and float(den) == 0 and float(num) == 0:
+        return 0.0
+    return None
+
+
 def compute_value(formula: str, row_values: dict) -> float | None:
     """
     Calculate a computed value from a formula string.
@@ -523,6 +565,8 @@ def compute_value(formula: str, row_values: dict) -> float | None:
                 return None
             expression = expression.replace(code, str(value))
         return float(eval(expression))
+    except ZeroDivisionError:
+        return _zero_division_result(formula, row_values)
     except Exception:
         return None
 
@@ -607,6 +651,7 @@ def parse_file(
 
     rows_processed = 0
     rows_staged = 0
+    rows_skipped_unchanged = 0
     all_issues = []
     errors = []
     preview = []
@@ -725,7 +770,20 @@ def parse_file(
                 )
                 existing = cur.fetchone()
                 existing_value = existing[0] if existing else None
-                conflict_status = "pending_review" if existing else "none"
+
+                if (
+                    existing_value is not None
+                    and _staging_values_match(
+                        existing_value, value, indicator_code
+                    )
+                ):
+                    rows_skipped_unchanged += 1
+                    continue
+
+                if existing_value is not None:
+                    conflict_status = "pending_review"
+                else:
+                    conflict_status = "none"
 
                 is_computed = next(
                     (c["is_computed"] for c in col_defs
@@ -771,7 +829,31 @@ def parse_file(
     cur.close()
     conn.close()
 
+    can_stage = len(errors) == 0 and rows_staged > 0
+
     if not dry_run and rows_staged == 0:
+        if rows_skipped_unchanged > 0 and len(errors) == 0:
+            return {
+                "success": False,
+                "error": (
+                    f"No changes to stage — {rows_skipped_unchanged} value(s) "
+                    "already match live data for this period. "
+                    "Run Validate Only to confirm; nothing was saved."
+                ),
+                "batch_id": None,
+                "dry_run": dry_run,
+                "template_id": template_id,
+                "period": period_info["period_label"],
+                "rows_processed": rows_processed,
+                "rows_staged": rows_staged,
+                "rows_skipped_unchanged": rows_skipped_unchanged,
+                "can_stage": False,
+                "dqc_issues": len(all_issues),
+                "errors": len(errors),
+                "issues_detail": all_issues,
+                "errors_detail": errors,
+                "preview": preview,
+            }
         hint = "Indicators may not be seeded for this template."
         if errors:
             first = errors[0]
@@ -782,12 +864,14 @@ def parse_file(
                 f"No data was staged ({rows_processed} rows parsed, 0 saved). "
                 f"{hint}"
             ),
-            "batch_id": batch_id,
+            "batch_id": None,
             "dry_run": dry_run,
             "template_id": template_id,
             "period": period_info["period_label"],
             "rows_processed": rows_processed,
             "rows_staged": rows_staged,
+            "rows_skipped_unchanged": rows_skipped_unchanged,
+            "can_stage": False,
             "dqc_issues": len(all_issues),
             "errors": len(errors),
             "issues_detail": all_issues,
@@ -803,11 +887,13 @@ def parse_file(
         "period": period_info["period_label"],
         "rows_processed": rows_processed,
         "rows_staged": rows_staged,
+        "rows_skipped_unchanged": rows_skipped_unchanged,
+        "can_stage": can_stage,
         "dqc_issues": len(all_issues),
         "errors": len(errors),
         "issues_detail": all_issues,
         "errors_detail": errors,
-        "preview": preview
+        "preview": preview,
     }
 
 

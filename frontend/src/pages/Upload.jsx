@@ -11,6 +11,7 @@ import {
   getUploadCatalog,
   getBatchSummary,
   getConflicts,
+  getStagedRows,
   resolveConflict,
   resolveConflictsBulk,
   approveBatch,
@@ -44,10 +45,28 @@ export default function Upload() {
   const [batchId, setBatchId] = useState(null);
   const [summary, setSummary] = useState(null);
   const [conflicts, setConflicts] = useState([]);
+  const [stagedRows, setStagedRows] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [dryResult, setDryResult] = useState(null);
+  const [validationKey, setValidationKey] = useState(null);
 
   const canApprove = can("can_approve");
+
+  /** Fingerprint of file + template + period — validation must match to stage. */
+  const selectionKey = useMemo(() => {
+    if (!file || !templateId) return "";
+    return [
+      templateId,
+      year,
+      periodValue,
+      file.name,
+      file.size,
+      file.lastModified,
+    ].join("|");
+  }, [file, templateId, year, periodValue]);
+
+  const validationPassed =
+    Boolean(dryResult?.can_stage) && validationKey === selectionKey;
 
   useEffect(() => {
     getUploadCatalog()
@@ -84,18 +103,32 @@ export default function Upload() {
     conflicts.length > 0 && selectedIds.length === conflicts.length;
   const someSelected = selectedIds.length > 0 && !allSelected;
 
-  function reset() {
+  function resetBatch() {
     setBatchId(null);
     setSummary(null);
     setConflicts([]);
-    setDryResult(null);
+    setStagedRows([]);
     setError("");
     setInfo("");
   }
 
+  function invalidateValidation() {
+    setDryResult(null);
+    setValidationKey(null);
+    resetBatch();
+  }
+
+  function reset() {
+    invalidateValidation();
+  }
+
   async function refreshSummary(id) {
-    const s = await getBatchSummary(id);
+    const [s, staged] = await Promise.all([
+      getBatchSummary(id),
+      getStagedRows(id),
+    ]);
     setSummary(s);
+    setStagedRows(staged.rows || []);
     if (s.conflicts > 0) {
       const c = await getConflicts(id);
       setConflicts(c.conflicts || []);
@@ -169,17 +202,38 @@ export default function Upload() {
   async function handleValidate() {
     const msg = validateSelection();
     if (msg) return setError(msg);
-    reset();
+    resetBatch();
+    setError("");
     setBusy(true);
     try {
       const result = await uploadFile(file, templateId, year, periodValue, true);
       setDryResult(result);
-      setInfo(
+      setValidationKey(selectionKey);
+
+      const unchanged = result.rows_skipped_unchanged || 0;
+      const toStage = result.rows_staged || 0;
+      let summary =
         `Validation parsed ${result.rows_processed} rows. ` +
-          `${result.dqc_issues} DQC issue(s), ${result.errors} error(s). ` +
-          `Nothing was saved.`
-      );
+        `${result.dqc_issues} DQC issue(s), ${result.errors} error(s). ` +
+        `Nothing was saved.`;
+
+      if (result.can_stage) {
+        summary += ` ${toStage} value(s) ready to stage`;
+        if (unchanged > 0) {
+          summary += ` (${unchanged} unchanged vs live data will be skipped)`;
+        }
+        summary += ".";
+      } else if (result.errors > 0) {
+        summary += " Fix errors before uploading to staging.";
+      } else if (toStage === 0 && unchanged > 0) {
+        summary += " All values already match live data — no staging needed.";
+      } else {
+        summary += " Nothing to stage.";
+      }
+      setInfo(summary);
     } catch (err) {
+      setValidationKey(null);
+      setDryResult(null);
       setError(errMsg(err, "Validation failed."));
     } finally {
       setBusy(false);
@@ -189,7 +243,12 @@ export default function Upload() {
   async function handleUpload() {
     const msg = validateSelection();
     if (msg) return setError(msg);
-    reset();
+    if (!validationPassed) {
+      return setError(
+        "Run Validate Only first and fix any errors before uploading to staging."
+      );
+    }
+    resetBatch();
     setBusy(true);
     try {
       const result = await uploadFile(file, templateId, year, periodValue, false);
@@ -207,9 +266,13 @@ export default function Upload() {
       }
       setBatchId(result.batch_id);
       await refreshSummary(result.batch_id);
+      setDryResult(null);
+      setValidationKey(null);
+      const skipped = result.rows_skipped_unchanged || 0;
       setInfo(
-        `Uploaded ${result.rows_staged} values to staging. ` +
-          `Review below before approving.`
+        `Uploaded ${result.rows_staged} value(s) to staging` +
+          (skipped > 0 ? ` (${skipped} unchanged skipped)` : "") +
+          `. Review below before approving.`
       );
     } catch (err) {
       setError(errMsg(err, "Upload failed."));
@@ -401,7 +464,10 @@ export default function Upload() {
                     <select
                       style={styles.input}
                       value={periodValue}
-                      onChange={(e) => setPeriodValue(Number(e.target.value))}
+                      onChange={(e) => {
+                        setPeriodValue(Number(e.target.value));
+                        invalidateValidation();
+                      }}
                       disabled={busy}
                     >
                       {MONTHS.map((m) => (
@@ -418,7 +484,10 @@ export default function Upload() {
                     <select
                       style={styles.input}
                       value={periodValue}
-                      onChange={(e) => setPeriodValue(Number(e.target.value))}
+                      onChange={(e) => {
+                        setPeriodValue(Number(e.target.value));
+                        invalidateValidation();
+                      }}
                       disabled={busy}
                     >
                       {QUARTERS.map((q) => (
@@ -436,7 +505,10 @@ export default function Upload() {
                   <select
                     style={styles.input}
                     value={year}
-                    onChange={(e) => setYear(Number(e.target.value))}
+                    onChange={(e) => {
+                      setYear(Number(e.target.value));
+                      invalidateValidation();
+                    }}
                     disabled={busy}
                   >
                     {YEARS.map((y) => (
@@ -492,31 +564,59 @@ export default function Upload() {
           )}
 
           <div style={styles.btnRow}>
+            <p style={styles.workflowHint}>
+              Step 1: <strong>Validate Only</strong> checks the file (nothing saved).
+              Step 2: <strong>Upload to Staging</strong> saves only new or changed values.
+            </p>
             <button
               style={styles.secondaryBtn}
               onClick={handleValidate}
-              disabled={busy || !uploadConfigured || !templateId}
+              disabled={busy || !uploadConfigured || !templateId || !file}
             >
               Validate Only (dry run)
             </button>
             <button
               style={styles.primaryBtn}
               onClick={handleUpload}
-              disabled={busy || !uploadConfigured || !templateId}
+              disabled={
+                busy || !uploadConfigured || !templateId || !file || !validationPassed
+              }
+              title={
+                validationPassed
+                  ? "Save new or changed values to staging"
+                  : "Run Validate Only first — must pass with no parse errors"
+              }
             >
               {busy ? "Working..." : "Upload to Staging"}
             </button>
           </div>
 
+          {validationPassed && (
+            <p style={styles.validationOk}>
+              Validation passed for this file and period — you can upload to staging.
+            </p>
+          )}
+
           {error && <p style={styles.error}>{error}</p>}
           {info && <p style={styles.info}>{info}</p>}
         </div>
 
-        {/* Dry-run preview */}
-        {dryResult && (
+        {/* Dry-run preview — hidden after a batch is staged */}
+        {dryResult && !summary && (
           <div style={styles.section}>
             <h2 style={styles.sectionTitle}>Validation Preview</h2>
+            {!dryResult.can_stage && (
+              <p style={styles.validationWarn}>
+                {dryResult.errors > 0
+                  ? "Fix parse errors below before staging."
+                  : dryResult.rows_staged === 0 &&
+                      (dryResult.rows_skipped_unchanged || 0) > 0
+                    ? "Live data already matches this file — staging is not needed."
+                    : "Nothing ready to stage."}
+              </p>
+            )}
             <PreviewTable rows={dryResult.preview} />
+            <ErrorsList errors={dryResult.errors_detail} />
             <IssuesList issues={dryResult.issues_detail} />
           </div>
         )}
@@ -525,6 +625,11 @@ export default function Upload() {
         {summary && (
           <div style={styles.section}>
             <h2 style={styles.sectionTitle}>Batch Review</h2>
+            <p style={styles.batchExplain}>
+              Staging holds <strong>new or changed</strong> values only — unchanged
+              cells matching live data were skipped. Use{" "}
+              <strong>Validation Preview</strong> above to see the full file parse.
+            </p>
             <div style={styles.statRow}>
               <Stat label="Total Rows" value={summary.total_rows} />
               <Stat label="Passed" value={summary.passed} color="#16A34A" />
@@ -594,8 +699,12 @@ export default function Upload() {
                         </td>
                         <td style={styles.td}>{c.location}</td>
                         <td style={styles.td}>{c.indicator_code}</td>
-                        <td style={styles.td}>{c.existing_value}</td>
-                        <td style={styles.td}>{c.incoming_value}</td>
+                        <td style={styles.td}>
+                          {formatStagingValue(c.existing_value, c.is_percentage)}
+                        </td>
+                        <td style={styles.td}>
+                          {formatStagingValue(c.incoming_value, c.is_percentage)}
+                        </td>
                         <td style={styles.td}>
                           <button
                             style={styles.miniBtn}
@@ -625,33 +734,44 @@ export default function Upload() {
               </>
             )}
 
-            {/* Sample */}
-            {summary.sample && summary.sample.length > 0 && (
+            {stagedRows.length > 0 && (
               <>
-                <h3 style={styles.subSectionTitle}>Sample of staged data</h3>
+                <h3 style={styles.subSectionTitle}>
+                  All staged values ({stagedRows.length})
+                </h3>
                 <table style={styles.table}>
                   <thead>
                     <tr>
                       <th style={styles.th}>Location</th>
                       <th style={styles.th}>Indicator</th>
-                      <th style={styles.th}>Value</th>
-                      <th style={styles.th}>Validation</th>
+                      <th style={styles.th}>Incoming</th>
+                      <th style={styles.th}>Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {summary.sample.map((s, i) => (
-                      <tr key={i} style={styles.tr}>
-                        <td style={styles.td}>{s.location}</td>
-                        <td style={styles.td}>{s.indicator}</td>
-                        <td style={styles.td}>{s.value}</td>
+                    {stagedRows.map((row) => (
+                      <tr key={row.staging_id} style={styles.tr}>
+                        <td style={styles.td}>{row.location}</td>
+                        <td style={styles.td}>{row.indicator_code}</td>
                         <td style={styles.td}>
-                          <StatusPill status={s.validation_status} />
+                          {formatStagingValue(row.value, row.is_percentage)}
+                        </td>
+                        <td style={styles.td}>
+                          {row.conflict_status === "pending_review" ? (
+                            <span style={styles.conflictBadge}>Conflict</span>
+                          ) : (
+                            <StatusPill status={row.validation_status} />
+                          )}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </>
+            )}
+
+            {!hasPendingConflicts && stagedRows.length === 0 && (
+              <p style={styles.note}>No staged rows in this batch.</p>
             )}
 
             <div style={styles.btnRow}>
@@ -676,6 +796,17 @@ export default function Upload() {
 
 function errMsg(err, fallback) {
   return err?.response?.data?.detail || fallback;
+}
+
+function formatStagingValue(value, isPct) {
+  if (value === null || value === undefined) return "—";
+  const n = Number(value);
+  if (Number.isNaN(n)) return String(value);
+  if (isPct) {
+    const pct = n > 1.5 ? n : n * 100;
+    return `${pct.toFixed(2)}%`;
+  }
+  return n.toLocaleString();
 }
 
 function Stat({ label, value, color }) {
@@ -732,6 +863,24 @@ function PreviewTable({ rows }) {
   );
 }
 
+function ErrorsList({ errors }) {
+  if (!errors || errors.length === 0) return null;
+  return (
+    <div style={styles.issues}>
+      <h3 style={styles.subSectionTitle}>Parse Errors</h3>
+      {errors.slice(0, 50).map((err, i) => (
+        <p key={i} style={styles.errorItem}>
+          {err.sheet ? `${err.sheet} — ` : ""}
+          {err.row != null ? `Row ${err.row}: ` : ""}
+          {err.location || err.psgc || ""}
+          {err.indicator_code ? ` (${err.indicator_code})` : ""}
+          {err.error ? `: ${err.error}` : ""}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 function IssuesList({ issues }) {
   if (!issues || issues.length === 0) return null;
   return (
@@ -767,6 +916,42 @@ const styles = {
   field: { display: "flex", flexDirection: "column", gap: "6px" },
   uploadDivider: { height: "1px", backgroundColor: "#E2E8F0", margin: "24px 0 20px 0" },
   uploadHint: { fontSize: "13px", color: "#5A6A85", margin: "0 0 14px 0" },
+  workflowHint: {
+    fontSize: "12px",
+    color: "#64748B",
+    margin: "0 0 12px 0",
+    flexBasis: "100%",
+  },
+  validationOk: {
+    fontSize: "13px",
+    color: "#166534",
+    backgroundColor: "#DCFCE7",
+    padding: "10px 14px",
+    borderRadius: "6px",
+    margin: "12px 0 0 0",
+  },
+  validationWarn: {
+    fontSize: "13px",
+    color: "#92400E",
+    backgroundColor: "#FFFBEB",
+    padding: "10px 14px",
+    borderRadius: "6px",
+    margin: "0 0 12px 0",
+  },
+  batchExplain: {
+    fontSize: "13px",
+    color: "#475569",
+    margin: "0 0 14px 0",
+    lineHeight: 1.5,
+  },
+  conflictBadge: {
+    fontSize: "11px",
+    fontWeight: 600,
+    color: "#92400E",
+    backgroundColor: "#FEF3C7",
+    padding: "2px 8px",
+    borderRadius: "4px",
+  },
   comingSoonBox: {
     marginTop: "16px",
     padding: "16px 18px",
@@ -829,4 +1014,5 @@ const styles = {
   pill: { padding: "2px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: "700" },
   issues: { marginTop: "12px" },
   issueItem: { fontSize: "12px", color: "#991B1B", backgroundColor: "#FEF2F2", padding: "6px 10px", borderRadius: "5px", margin: "0 0 6px 0" },
+  errorItem: { fontSize: "12px", color: "#991B1B", backgroundColor: "#FEE2E2", padding: "6px 10px", borderRadius: "5px", margin: "0 0 6px 0" },
 };

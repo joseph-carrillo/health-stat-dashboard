@@ -30,6 +30,7 @@ from app.services.parser import parse_file, load_config, validate_config
 from app.services.commit import (
     get_batch_summary,
     get_conflicts,
+    get_staged_rows,
     resolve_conflict,
     resolve_conflicts_bulk,
     approve_batch,
@@ -273,6 +274,19 @@ def get_staging_summary(
     if "error" in summary:
         raise HTTPException(status_code=404, detail=summary["error"])
     return summary
+
+
+@app.get("/api/staging/{batch_id}/rows")
+def get_batch_staged_rows(
+    batch_id: str, current_user: dict = Depends(get_current_user)
+):
+    """All staged values in a batch (new/changed cells only)."""
+    rows = get_staged_rows(batch_id)
+    return {
+        "batch_id": batch_id,
+        "total": len(rows),
+        "rows": rows,
+    }
 
 
 @app.get("/api/staging/{batch_id}/conflicts")

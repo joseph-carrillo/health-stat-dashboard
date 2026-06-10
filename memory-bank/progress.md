@@ -1,8 +1,15 @@
 # progress.md
 
-## Status: Track 1 — Immunization Files 1+4, Nutrition Files 1–6, Sick Child Files 1–3; Indicator Reports polished (June 9)
+## Status: Track 1 — Nutrition 1–6, Sick 1–3, Immunization 1+4; upload workflow validate-first (June 10)
 
-## Latest Session (June 9) — Nutrition pipeline + report fixes
+## Latest Session (June 10) — Upload validate-first + staging cleanup
+- Validate Only gates Upload to Staging; no DB writes on dry run
+- Staging skips unchanged values; conflicts only on real diffs; PCT ratio-normalized compare
+- Batch review: all staged rows API + table; validation preview hidden after stage
+- 0÷0 → 0.00%; Upload.jsx parse error fixed
+- User testing CPAB re-upload: legacy CPAB_PCT bad values (143% vs 1.44%) — use incoming to fix
+
+## Session (June 9) — Nutrition pipeline + report fixes
 - Nutrition Files 1–5 quarterly + File 6 annual (MAM/SAM dual-sheet upload)
 - Upload catalog API + refactored Upload page; `uploadPrograms.js` helpers
 - Parser: multi-sheet annual, `ensure_period_id`, filename validation

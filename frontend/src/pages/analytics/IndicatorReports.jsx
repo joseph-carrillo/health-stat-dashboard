@@ -107,6 +107,17 @@ function filterRowsByArea(rows, areaId) {
   return rows.filter((r) => String(r.psgc).startsWith(area.psgcPrefix));
 }
 
+function zeroDivisionResult(formula, rowValues) {
+  if (!formula.includes("/")) return null;
+  const [numCode, denCode] = formula.split("/").map((s) => s.trim());
+  const num = rowValues[numCode];
+  const den = rowValues[denCode];
+  if (num != null && den != null && Number(den) === 0 && Number(num) === 0) {
+    return 0;
+  }
+  return null;
+}
+
 function computeValueFromFormula(formula, rowValues) {
   if (!formula) return null;
   try {
@@ -119,9 +130,13 @@ function computeValueFromFormula(formula, rowValues) {
       expression = expression.split(code).join(String(value));
     }
     // eslint-disable-next-line no-new-func
-    return Function(`"use strict"; return (${expression})`)();
+    const result = Function(`"use strict"; return (${expression})`)();
+    if (!Number.isFinite(result)) {
+      return zeroDivisionResult(formula, rowValues);
+    }
+    return result;
   } catch {
-    return null;
+    return zeroDivisionResult(formula, rowValues);
   }
 }
 
