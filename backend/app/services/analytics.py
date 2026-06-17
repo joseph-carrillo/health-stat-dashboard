@@ -855,6 +855,32 @@ def get_template_report(
             "values": values,
         })
 
+    # No committed data for this period: still return the canonical NIR
+    # reporting locations (provinces + cities/municipalities) with empty values,
+    # so the report renders the template's design (the Excel-face layout) with
+    # "—" cells instead of hiding the table behind a "no data" message.
+    if not rows:
+        conn2 = get_db_connection()
+        cur2 = conn2.cursor()
+        cur2.execute(
+            """SELECT psgc, name FROM locations
+               WHERE is_active = TRUE
+                 AND level IN ('province', 'city_municipality')
+               ORDER BY psgc"""
+        )
+        canonical = cur2.fetchall()
+        cur2.close()
+        conn2.close()
+        for psgc, name in canonical:
+            values = {}
+            for code in codes:
+                col_def = col_def_by_code.get(code)
+                if col_def and col_def.get("is_computed"):
+                    continue
+                values[code] = None
+            _recompute_row_values(values, col_defs)
+            rows.append({"psgc": psgc, "location": name, "values": values})
+
     display = config.get("display", {})
     dqc_highlight = bool(display.get("dqc_highlight"))
     dqc_rules = config.get("dqc_rules", []) if dqc_highlight else []
