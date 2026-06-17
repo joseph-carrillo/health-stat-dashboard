@@ -63,10 +63,10 @@
   ],
 
   "dqc_rules": [
-    { "rule_type": "over_threshold", "indicator_code": "DIAR_ORS_PCT", "threshold": 1.0, "message": "ORS percentage exceeds 100% of diarrhea cases seen" },
-    { "rule_type": "over_threshold", "indicator_code": "DIAR_ORSZ_PCT", "threshold": 1.0, "message": "ORS+Zinc percentage exceeds 100% of diarrhea cases seen" },
-    { "rule_type": "over_threshold", "indicator_code": "DIAR_COMBINED_PCT", "threshold": 1.0, "message": "Combined diarrhea treatment percentage exceeds 100%" },
-    { "rule_type": "over_threshold", "indicator_code": "PNEU_ABX_PCT", "threshold": 1.0, "message": "Pneumonia antibiotic percentage exceeds 100% of cases seen" }
+    { "rule_type": "over_threshold", "indicator_code": "DIAR_ORS_PCT", "threshold": 1.0, "numerator_code": "DIAR_ORS_TOTAL", "denominator_code": "DIAR_SEEN_TOTAL", "message": "ORS given exceeds diarrhea cases seen (over 100%)", "hint": "More ORS recipients than children seen for diarrhea. Verify the source file — likely a transcription error or a denominator (cases seen) that is too low." },
+    { "rule_type": "over_threshold", "indicator_code": "DIAR_ORSZ_PCT", "threshold": 1.0, "numerator_code": "DIAR_ORSZ_TOTAL", "denominator_code": "DIAR_SEEN_TOTAL", "message": "ORS+Zinc given exceeds diarrhea cases seen (over 100%)", "hint": "More ORS+Zinc recipients than children seen for diarrhea. Verify the source file — likely a transcription error or a denominator (cases seen) that is too low." },
+    { "rule_type": "over_threshold", "indicator_code": "DIAR_COMBINED_PCT", "threshold": 1.0, "numerator_code": "DIAR_COMBINED_TOTAL", "denominator_code": "DIAR_SEEN_TOTAL", "message": "Combined treatment exceeds diarrhea cases seen (over 100%)", "hint": "Combined = ORS + ORS+Zinc. A child given both is counted in both buckets, so combined can exceed cases seen. Verify the source file; confirm whether ORS and ORS+Zinc should be mutually exclusive." },
+    { "rule_type": "over_threshold", "indicator_code": "PNEU_ABX_PCT", "threshold": 1.0, "numerator_code": "PNEU_ABX_TOTAL", "denominator_code": "PNEU_SEEN_TOTAL", "message": "Antibiotics given exceed pneumonia cases seen (over 100%)", "hint": "More antibiotic courses than children seen for pneumonia. Verify the source file — likely a transcription error or a denominator (cases seen) that is too low." }
   ],
 
   "notes": "Col 10 mapped as ORS+Zinc Female (template label typo corrected in config). Quarterly upload Qtr1–Qtr4."
