@@ -1,0 +1,16 @@
+# Backend build context is the repo root — keep it lean.
+.git
+**/__pycache__
+**/*.pyc
+.venv
+venv
+frontend/node_modules
+frontend/dist
+postgres_data
+*.log
+.env
+.env.*
+backend/data/uploads
+docs
+memory-bank
+*.md

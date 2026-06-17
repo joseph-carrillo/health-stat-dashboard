@@ -46,9 +46,13 @@ app = FastAPI(
     version="0.1.0",
 )
 
+# Comma-separated list of allowed origins; defaults to "*" for local dev.
+# Set CORS_ORIGINS in production to lock this down (e.g. "https://dashboard.example").
+_cors_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "*").split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

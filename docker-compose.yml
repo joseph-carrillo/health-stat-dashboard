@@ -1,18 +1,73 @@
-version: "3.8"
+# Health Statistics Dashboard — development stack.
+#
+# Brings up all three services with live reload:
+#   docker compose up -d --build      # start everything
+#   docker compose logs -f backend    # watch backend logs
+#   docker compose down               # stop everything
+#
+# Credentials come from .env (copy .env.example -> .env first).
+# One-time DB setup after the stack is up:
+#   docker compose exec backend python backend/bootstrap_db.py
 
 services:
   db:
     image: postgres:15
     container_name: doh_nir_db
-    restart: always
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: doh_admin
-      POSTGRES_PASSWORD: doh_password_2026
-      POSTGRES_DB: doh_nir_dashboard
+      POSTGRES_USER: ${DB_USER:-doh_admin}
+      POSTGRES_DB: ${DB_NAME:-doh_nir_dashboard}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-doh_admin} -d ${DB_NAME:-doh_nir_dashboard}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: development
+    container_name: doh_nir_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Inside the compose network the DB is reachable as "db", not localhost.
+      DB_HOST: db
+      DB_PORT: 5432
+    volumes:
+      # Live reload — host source overrides the image copy.
+      - ./backend:/app/backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: doh_nir_frontend
+    restart: unless-stopped
+    environment:
+      # Vite proxies /api to the backend service (see frontend/vite.config.js).
+      VITE_PROXY_TARGET: http://backend:8000
+    volumes:
+      - ./frontend:/app
+      # Keep the image's node_modules — don't let the host mount clobber it.
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:

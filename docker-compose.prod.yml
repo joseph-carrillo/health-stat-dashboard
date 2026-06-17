@@ -1,0 +1,55 @@
+# Health Statistics Dashboard — production stack.
+#
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Differences from dev:
+#   - backend runs gunicorn (production target), no source bind-mount, no reload
+#   - frontend is the built SPA served by nginx on port 80, proxying /api -> backend
+#   - credentials/secrets come from .env (must set strong values for prod)
+
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-doh_admin}
+      POSTGRES_DB: ${DB_NAME:-doh_nir_dashboard}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-doh_admin} -d ${DB_NAME:-doh_nir_dashboard}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: production
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+    expose:
+      - "8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: production
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

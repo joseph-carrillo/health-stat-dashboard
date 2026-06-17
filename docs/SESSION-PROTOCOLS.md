@@ -1,16 +1,19 @@
 # Session Startup & Shutdown Protocols (Windows / PowerShell)
 
-This repo has three parts:
+This repo has three parts — **all three now run in Docker containers**:
 
-1. **Database** (PostgreSQL in Docker)
+1. **Database** (PostgreSQL on port `5432`)
 2. **Backend** (FastAPI on port `8000`)
 3. **Frontend** (Vite React on port `5173`)
 
-We make a simple “press one button” setup:
+The "press one button" setup wraps Docker Compose:
 
-- `scripts\start.ps1` starts everything
-- `scripts\stop.ps1` stops everything
+- `scripts\start.ps1` → `docker compose up -d --build` (the whole stack)
+- `scripts\stop.ps1` → `docker compose down`
 - `scripts\health-check.ps1` checks what is running
+
+Prefer running pieces on the host instead? `scripts\start.ps1 -Native` runs the DB in Docker
+but the backend (uvicorn) and frontend (vite) as host processes.
 
 ## The simple mental model (like a smart 10-year-old)
 
@@ -44,7 +47,10 @@ Run:
 .\scripts\stop.ps1
 ```
 
-This stops anything listening on ports `5173` and `8000`, and also runs `docker-compose down`.
+This runs `docker compose down`, stopping all three containers (the DB volume is preserved).
+
+> First run after a fresh DB volume? Seed it once:
+> `docker compose exec backend python backend/bootstrap_db.py`
 
 ## Auto start/stop on Windows login/logout (Task Scheduler)
 
@@ -76,9 +82,12 @@ You can make Windows run the scripts automatically:
 
 ## Notes / gotchas
 
-- If Docker isn’t running, the DB start will fail. Start Docker Desktop first.
-- If `python -m uvicorn` / `npm run dev` are missing, you must install dependencies first (the scripts assume you already have them set up).
-- These scripts stop by **ports**, so even if the process IDs change, shutdown still works.
+- Docker Desktop must be running first — the whole stack is containerized.
+- First run builds the images (a few minutes); later runs are fast. Rebuild after changing
+  `requirements.txt` or a Dockerfile: `docker compose up -d --build`.
+- Source is hot-mounted in dev — code edits reload without a rebuild.
+- `-Native` mode assumes Python deps (`requirements.txt`) and `npm install` are already set up
+  on the host.
 
 ## Chat Trigger Phrases (Agent Protocol)
 
@@ -104,7 +113,7 @@ The agent will do this in order:
    - `memory-bank/progress.md`
    - `memory-bank/architecture.md`
 3. Start services (unless already running):
-   - `scripts/start.ps1`
+   - `scripts/start.ps1` → `docker compose up -d` (db + backend + frontend)
 4. Brief you in plain language:
    - current goal
    - what was last completed

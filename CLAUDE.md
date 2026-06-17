@@ -4,20 +4,70 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Dev Stack Startup
 
-Three things must run simultaneously. Start in this order:
+The whole stack is containerized — DB, backend, and frontend each run as a service.
+Copy the env template once, then bring everything up:
 
 ```bash
-# 1. Database (Docker)
-docker-compose up -d
-
-# 2. Backend (from repo root)
-uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
-
-# 3. Frontend (separate terminal)
-cd frontend && npm run dev
+cp .env.example .env            # first time only; fill in values
+docker compose up -d --build    # starts db + backend + frontend
+docker compose exec backend python backend/bootstrap_db.py   # first time only: schema + seed + admin
 ```
 
 Frontend: `http://localhost:5173` — Backend docs: `http://localhost:8000/docs`
+
+```bash
+docker compose logs -f backend  # tail logs
+docker compose down             # stop everything
+```
+
+**Production parity:** `docker compose -f docker-compose.prod.yml up -d --build` runs gunicorn
+behind nginx (SPA served on port 80, `/api` proxied to the backend).
+
+Running pieces on the host instead of in containers still works (`uvicorn backend.main:app
+--reload` and `cd frontend && npm run dev`) — Vite falls back to `localhost:8000` and the
+backend reads the same `.env`.
+
+**Test credentials:**
+- `admin` / `Admin@2026!` — full admin access
+- `jsmith` / `Test@2026!` — program_manager, CHILD_CARE program
+- `dev` / `dev` — offline dev bypass (no DB needed)
+
+## Session Protocols
+
+Short commands Joseph uses to drive a session. When he types one, follow it exactly.
+
+### `startup protocols`
+1. **Load memory** — read `memory-bank/MEMORY.md` (the index), then each linked file
+   (`project_state.md`, `activeContext.md`, `progress.md`, `session-handoff.md`).
+2. **Check git** — `git fetch origin --quiet`, `git status -sb`, `git log --oneline -10`.
+   Joseph works from an office desktop *and* a laptop, so if behind origin, `git pull --rebase`
+   before any new work.
+3. **Bring up the stack** — `docker compose up -d`; wait for `db` healthy
+   (`docker compose ps`), then confirm `http://localhost:8000/docs` and `:5173` respond.
+4. **Self-diagnose** — read `ROADMAP.md` and `memory-bank/project_state.md`; cross-reference
+   against the git log and the actual file tree. Flag anything marked done that isn't in code.
+5. **Brief Joseph** — current phase + status, what was last built (from git log, not memory),
+   open items in priority order with the recommended next one highlighted, any blockers. Then
+   ask: "What do you want to tackle?" **This is a briefing, not a build trigger — do not build
+   until he responds.**
+
+### `run shutdown protocols`
+1. **Sync docs** — update `ROADMAP.md` (mark done milestones, fix stale text) and append a new
+   ADR to `DECISIONS_LOG.md` if a locked decision changed this session (never edit old ADRs).
+2. **Sync memory** — update `memory-bank/project_state.md` (done / open in priority order /
+   branch + push status / anything needed to start cold), plus `activeContext.md` and
+   `session-handoff.md`. Add a pointer in `MEMORY.md` for any new memory file.
+3. **Commit** — shutdown commits are **docs + memory only**. If there are pending *code*
+   changes, halt and ask Joseph how to handle them. Otherwise commit with
+   `docs(shutdown): sync docs and memory — <date>`.
+4. **Push** — `git pull --rebase origin <branch>` then push. Halt and ask on rebase conflicts.
+5. **Stop the stack** — `docker compose down`.
+6. **Report** — what shipped, commit hash, push status, services stopped, top 1–2 next items.
+
+### Other triggers
+- `status` / `where are we` — concise: current phase, last milestone, next action, blockers.
+- `audit this` — adversarial review; find the flaws, don't praise.
+- `go` — the previous proposal is approved; proceed with the build.
 
 **Test credentials:**
 - `admin` / `Admin@2026!` — full admin access
@@ -49,8 +99,9 @@ health-stat-dashboard/
 
 ## Database
 
-PostgreSQL 15 via Docker. Connection hardcoded in `backend/main.py`:
-- Host: `localhost:5432`, DB: `doh_nir_dashboard`, User: `doh_admin`, Password: `doh_password_2026`
+PostgreSQL 15 via Docker. Connection config lives in `backend/app/core/db.py`, read from
+environment variables (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`) with local
+dev fallbacks. Compose injects them from `.env`; inside the network the host is `db`.
 
 **Schema pattern:** Narrow/tall — one row per (indicator, location, period, value). Key tables:
 - `health_data` — production values; unique on `(indicator_id, location_id, period_id)`
@@ -88,6 +139,9 @@ Roles: `admin`, `data_encoder`, `program_manager`, `mancom`, `execom`. Admin-onl
 
 ## Known Gaps
 
-- No `requirements.txt` — backend Python dependencies must be installed manually (fastapi, uvicorn, psycopg2-binary, pandas, openpyxl, python-jose, passlib[bcrypt]).
-- Database credentials and JWT secret are hardcoded in source; must be moved to environment variables before production.
-- CORS in `main.py` allows all origins (`*`).
+- Secrets are env-driven (`.env`) but `db.py`/`auth.py` still keep insecure dev *fallbacks*;
+  production should fail-fast on missing env (tracked as a follow-up, not yet done).
+- Password hashing is bcrypt; Sentinel-FMS uses argon2 — not yet migrated.
+- No automated tests — backend `tests/` directory exists but is empty; no CI yet.
+- `backend/main.py` (1100+ lines) and a few frontend pages exceed the 800-line cap and
+  should be split.
