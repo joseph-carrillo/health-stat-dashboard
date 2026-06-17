@@ -65,7 +65,7 @@ const TEMPLATE_DQC_RULES_FALLBACK = {
       numerator_code: "DIAR_COMBINED_TOTAL",
       denominator_code: "DIAR_SEEN_TOTAL",
       message: "Combined treatment exceeds diarrhea cases seen (over 100%)",
-      hint: "Combined = ORS + ORS+Zinc. A child given both is counted in both buckets, so combined can exceed cases seen. Verify the source file; confirm whether ORS and ORS+Zinc should be mutually exclusive.",
+      hint: "Each child seen is recorded under ORS or ORS+Zinc — not both — so combined treated should never exceed cases seen. Over 100% means a value is wrong: check the source file (cases seen entered too low, or an ORS / ORS+Zinc count too high) and re-upload.",
     },
     {
       rule_type: "over_threshold",
