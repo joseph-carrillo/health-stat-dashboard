@@ -44,37 +44,25 @@ const TEMPLATE_DQC_RULES_FALLBACK = {
       rule_type: "over_threshold",
       indicator_code: "DIAR_ORS_PCT",
       threshold: 1.0,
-      numerator_code: "DIAR_ORS_TOTAL",
-      denominator_code: "DIAR_SEEN_TOTAL",
-      message: "ORS given exceeds diarrhea cases seen (over 100%)",
-      hint: "More ORS recipients than children seen for diarrhea. Verify the source file — likely a transcription error or a denominator (cases seen) that is too low.",
+      message: "ORS percentage exceeds 100% of diarrhea cases seen",
     },
     {
       rule_type: "over_threshold",
       indicator_code: "DIAR_ORSZ_PCT",
       threshold: 1.0,
-      numerator_code: "DIAR_ORSZ_TOTAL",
-      denominator_code: "DIAR_SEEN_TOTAL",
-      message: "ORS+Zinc given exceeds diarrhea cases seen (over 100%)",
-      hint: "More ORS+Zinc recipients than children seen for diarrhea. Verify the source file — likely a transcription error or a denominator (cases seen) that is too low.",
+      message: "ORS+Zinc percentage exceeds 100% of diarrhea cases seen",
     },
     {
       rule_type: "over_threshold",
       indicator_code: "DIAR_COMBINED_PCT",
       threshold: 1.0,
-      numerator_code: "DIAR_COMBINED_TOTAL",
-      denominator_code: "DIAR_SEEN_TOTAL",
-      message: "Combined treatment exceeds diarrhea cases seen (over 100%)",
-      hint: "Combined = ORS + ORS+Zinc. A child given both is counted in both buckets, so combined can exceed cases seen. Verify the source file; confirm whether ORS and ORS+Zinc should be mutually exclusive.",
+      message: "Combined diarrhea treatment percentage exceeds 100%",
     },
     {
       rule_type: "over_threshold",
       indicator_code: "PNEU_ABX_PCT",
       threshold: 1.0,
-      numerator_code: "PNEU_ABX_TOTAL",
-      denominator_code: "PNEU_SEEN_TOTAL",
-      message: "Antibiotics given exceed pneumonia cases seen (over 100%)",
-      hint: "More antibiotic courses than children seen for pneumonia. Verify the source file — likely a transcription error or a denominator (cases seen) that is too low.",
+      message: "Pneumonia antibiotic percentage exceeds 100% of cases seen",
     },
   ],
 };
@@ -274,57 +262,27 @@ function fmtValue(value, isPct) {
   return Number(value).toLocaleString();
 }
 
-// Returns null when a cell is clean, or a structured DQC issue when flagged.
-// The `title` is a rich, multi-line tooltip that shows the actual numbers and a
-// plain-language likely cause; the other fields feed the issues summary panel.
-function dqcForCell(row, col, value, dqcRules = [], dqcHighlight = false) {
-  if (!dqcHighlight) return null;
+function resolveDqcMessage(row, col, value, dqcRules = [], dqcHighlight = false) {
+  if (!dqcHighlight) return undefined;
 
   const code = col.indicator_code;
+  const fromApi = row.dqc?.[code];
+  if (fromApi) return fromApi;
+
   const rule = dqcRules.find(
     (r) => r.rule_type === "over_threshold" && r.indicator_code === code
   );
+  if (!rule || value == null || value === undefined) return undefined;
 
-  // A cell is flagged if the backend tagged it, or the over_threshold rule fires.
-  const apiMessage = row.dqc?.[code];
   const pct = toDisplayPercent(value);
-  let flagged = Boolean(apiMessage);
-  if (!flagged && rule && pct != null) {
-    const threshold = rule.threshold ?? 1;
-    const thresholdPct = threshold <= 1.5 ? threshold * 100 : threshold;
-    flagged = pct > thresholdPct;
+  if (pct == null) return undefined;
+
+  const threshold = rule.threshold ?? 1;
+  const thresholdPct = threshold <= 1.5 ? threshold * 100 : threshold;
+  if (pct > thresholdPct) {
+    return rule.message || "Value exceeds the allowed threshold";
   }
-  if (!flagged) return null;
-
-  const baseMessage = rule?.message || apiMessage || "Value exceeds the allowed threshold";
-  const hint = rule?.hint;
-
-  // Pull the underlying count and denominator from the same row so we can show
-  // the actual math (e.g. "79 treated > 74 seen").
-  const numVal = rule?.numerator_code ? row.values?.[rule.numerator_code] : null;
-  const denVal = rule?.denominator_code ? row.values?.[rule.denominator_code] : null;
-  const hasMath = numVal != null && denVal != null;
-
-  const pctText = pct != null ? `${pct.toFixed(1)}%` : "";
-  const mathText = hasMath
-    ? `${Number(numVal).toLocaleString()} vs ${Number(denVal).toLocaleString()} → ${pctText}`
-    : pctText;
-
-  const title = [baseMessage, mathText, hint].filter(Boolean).join("\n");
-
-  return {
-    code,
-    label: col.name || col.sub || code,
-    location: row.location || row.psgc || "",
-    pctText,
-    numCode: rule?.numerator_code,
-    denCode: rule?.denominator_code,
-    numVal,
-    denVal,
-    message: baseMessage,
-    hint,
-    title,
-  };
+  return undefined;
 }
 
 export default function IndicatorReports() {
@@ -485,19 +443,17 @@ export default function IndicatorReports() {
     report?.dqc_rules?.length > 0
       ? report.dqc_rules
       : TEMPLATE_DQC_RULES_FALLBACK[templateId] || [];
-  const dqcIssues = useMemo(() => {
-    if (!dqcHighlight) return [];
-    const issues = [];
+  const dqcCellCount = useMemo(() => {
+    if (!dqcHighlight) return 0;
+    let n = 0;
     for (const r of filteredRows) {
       for (const c of columns) {
         const v = r.values?.[c.indicator_code];
-        const issue = dqcForCell(r, c, v, dqcRules, dqcHighlight);
-        if (issue) issues.push(issue);
+        if (resolveDqcMessage(r, c, v, dqcRules, dqcHighlight)) n += 1;
       }
     }
-    return issues;
+    return n;
   }, [filteredRows, columns, dqcRules, dqcHighlight]);
-  const dqcCellCount = dqcIssues.length;
   const dataFrequency = activeTemplate?.frequency || report?.period_type || "monthly";
   const periodLabel = viewPeriodLabel(viewPeriodType, periodValue);
   const periodDisplay =
@@ -779,29 +735,32 @@ export default function IndicatorReports() {
                       ))}
                       {columns.map((c, ci) => {
                         const v = r.values?.[c.indicator_code];
-                        const dqc = dqcForCell(r, c, v, dqcRules, dqcHighlight);
+                        const dqcMsg = resolveDqcMessage(
+                          r,
+                          c,
+                          v,
+                          dqcRules,
+                          dqcHighlight
+                        );
                         const firstOfGroup =
                           ci === 0 || columns[ci - 1].group !== c.group || !c.group;
                         return (
                           <td
                             key={c.indicator_code}
-                            title={dqc?.title || undefined}
+                            title={dqcMsg || undefined}
                             style={{
                               ...styles.tdNum,
                               ...(isNir ? styles.tdNumNirRegion : {}),
                               ...(c.is_computed && !isNir ? styles.tdComputed : {}),
                               ...(c.is_computed && isNir ? styles.tdComputedNir : {}),
                               ...(firstOfGroup ? styles.groupStart : {}),
-                              ...(dqc ? styles.tdDqcFail : {}),
+                              ...(dqcMsg ? styles.tdDqcFail : {}),
                             }}
                           >
                             {v === undefined || v === null ? (
                               <span style={styles.missing}>—</span>
                             ) : (
-                              <>
-                                {dqc && <span style={styles.dqcMark}>⚠</span>}
-                                {fmtValue(v, isPctColumn(c))}
-                              </>
+                              fmtValue(v, isPctColumn(c))
                             )}
                           </td>
                         );
@@ -828,47 +787,6 @@ export default function IndicatorReports() {
           top; if not in the upload it is calculated by summing Negros
           Occidental, Negros Oriental, Siquijor, and Bacolod HUC.
         </p>
-
-        {dqcHighlight && dqcIssues.length > 0 && (
-          <div style={styles.dqcPanel}>
-            <div style={styles.dqcPanelHead}>
-              ⚠ Data-quality issues ({dqcIssues.length}) — values over 100%
-            </div>
-            <p style={styles.dqcPanelIntro}>
-              These cells are flagged because a treatment count exceeds the cases
-              seen. The numbers may be exactly as reported — verify against the
-              source Excel file before correcting.
-            </p>
-            <table style={styles.dqcTable}>
-              <thead>
-                <tr>
-                  <th style={styles.dqcTh}>Location</th>
-                  <th style={styles.dqcTh}>Indicator</th>
-                  <th style={styles.dqcThNum}>Counted</th>
-                  <th style={styles.dqcThNum}>Cases seen</th>
-                  <th style={styles.dqcThNum}>%</th>
-                  <th style={styles.dqcTh}>Likely cause / action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dqcIssues.map((it, i) => (
-                  <tr key={`${it.location}-${it.code}-${i}`}>
-                    <td style={styles.dqcTd}>{it.location}</td>
-                    <td style={styles.dqcTd}>{it.label}</td>
-                    <td style={styles.dqcTdNum}>
-                      {it.numVal != null ? Number(it.numVal).toLocaleString() : "—"}
-                    </td>
-                    <td style={styles.dqcTdNum}>
-                      {it.denVal != null ? Number(it.denVal).toLocaleString() : "—"}
-                    </td>
-                    <td style={styles.dqcTdNum}>{it.pctText}</td>
-                    <td style={styles.dqcTdHint}>{it.hint || it.message}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -944,29 +862,4 @@ const styles = {
   groupStart: { borderLeft: "2px solid #CBD5E1" },
   missing: { color: "#CBD5E1" },
   legend: { fontSize: "11px", color: "#94A3B8", marginTop: "12px" },
-  dqcMark: { color: "#B91C1C", marginRight: "3px", fontSize: "10px" },
-  dqcPanel: {
-    marginTop: "16px",
-    border: "1px solid #FCA5A5",
-    borderRadius: "8px",
-    background: "#FEF2F2",
-    padding: "12px 14px",
-  },
-  dqcPanelHead: { fontSize: "13px", fontWeight: "700", color: "#991B1B" },
-  dqcPanelIntro: { fontSize: "11px", color: "#7F1D1D", margin: "4px 0 10px" },
-  dqcTable: { width: "100%", borderCollapse: "collapse", fontSize: "12px" },
-  dqcTh: {
-    textAlign: "left", padding: "6px 8px", color: "#7F1D1D",
-    borderBottom: "1px solid #FCA5A5", fontWeight: "600", whiteSpace: "nowrap",
-  },
-  dqcThNum: {
-    textAlign: "right", padding: "6px 8px", color: "#7F1D1D",
-    borderBottom: "1px solid #FCA5A5", fontWeight: "600", whiteSpace: "nowrap",
-  },
-  dqcTd: { padding: "6px 8px", color: "#450A0A", borderBottom: "1px solid #FEE2E2", verticalAlign: "top" },
-  dqcTdNum: {
-    padding: "6px 8px", color: "#450A0A", borderBottom: "1px solid #FEE2E2",
-    textAlign: "right", fontWeight: "600", whiteSpace: "nowrap", verticalAlign: "top",
-  },
-  dqcTdHint: { padding: "6px 8px", color: "#7F1D1D", borderBottom: "1px solid #FEE2E2", lineHeight: 1.4 },
 };
