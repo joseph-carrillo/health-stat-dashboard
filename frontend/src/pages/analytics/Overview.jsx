@@ -1,7 +1,7 @@
 // frontend/src/pages/analytics/Overview.jsx
 
 import Navbar from "../../components/Navbar";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import {
@@ -40,7 +40,8 @@ export default function Overview() {
   const [coverageData, setCoverageData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [summary, setSummary] = useState(null);
+  const [programsData, setProgramsData] = useState(null);
+  const mapRef = useRef(null);
 
   // Load GeoJSON files once
   useEffect(() => {
@@ -50,16 +51,23 @@ export default function Overview() {
       .catch(() => console.error("Could not load HUC.geojson"));
   }, []);
 
-  // Tier-1 program-area summary (completeness + flagship %).
+  // Tier-1 at-a-glance grid: one card per program, latest period per program.
   useEffect(() => {
     const token = localStorage.getItem("token");
-    fetch(`/api/overview/summary?year=${year}`, {
+    fetch(`/api/overview/programs?year=${year}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => (r.ok ? r.json() : null))
-      .then(setSummary)
-      .catch(() => setSummary(null));
+      .then(setProgramsData)
+      .catch(() => setProgramsData(null));
   }, [year]);
+
+  // Clicking a program card drills the map/ranking into its flagship indicator.
+  function handleProgramClick(p) {
+    if (!p.flagship_code || p.regional_pct == null) return;
+    setIndicatorCode(p.flagship_code);
+    mapRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   // Fetch coverage from API whenever year/month changes
   useEffect(() => {
@@ -175,39 +183,43 @@ export default function Overview() {
 
         {error && <div style={styles.errorBox}>{error}</div>}
 
-        {/* TIER 1 — executive glance: data freshness + per-program KPI cards */}
-        {summary && (
+        {/* TIER 1 — at-a-glance program performance grid */}
+        {programsData && (
           <>
-            <div style={styles.freshBanner}>
-              <span style={styles.freshLabel}>Data completeness (of {summary.total_locations} LGUs):</span>
-              {summary.areas.map((a) => {
-                const full = a.locations_reporting >= a.total_locations;
-                const none = a.locations_reporting === 0;
-                const color = none ? "#DC2626" : full ? "#16A34A" : "#EAB308";
+            <p style={styles.glanceNote}>
+              Each program shows its headline coverage for its latest reported period in {year}. Click a program with data to drill into the map below.
+            </p>
+            <div style={styles.programGrid}>
+              {programsData.programs.map((p) => {
+                const pct = p.regional_pct == null ? null : Math.round(p.regional_pct * 1000) / 10;
+                const color = getCoverageColor(p.regional_pct);
+                const clickable = p.flagship_code && p.regional_pct != null;
                 return (
-                  <span key={a.area} style={{ ...styles.freshChip, borderColor: color, color }}>
-                    {a.area}: {a.locations_reporting}/{a.total_locations}
-                  </span>
-                );
-              })}
-            </div>
-            <div style={styles.kpiRow}>
-              {summary.areas.map((a) => {
-                const pct = a.regional_pct == null ? null : Math.round(a.regional_pct * 1000) / 10;
-                return (
-                  <div key={a.area} style={styles.kpiCard}>
-                    <p style={styles.kpiArea}>{a.area}</p>
-                    <p style={styles.kpiValue}>
+                  <div
+                    key={p.program_code}
+                    onClick={() => handleProgramClick(p)}
+                    style={{
+                      ...styles.programCard,
+                      borderTop: `4px solid ${color}`,
+                      cursor: clickable ? "pointer" : "default",
+                    }}
+                    title={clickable ? `View ${p.flagship_label} on the map` : ""}
+                  >
+                    <p style={styles.programName}>{p.program_name}</p>
+                    <p style={{ ...styles.programValue, color: pct == null ? "#94A3B8" : "#0F172A" }}>
                       {pct == null ? "—" : `${pct}%`}
                     </p>
-                    <p style={styles.kpiSub}>{a.flagship_label}</p>
+                    <p style={styles.programSub}>
+                      {p.flagship_label}
+                      {p.period_label ? ` · ${p.period_label}` : ""}
+                    </p>
                     {pct == null ? (
-                      <p style={styles.kpiNote}>
-                        {a.locations_reporting === 0 ? "no data yet" : `${a.locations_reporting}/${a.total_locations} reporting`}
+                      <p style={styles.programNote}>
+                        {p.locations_reporting === 0 ? "no data yet" : "metric not reported"}
                       </p>
                     ) : (
-                      <p style={styles.kpiNote}>
-                        ▲ {a.on_target} on-target · ⛔ {a.below_target} below
+                      <p style={styles.programNote}>
+                        {p.locations_reporting}/{p.total_locations} LGUs · ▲{p.on_target} on-target · ⛔{p.below_target} below
                       </p>
                     )}
                   </div>
@@ -244,7 +256,7 @@ export default function Overview() {
         </div>
 
         {/* Two Maps */}
-        <div style={styles.mapsRow}>
+        <div style={styles.mapsRow} ref={mapRef}>
           <div style={styles.mapCard}>
             <h2 style={styles.mapTitle}>
               Negros Island Region
@@ -353,15 +365,13 @@ const styles = {
   filterLabel: { fontSize: "12px", fontWeight: "600", color: "#1F2A45" },
   select: { padding: "8px 14px", borderRadius: "6px", border: "1px solid #CBD5E1", fontSize: "13px", color: "#1F2A45", backgroundColor: "#ffffff", outline: "none" },
   errorBox: { backgroundColor: "#FEE2E2", color: "#991B1B", padding: "12px 16px", borderRadius: "6px", fontSize: "13px", marginBottom: "16px" },
-  freshBanner: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", padding: "10px 14px", background: "#F1F5F9", border: "1px solid #E2E8F0", borderRadius: "8px", marginBottom: "16px", fontSize: "12px" },
-  freshLabel: { fontWeight: "600", color: "#475569" },
-  freshChip: { padding: "2px 8px", border: "1px solid", borderRadius: "999px", fontWeight: "600", background: "#fff" },
-  kpiRow: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" },
-  kpiCard: { backgroundColor: "#fff", borderRadius: "10px", padding: "16px 18px", boxShadow: "0 2px 8px rgba(0,0,0,0.07)", borderTop: "4px solid #0B4BAA" },
-  kpiArea: { fontSize: "12px", fontWeight: "700", color: "#64748B", textTransform: "uppercase", letterSpacing: "0.04em", margin: 0 },
-  kpiValue: { fontSize: "30px", fontWeight: "800", color: "#0F172A", margin: "6px 0 0" },
-  kpiSub: { fontSize: "12px", color: "#475569", margin: "2px 0 0" },
-  kpiNote: { fontSize: "11px", color: "#94A3B8", margin: "8px 0 0" },
+  glanceNote: { fontSize: "12px", color: "#5A6A85", margin: "0 0 12px 0", fontStyle: "italic" },
+  programGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "14px", marginBottom: "24px" },
+  programCard: { backgroundColor: "#fff", borderRadius: "10px", padding: "14px 16px", boxShadow: "0 2px 8px rgba(0,0,0,0.07)" },
+  programName: { fontSize: "12px", fontWeight: "700", color: "#64748B", margin: 0, minHeight: "32px" },
+  programValue: { fontSize: "28px", fontWeight: "800", margin: "6px 0 0" },
+  programSub: { fontSize: "12px", color: "#475569", margin: "2px 0 0" },
+  programNote: { fontSize: "11px", color: "#94A3B8", margin: "8px 0 0" },
   cardRow: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" },
   card: { backgroundColor: "#ffffff", borderRadius: "10px", padding: "20px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.07)" },
   cardLabel: { fontSize: "11px", color: "#5A6A85", margin: "0 0 8px 0", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" },

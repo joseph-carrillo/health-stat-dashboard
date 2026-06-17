@@ -472,6 +472,16 @@ def get_overview_summary(
     return analytics.overview_summary(year=year)
 
 
+@app.get("/api/overview/programs")
+def get_overview_programs(
+    year: int = 2026,
+    current_user: dict = Depends(get_current_user),
+):
+    """Per-program performance snapshot (latest period per program) for the
+    Overview at-a-glance grid."""
+    return analytics.overview_programs(year=year)
+
+
 @app.get("/api/coverage")
 def get_coverage(
     indicator_code: str,

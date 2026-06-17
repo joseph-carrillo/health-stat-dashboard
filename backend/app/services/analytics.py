@@ -966,6 +966,25 @@ _ON_TARGET = 0.95
 _BELOW_TARGET = 0.80
 
 
+def _status_for_ratio(ratio):
+    """Status band for a 0-1 ratio. None -> 'no_data'."""
+    if ratio is None:
+        return "no_data"
+    if ratio >= _ON_TARGET:
+        return "on"
+    if ratio >= _BELOW_TARGET:
+        return "near"
+    return "below"
+
+
+# Headline KPI per program for the Overview at-a-glance grid.
+# Add (indicator_code, label) as each program's template and headline metric
+# are defined. Programs not listed fall back to averaging their % indicators.
+PROGRAM_FLAGSHIPS = {
+    "CHILD_CARE": ("FIC_PCT", "Fully immunized children (FIC)"),
+}
+
+
 def overview_summary(year: int = 2026) -> dict:
     """Per-program-area snapshot for the Overview executive glance."""
     conn = get_db_connection()
@@ -1024,3 +1043,145 @@ def overview_summary(year: int = 2026) -> dict:
     cur.close()
     conn.close()
     return {"year": year, "total_locations": OVERVIEW_TOTAL_LOCATIONS, "areas": areas}
+
+
+def overview_programs(year: int = 2026) -> dict:
+    """Per-program performance snapshot for the Overview at-a-glance grid.
+
+    For every active program, find its latest reported period this year and
+    summarize the headline coverage across province/city LGUs. Programs with a
+    configured flagship use that indicator; the rest average their active
+    percentage indicators. Programs with no committed data come back as
+    status 'no_data'.
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id, code, name FROM programs WHERE is_active = TRUE ORDER BY id"
+    )
+    program_rows = cur.fetchall()
+
+    programs = []
+    for program_id, code, name in program_rows:
+        flagship = PROGRAM_FLAGSHIPS.get(code)
+        flagship_code = flagship[0] if flagship else None
+        flagship_label = flagship[1] if flagship else None
+
+        # Latest period this year for the headline metric. Tie it to the
+        # flagship indicator when configured (programs report on different
+        # frequencies, so the program-wide latest period may belong to a
+        # different indicator than the flagship).
+        if flagship_code:
+            cur.execute(
+                """SELECT h.period_id, rp.period_type, rp.label
+                   FROM health_data h
+                   JOIN indicators i ON i.id = h.indicator_id
+                   JOIN report_periods rp ON rp.id = h.period_id
+                   WHERE i.code = %s
+                     AND rp.year = %s
+                   ORDER BY h.period_id DESC
+                   LIMIT 1""",
+                [flagship_code, year],
+            )
+        else:
+            cur.execute(
+                """SELECT h.period_id, rp.period_type, rp.label
+                   FROM health_data h
+                   JOIN indicators i ON i.id = h.indicator_id
+                   JOIN report_periods rp ON rp.id = h.period_id
+                   WHERE i.program_id = %s
+                     AND i.formula_type = 'percentage'
+                     AND i.is_active = TRUE
+                     AND rp.year = %s
+                   ORDER BY h.period_id DESC
+                   LIMIT 1""",
+                [program_id, year],
+            )
+        period = cur.fetchone()
+
+        if not period:
+            programs.append({
+                "program_code": code,
+                "program_name": name,
+                "flagship_code": flagship_code,
+                "flagship_label": flagship_label,
+                "period_id": None,
+                "period_label": None,
+                "period_type": None,
+                "regional_pct": None,
+                "status": "no_data",
+                "on_target": 0,
+                "below_target": 0,
+                "locations_reporting": 0,
+                "total_locations": OVERVIEW_TOTAL_LOCATIONS,
+            })
+            continue
+
+        period_id, period_type, period_label = period
+
+        # Per-LGU headline values at that period.
+        if flagship_code:
+            cur.execute(
+                """SELECT h.value
+                   FROM health_data h
+                   JOIN indicators i ON i.id = h.indicator_id
+                   JOIN locations l ON l.id = h.location_id
+                   WHERE i.code = %s
+                     AND h.period_id = %s
+                     AND l.level IN ('province', 'city_municipality')""",
+                [flagship_code, period_id],
+            )
+        else:
+            # Fallback: average each LGU's % indicators for the program.
+            cur.execute(
+                """SELECT AVG(h.value)
+                   FROM health_data h
+                   JOIN indicators i ON i.id = h.indicator_id
+                   JOIN locations l ON l.id = h.location_id
+                   WHERE i.program_id = %s
+                     AND i.formula_type = 'percentage'
+                     AND i.is_active = TRUE
+                     AND h.period_id = %s
+                     AND l.level IN ('province', 'city_municipality')
+                   GROUP BY l.id""",
+                [program_id, period_id],
+            )
+        vals = [float(v[0]) for v in cur.fetchall() if v[0] is not None]
+        avg = round(sum(vals) / len(vals), 4) if vals else None
+
+        # Reporting completeness: distinct LGUs with any data this period.
+        cur.execute(
+            """SELECT COUNT(DISTINCT h.location_id)
+               FROM health_data h
+               JOIN indicators i ON i.id = h.indicator_id
+               JOIN locations l ON l.id = h.location_id
+               WHERE i.program_id = %s
+                 AND h.period_id = %s
+                 AND l.level IN ('province', 'city_municipality')""",
+            [program_id, period_id],
+        )
+        reporting = cur.fetchone()[0] or 0
+
+        programs.append({
+            "program_code": code,
+            "program_name": name,
+            "flagship_code": flagship_code,
+            "flagship_label": flagship_label or "Avg of % indicators",
+            "period_id": period_id,
+            "period_label": period_label,
+            "period_type": period_type,
+            "regional_pct": avg,
+            "status": _status_for_ratio(avg),
+            "on_target": sum(1 for v in vals if v >= _ON_TARGET),
+            "below_target": sum(1 for v in vals if v < _BELOW_TARGET),
+            "locations_reporting": reporting,
+            "total_locations": OVERVIEW_TOTAL_LOCATIONS,
+        })
+
+    cur.close()
+    conn.close()
+    return {
+        "year": year,
+        "total_locations": OVERVIEW_TOTAL_LOCATIONS,
+        "programs": programs,
+    }
