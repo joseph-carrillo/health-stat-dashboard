@@ -40,6 +40,7 @@ export default function Overview() {
   const [coverageData, setCoverageData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [summary, setSummary] = useState(null);
 
   // Load GeoJSON files once
   useEffect(() => {
@@ -48,6 +49,17 @@ export default function Overview() {
     fetch("/geojson/HUC.geojson").then((r) => r.json()).then(setHucGeo)
       .catch(() => console.error("Could not load HUC.geojson"));
   }, []);
+
+  // Tier-1 program-area summary (completeness + flagship %).
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    fetch(`/api/overview/summary?year=${year}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setSummary)
+      .catch(() => setSummary(null));
+  }, [year]);
 
   // Fetch coverage from API whenever year/month changes
   useEffect(() => {
@@ -162,6 +174,48 @@ export default function Overview() {
         </div>
 
         {error && <div style={styles.errorBox}>{error}</div>}
+
+        {/* TIER 1 — executive glance: data freshness + per-program KPI cards */}
+        {summary && (
+          <>
+            <div style={styles.freshBanner}>
+              <span style={styles.freshLabel}>Data completeness (of {summary.total_locations} LGUs):</span>
+              {summary.areas.map((a) => {
+                const full = a.locations_reporting >= a.total_locations;
+                const none = a.locations_reporting === 0;
+                const color = none ? "#DC2626" : full ? "#16A34A" : "#EAB308";
+                return (
+                  <span key={a.area} style={{ ...styles.freshChip, borderColor: color, color }}>
+                    {a.area}: {a.locations_reporting}/{a.total_locations}
+                  </span>
+                );
+              })}
+            </div>
+            <div style={styles.kpiRow}>
+              {summary.areas.map((a) => {
+                const pct = a.regional_pct == null ? null : Math.round(a.regional_pct * 1000) / 10;
+                return (
+                  <div key={a.area} style={styles.kpiCard}>
+                    <p style={styles.kpiArea}>{a.area}</p>
+                    <p style={styles.kpiValue}>
+                      {pct == null ? "—" : `${pct}%`}
+                    </p>
+                    <p style={styles.kpiSub}>{a.flagship_label}</p>
+                    {pct == null ? (
+                      <p style={styles.kpiNote}>
+                        {a.locations_reporting === 0 ? "no data yet" : `${a.locations_reporting}/${a.total_locations} reporting`}
+                      </p>
+                    ) : (
+                      <p style={styles.kpiNote}>
+                        ▲ {a.on_target} on-target · ⛔ {a.below_target} below
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
 
         {/* Summary Cards */}
         <div style={styles.cardRow}>
@@ -299,6 +353,15 @@ const styles = {
   filterLabel: { fontSize: "12px", fontWeight: "600", color: "#1F2A45" },
   select: { padding: "8px 14px", borderRadius: "6px", border: "1px solid #CBD5E1", fontSize: "13px", color: "#1F2A45", backgroundColor: "#ffffff", outline: "none" },
   errorBox: { backgroundColor: "#FEE2E2", color: "#991B1B", padding: "12px 16px", borderRadius: "6px", fontSize: "13px", marginBottom: "16px" },
+  freshBanner: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", padding: "10px 14px", background: "#F1F5F9", border: "1px solid #E2E8F0", borderRadius: "8px", marginBottom: "16px", fontSize: "12px" },
+  freshLabel: { fontWeight: "600", color: "#475569" },
+  freshChip: { padding: "2px 8px", border: "1px solid", borderRadius: "999px", fontWeight: "600", background: "#fff" },
+  kpiRow: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" },
+  kpiCard: { backgroundColor: "#fff", borderRadius: "10px", padding: "16px 18px", boxShadow: "0 2px 8px rgba(0,0,0,0.07)", borderTop: "4px solid #0B4BAA" },
+  kpiArea: { fontSize: "12px", fontWeight: "700", color: "#64748B", textTransform: "uppercase", letterSpacing: "0.04em", margin: 0 },
+  kpiValue: { fontSize: "30px", fontWeight: "800", color: "#0F172A", margin: "6px 0 0" },
+  kpiSub: { fontSize: "12px", color: "#475569", margin: "2px 0 0" },
+  kpiNote: { fontSize: "11px", color: "#94A3B8", margin: "8px 0 0" },
   cardRow: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" },
   card: { backgroundColor: "#ffffff", borderRadius: "10px", padding: "20px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.07)" },
   cardLabel: { fontSize: "11px", color: "#5A6A85", margin: "0 0 8px 0", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" },

@@ -463,6 +463,15 @@ def get_scorecard(
     }
 
 
+@app.get("/api/overview/summary")
+def get_overview_summary(
+    year: int = 2026,
+    current_user: dict = Depends(get_current_user),
+):
+    """Per-program-area snapshot (completeness + flagship %) for the Overview."""
+    return analytics.overview_summary(year=year)
+
+
 @app.get("/api/coverage")
 def get_coverage(
     indicator_code: str,

@@ -941,3 +941,86 @@ def update_indicator_target(indicator_id: int, target_value,
         "target_value": float(row[2]) if row[2] is not None else None,
         "target_year": row[3],
     }
+
+
+# =====================================================
+# OVERVIEW SUMMARY — tiered executive glance (Tier 1)
+# Per program area: reporting completeness + flagship regional %.
+# Flagships are first-pass picks; confirm/adjust with the program team.
+# =====================================================
+OVERVIEW_TOTAL_LOCATIONS = 66  # provinces (3) + cities/municipalities (63)
+
+OVERVIEW_AREAS = [
+    {"area": "Immunization", "flagship": "FIC_PCT", "flagship_label": "FIC",
+     "codes_like": ["CPAB%", "BCG%", "HEPAB%", "DPT%", "OPV%", "IPV%", "PCV%", "MMR%", "FIC%", "CIC%"]},
+    {"area": "Nutrition", "flagship": "NUT_MAM_CURED_PCT", "flagship_label": "MAM cure rate",
+     "codes_like": ["NUT_%"]},
+    {"area": "Mgt of Sick", "flagship": "PNEU_ABX_PCT", "flagship_label": "Pneumonia w/ antibiotics",
+     "codes_like": ["DIAR%", "PNEU%", "SICK%"]},
+    {"area": "SBI", "flagship": "HPV1_SBI_PCT", "flagship_label": "HPV1 coverage",
+     "codes_like": ["SBI%", "HPV%"]},
+]
+
+# Coverage bands (ratios): on-target >= 0.95, below-target < 0.80.
+_ON_TARGET = 0.95
+_BELOW_TARGET = 0.80
+
+
+def overview_summary(year: int = 2026) -> dict:
+    """Per-program-area snapshot for the Overview executive glance."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    areas = []
+    for a in OVERVIEW_AREAS:
+        like = a["codes_like"]
+        like_clause = " OR ".join(["i.code LIKE %s"] * len(like))
+
+        # Reporting completeness: distinct province/city locations with any
+        # committed data for this program area this year.
+        cur.execute(
+            f"""SELECT COUNT(DISTINCT h.location_id)
+                FROM health_data h
+                JOIN indicators i ON i.id = h.indicator_id
+                JOIN report_periods rp ON rp.id = h.period_id
+                JOIN locations l ON l.id = h.location_id
+                WHERE rp.year = %s
+                  AND l.level IN ('province', 'city_municipality')
+                  AND ({like_clause})""",
+            [year, *like],
+        )
+        reporting = cur.fetchone()[0] or 0
+
+        # Flagship values across LGUs for its latest period this year.
+        cur.execute(
+            """SELECT h.value
+               FROM health_data h
+               JOIN indicators i ON i.id = h.indicator_id
+               JOIN locations l ON l.id = h.location_id
+               WHERE i.code = %s
+                 AND l.level IN ('province', 'city_municipality')
+                 AND h.period_id = (
+                     SELECT MAX(h2.period_id)
+                     FROM health_data h2
+                     JOIN indicators i2 ON i2.id = h2.indicator_id
+                     JOIN report_periods rp2 ON rp2.id = h2.period_id
+                     WHERE i2.code = %s AND rp2.year = %s
+                 )""",
+            [a["flagship"], a["flagship"], year],
+        )
+        vals = [float(v[0]) for v in cur.fetchall() if v[0] is not None]
+        avg = round(sum(vals) / len(vals), 4) if vals else None
+
+        areas.append({
+            "area": a["area"],
+            "flagship_code": a["flagship"],
+            "flagship_label": a["flagship_label"],
+            "regional_pct": avg,
+            "on_target": sum(1 for v in vals if v >= _ON_TARGET),
+            "below_target": sum(1 for v in vals if v < _BELOW_TARGET),
+            "locations_reporting": reporting,
+            "total_locations": OVERVIEW_TOTAL_LOCATIONS,
+        })
+
+    cur.close()
+    conn.close()
+    return {"year": year, "total_locations": OVERVIEW_TOTAL_LOCATIONS, "areas": areas}

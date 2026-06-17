@@ -32,12 +32,28 @@ Back on Phase 1 feature work: remaining FHSIS templates, then GeoJSON maps.
   too large (244 rows, audit-logged); shipped `audit_data_quality.py` + `fix_birthdose_pct.py`
   + first pytest suite (9 tests). Applied on laptop DB; office DB pending (see reminder above).
 
+## IN PROGRESS — Overview redesign (tiered, all programs)
+Agreed design: Tier 1 = executive glance (freshness banner + per-program KPI cards + map +
+"needs attention" panel); Tier 2 = expandable per-program detail for program managers.
+**Done this session (15% budget slice):**
+- Backend `analytics.overview_summary()` + `GET /api/overview/summary` (per-area completeness +
+  flagship regional %; flagships: FIC_PCT, NUT_MAM_CURED_PCT, PNEU_ABX_PCT, HPV1_SBI_PCT).
+- Frontend `Overview.jsx`: data-completeness banner + 4 KPI cards (Tier 1, top of page).
+- Existing map + ranking still render below.
+**Next session (resume here):**
+1. **"Needs attention" panel** — bottom 5 LGUs + over-100% DQC flag count + # not reporting.
+2. **Tier 2 expandable per-program sections** (link out to Coverage/Rankings/Reports).
+3. **Confirm flagship KPIs** with the program team (current picks are first-pass straw-man).
+4. Trim the old summary cards / ranking if they now duplicate Tier 1.
+5. (Later) sparkline trends once >1 period of data exists.
+
 ## Open work (priority order)
-1. File 6 Nutritional Status (Expanded NIR folder) — validate then stage
-2. SBI (Annual) config + seed
-3. Remaining Immunization files (5–8)
-4. GeoJSON choropleth maps in `frontend/public/geojson/`
-5. ICTU deployment
+1. Finish Overview redesign (see IN PROGRESS above)
+2. Remaining Immunization files (5–8) — when real data arrives
+3. ICTU deployment (pending IT: Linux VM for Docker, SSH vs RDP)
+4. Deferred best-practices: fail-fast secrets, bcrypt→argon2, CI
+
+Note: File 6 (Nutrition) + SBI (Annual, Td/MR/HPV) templates are DONE this session.
 
 ## Deferred best-practices (next foundation pass)
 - Fail-fast on missing secrets (remove `os.getenv` fallbacks in `db.py`/`auth.py`)
