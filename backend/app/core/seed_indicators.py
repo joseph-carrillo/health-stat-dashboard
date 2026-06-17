@@ -3,17 +3,21 @@
 # Run this script once to populate the indicators table
 # Safe to run multiple times -- skips existing indicators
 
+import os
+
 import psycopg2
 
 # =====================================================
 # DATABASE CONNECTION
+# Reads from environment (mirrors app/core/db.py) so the same script runs on
+# the host and inside the Docker container (where DB_HOST=db).
 # =====================================================
 DB_CONFIG = {
-    "host": "localhost",
-    "port": 5432,
-    "database": "doh_nir_dashboard",
-    "user": "doh_admin",
-    "password": "doh_password_2026"
+    "host": os.getenv("DB_HOST", "localhost"),
+    "port": int(os.getenv("DB_PORT", "5432")),
+    "database": os.getenv("DB_NAME", "doh_nir_dashboard"),
+    "user": os.getenv("DB_USER", "doh_admin"),
+    "password": os.getenv("DB_PASSWORD", "doh_password_2026"),
 }
 
 # =====================================================
@@ -691,6 +695,78 @@ INDICATORS = {
          "Projected Population 0-11 Months Previous Year",
          "count", "monthly", "count",
          100, None, False, False, None, None),
+
+        # =================================================
+        # CHILD CARE -- SBI (School-Based Immunization), annual
+        # Denominator = enrolled learners (a column in the file, from DepEd),
+        # not the health population table.
+        # =================================================
+
+        # --- File 9: G1 & G7 given Td vaccine ---
+        ("SBI_TD_G1_ENROLLED", "Td: Grade 1 Enrolled Learners",
+         "count", "annual", "count", 100, None, False, False, None, None),
+        ("SBI_TD_G1_MALE", "Td: Grade 1 Given Td Male",
+         "count", "annual", "count", 100, None, False, False, None, None),
+        ("SBI_TD_G1_FEMALE", "Td: Grade 1 Given Td Female",
+         "count", "annual", "count", 100, None, False, False, None, None),
+        ("SBI_TD_G1_TOTAL", "Td: Grade 1 Total",
+         "count", "annual", "sum", 100, None, True, False, None, None),
+        ("SBI_TD_G1_PCT", "Td: Grade 1 Percentage",
+         "percentage", "annual", "percentage",
+         100, "SBI_TD_G1_ENROLLED", True, False, 0.95, 2026),
+        ("SBI_TD_G7_ENROLLED", "Td: Grade 7 Enrolled Learners",
+         "count", "annual", "count", 100, None, False, False, None, None),
+        ("SBI_TD_G7_MALE", "Td: Grade 7 Given Td Male",
+         "count", "annual", "count", 100, None, False, False, None, None),
+        ("SBI_TD_G7_FEMALE", "Td: Grade 7 Given Td Female",
+         "count", "annual", "count", 100, None, False, False, None, None),
+        ("SBI_TD_G7_TOTAL", "Td: Grade 7 Total",
+         "count", "annual", "sum", 100, None, True, False, None, None),
+        ("SBI_TD_G7_PCT", "Td: Grade 7 Percentage",
+         "percentage", "annual", "percentage",
+         100, "SBI_TD_G7_ENROLLED", True, False, 0.95, 2026),
+
+        # --- File 10: G1 & G7 given MR vaccine (same shape as Td) ---
+        ("SBI_MR_G1_ENROLLED", "MR: Grade 1 Enrolled Learners",
+         "count", "annual", "count", 100, None, False, False, None, None),
+        ("SBI_MR_G1_MALE", "MR: Grade 1 Given MR Male",
+         "count", "annual", "count", 100, None, False, False, None, None),
+        ("SBI_MR_G1_FEMALE", "MR: Grade 1 Given MR Female",
+         "count", "annual", "count", 100, None, False, False, None, None),
+        ("SBI_MR_G1_TOTAL", "MR: Grade 1 Total",
+         "count", "annual", "sum", 100, None, True, False, None, None),
+        ("SBI_MR_G1_PCT", "MR: Grade 1 Percentage",
+         "percentage", "annual", "percentage",
+         100, "SBI_MR_G1_ENROLLED", True, False, 0.95, 2026),
+        ("SBI_MR_G7_ENROLLED", "MR: Grade 7 Enrolled Learners",
+         "count", "annual", "count", 100, None, False, False, None, None),
+        ("SBI_MR_G7_MALE", "MR: Grade 7 Given MR Male",
+         "count", "annual", "count", 100, None, False, False, None, None),
+        ("SBI_MR_G7_FEMALE", "MR: Grade 7 Given MR Female",
+         "count", "annual", "count", 100, None, False, False, None, None),
+        ("SBI_MR_G7_TOTAL", "MR: Grade 7 Total",
+         "count", "annual", "sum", 100, None, True, False, None, None),
+        ("SBI_MR_G7_PCT", "MR: Grade 7 Percentage",
+         "percentage", "annual", "percentage",
+         100, "SBI_MR_G7_ENROLLED", True, False, 0.95, 2026),
+
+        # --- File 11: HPV (female-only; SBI + CBI delivery) ---
+        ("HPV_G4_ENROLLED", "HPV: Grade 4 Female Enrolled (public + private)",
+         "count", "annual", "count", 100, None, False, False, None, None),
+        ("HPV1_SBI", "HPV1 via SBI (Grade 4 female, >=9 yrs)",
+         "count", "annual", "count", 100, None, False, False, None, None),
+        ("HPV1_SBI_PCT", "HPV1 SBI Percentage",
+         "percentage", "annual", "percentage",
+         100, "HPV_G4_ENROLLED", True, False, 0.95, 2026),
+        ("HPV1_CBI", "HPV1 via CBI (9-year-old female)",
+         "count", "annual", "count", 100, None, False, False, None, None),
+        ("HPV1_COMBINED", "HPV1 Combined Total (SBI + CBI)",
+         "count", "annual", "sum", 100, None, True, False, None, None),
+        ("HPV2_CBI", "HPV2 via CBI",
+         "count", "annual", "count", 100, None, False, False, None, None),
+        ("HPV2_PCT", "HPV2 Percentage (of HPV1 recipients)",
+         "percentage", "annual", "percentage",
+         100, "HPV1_COMBINED", True, False, 0.95, 2026),
     ],
 }
 

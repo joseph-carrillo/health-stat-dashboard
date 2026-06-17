@@ -1,0 +1,54 @@
+{
+  "template_id": "HPV_SBI_CBI",
+  "template_version": "2026",
+  "program_code": "CHILD_CARE",
+  "source_file_pattern": "HPV",
+  "frequency": "annual",
+  "psgc_column": 0,
+  "location_column": 1,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000",
+    "Negros Island Region": "1800000000",
+    "Negros Island Region (NIR)": "1800000000",
+    "BARMM": "1800000000"
+  },
+
+  "display": {
+    "label": "File 11 - SBI: HPV (SBI + CBI, annual)",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Name of City / Municipality" }
+    ]
+  },
+
+  "upload": {
+    "sub_program": "SBI (Annual)",
+    "file_number": 11
+  },
+
+  "sheet_map": {
+    "annual": "Annual"
+  },
+
+  "columns": [
+    { "index": 2, "indicator_code": "HPV_G4_ENROLLED", "is_computed": false },
+    { "index": 3, "indicator_code": "HPV1_SBI", "is_computed": false },
+    { "index": 4, "indicator_code": "HPV1_SBI_PCT", "is_computed": true, "formula": "HPV1_SBI / HPV_G4_ENROLLED" },
+    { "index": 5, "indicator_code": "HPV1_CBI", "is_computed": false },
+    { "index": 6, "indicator_code": "HPV1_COMBINED", "is_computed": true, "formula": "HPV1_SBI + HPV1_CBI" },
+    { "index": 7, "indicator_code": "HPV2_CBI", "is_computed": false },
+    { "index": 8, "indicator_code": "HPV2_PCT", "is_computed": true, "formula": "HPV2_CBI / HPV1_COMBINED" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "HPV1_SBI_PCT", "threshold": 1.0, "numerator_code": "HPV1_SBI", "denominator_code": "HPV_G4_ENROLLED", "message": "HPV1 (SBI) vaccinated exceeds Grade 4 enrolled (over 100%)", "hint": "You cannot vaccinate more Grade 4 females via SBI than are enrolled. Over 100% means a value is wrong: check the source file (enrolled too low, or SBI count too high) and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "HPV2_PCT", "threshold": 1.0, "numerator_code": "HPV2_CBI", "denominator_code": "HPV1_COMBINED", "message": "HPV2 exceeds total HPV1 recipients (over 100%)", "hint": "A 2nd HPV dose cannot be given to someone who did not receive the 1st, so HPV2 cannot exceed total HPV1 (SBI + CBI). Over 100% means a value is wrong: check the source file and re-upload." }
+  ],
+
+  "notes": "SBI File 11. Annual, female-only (HPV targets Grade 4 females >=9 yrs). HPV1 SBI = cols 2-4 (enrolled, vaccinated, %), HPV1 CBI count = col 5, combined HPV1 = col 6, HPV2 CBI = cols 7-8. Cols 9-11 (Remarks, DQC A/B) not stored."
+}

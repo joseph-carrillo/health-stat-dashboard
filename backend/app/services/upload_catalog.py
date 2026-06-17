@@ -14,7 +14,7 @@ PROGRAMS = [
             {"name": "Immunization"},
             {"name": "Management of the Sick"},
             {"name": "Nutrition"},
-            {"name": "SBI (Annual)", "status": "coming_soon"},
+            {"name": "SBI (Annual)"},
         ],
     },
 ]
