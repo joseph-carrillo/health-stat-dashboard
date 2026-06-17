@@ -1,5 +1,15 @@
 # progress.md
 
+## Status: Track 1 — Overview at-a-glance 11-program grid (June 17)
+
+## Latest Session (June 17) — Overview at-a-glance (all programs)
+- New `analytics.overview_programs(year)` + `GET /api/overview/programs?year=`
+- `Overview.jsx`: 11-program performance grid (one card per program), each using that
+  program's latest reported period; click a card to drill the map into its flagship
+- `PROGRAM_FLAGSHIPS` config (CHILD_CARE→FIC_PCT; others average % indicators)
+- Fixed flagship-period selection bug (was picking program-wide latest = Annual SBI)
+- Verified Child Care FIC 4.29% (Jan 2026, 66/66) against direct DB AVG
+
 ## Status: Track 1 — Nutrition 1–6, Sick 1–3, Immunization 1+4; upload workflow validate-first (June 10)
 
 ## Latest Session (June 10) — Upload validate-first + staging cleanup

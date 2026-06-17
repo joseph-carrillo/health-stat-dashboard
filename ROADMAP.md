@@ -17,6 +17,7 @@
 ### Analytics
 - [x] Home scorecard
 - [x] Overview (multi-indicator)
+- [x] Overview at-a-glance — 11-program performance grid (latest period per program, click-to-drill)
 - [x] Coverage + Rankings (province / HUC grouping)
 - [x] Trends (SVG)
 - [x] Indicator Reports (API-driven, province filter, computed columns, NIR rollup)
@@ -27,10 +28,9 @@
 - [x] Immunization File 4 (DPT-HiB-HepB)
 - [x] Nutrition Files 1–6 (incl. File 6 annual MAM/SAM)
 - [x] Management of the Sick 1–3 (Vitamin A, diarrhea/pneumonia)
-- [ ] Re-upload/approve CPAB with validate-first flow; fix legacy bad `CPAB_PCT` rows
-- [ ] File 6 Nutritional Status (Expanded NIR folder) — confirm upload/approve
-- [ ] SBI (Annual) config + seed
-- [ ] Remaining Immunization files (5–8)
+- [x] Birth-dose % fix (CPAB/BCG/HepaB stored 100× too large) + reusable data-quality audit
+- [x] SBI (Annual) — Td (#9), MR (#10), HPV (#11) configs + 27 indicators
+- [ ] Remaining Immunization files (5–8) — when real data arrives
 
 ### Remaining
 - [ ] GeoJSON choropleth maps (`frontend/public/geojson/`)

@@ -1,28 +1,30 @@
 # activeContext.md
 
 ## Current Session Goal
-Foundation hardening from Sentinel-FMS: full-stack containerization, session protocols, and a
-root foundation-doc suite. Branch `chore/containerize-and-foundation-docs`.
+Overview "at a glance": show the performance of every program on one page. Work goes
+directly on `main` (sole developer).
 
 ## Strategic Decision (unchanged)
 Two-Track strategy: Track 1 province dashboard for ops feedback; Track 2 LGU/barangay later.
 
-## What Was Just Completed (June 17 — Foundation hardening)
-- Containerized backend + frontend (multi-stage Dockerfiles) alongside the DB; full dev
-  `docker-compose.yml` + `docker-compose.prod.yml` (gunicorn + nginx)
-- Env-driven config: `.env`/`.env.example`, compose sources DB creds, configurable CORS
-- Fixed login 500: pinned `bcrypt>=4.0,<4.1` (passlib 1.7.4 breaks on bcrypt ≥4.1)
-- Session protocols added to `CLAUDE.md` (`startup protocols` / `run shutdown protocols`)
-- `memory-bank/MEMORY.md` index + `project_state.md` added
-- Root foundation docs: README, ARCHITECTURE, DATA_MODEL, DECISIONS_LOG, SECURITY, RUNBOOK,
-  ROADMAP, GLOSSARY, FILE_STRUCTURE, CONTRIBUTING
-- `scripts/start.ps1` & `stop.ps1` now wrap `docker compose` (with `-Native` fallback)
-- Verified end-to-end: stack up, `/docs` 200, frontend 200, login via proxy returns JWT
+## What Was Just Completed (June 17 — Overview at-a-glance grid)
+- Replaced the 4 Child Care sub-area KPI cards on Analytics → Overview with an 11-program
+  responsive grid. Each card = one DOH program, showing headline coverage for that program's
+  latest reported period in the selected year, status color, reporting count, on/below counts.
+- Cards with data are clickable → set the map's indicator to that program's flagship and
+  scroll to the map (Tier 2 drill-down).
+- Backend: `analytics.overview_programs(year)` + `GET /api/overview/programs?year=`;
+  `PROGRAM_FLAGSHIPS` config (CHILD_CARE→FIC_PCT; others average % indicators);
+  `_status_for_ratio()` helper.
+- Fixed a period-selection bug: latest period is now chosen relative to the flagship
+  indicator (was program-wide MAX(period_id), which wrongly picked Annual SBI for Child Care).
+- Verified: 11 programs returned; Child Care FIC 4.29% (Jan 2026, 66/66); matches direct DB AVG.
 
 ## What Happens Next
-1. Commit + push this branch (pending Joseph's go-ahead)
-2. Continue Immunization uploads using validate → stage → approve
-3. Fix legacy bad CPAB_PCT rows by approving incoming values where conflicts appear
+1. Phase 2: "Needs attention" panel (bottom LGUs, DQC flags, # not reporting)
+2. Confirm flagship KPIs with program team (only CHILD_CARE set so far)
+3. Optional: expandable Child Care sub-area detail (old Immunization/Nutrition/Sick/SBI cards)
+4. Remaining Immunization files (5–8) when real data arrives
 
 ## Daily Startup (two machines)
 1. `run startup protocols` OR `.\scripts\sync.ps1` then `.\scripts\start.ps1`

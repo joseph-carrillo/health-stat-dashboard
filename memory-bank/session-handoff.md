@@ -1,33 +1,41 @@
 # session-handoff.md
 
 ## Last Updated
-2026-06-10 (Upload validate-first workflow + staging cleanup)
+2026-06-17 (Overview at-a-glance — 11-program performance grid)
 
 ## Current Objective
-Track 1 Child Care: solid upload pipeline with validate → stage → approve. Next: finish Immunization re-uploads with new workflow, File 6, or SBI (Annual).
+Track 1 province dashboard. Overview now shows one performance card per program
+(latest reported period per program). Next: Phase 2 polish (Needs-attention panel,
+confirm flagship KPIs) and remaining Immunization files when real data arrives.
 
 ## Done This Session
-- **Validate-first upload** — Upload to Staging disabled until Validate Only passes; changing file/period clears validation
-- **Staging clutter fix** — skip unchanged values (match live data); only new/changed rows staged
-- **Conflict logic** — no false conflicts when existing == incoming; `_PCT` normalized to ratio before compare
-- **Batch review UI** — "All staged values" table; conflict % shown as `1.44%` not raw ratios; validation preview hidden after staging
-- **0÷0 percent** — shows `0.00%` not "—" (e.g. LBW iron HUC)
-- **Upload.jsx** syntax fix (broken styles object)
-- **Known data issue:** some live `CPAB_PCT` rows stored wrong (e.g. Amlan 1.4374 → 143.74%); incoming 1.44% is correct — use **Use incoming** on approve
+- **Overview at-a-glance grid** — replaced the 4 Child Care sub-area KPI cards with an
+  11-program responsive grid; each card shows headline coverage for that program's
+  latest reported period in the selected year, status color, reporting count, and
+  on/below-target counts. Cards with data are clickable -> drill the map into that
+  program's flagship indicator.
+- **Backend** `analytics.overview_programs(year)` + `GET /api/overview/programs?year=`;
+  added `PROGRAM_FLAGSHIPS` config (CHILD_CARE -> FIC_PCT; others average their %
+  indicators) and `_status_for_ratio()` helper.
+- **Bug caught + fixed:** latest period was first computed as the program-wide MAX(period_id),
+  which resolved Child Care to "Annual 2026" (SBI) where FIC has no data. Fixed to select
+  the period relative to the flagship indicator -> Child Care now resolves to January 2026.
+- **Verified:** endpoint returns all 11 programs; Child Care FIC = 4.29% (Jan 2026, 66/66
+  reporting); cross-checked against direct DB AVG (0.0429) — exact match. No lint errors.
 
 ## Next Session — Pick One
-1. **Re-upload / approve CPAB** with validate-first flow; resolve real conflicts with "Use incoming" for bad legacy %
-2. **File 6** Nutritional Status (Expanded NIR folder) — validate then stage
-3. **SBI (Annual)** config + seed
-4. **Immunization** files 5–8
+1. **Needs-attention panel** (Phase 2) — bottom LGUs, over-100% DQC flags, # not reporting
+2. **Confirm flagship KPIs** with program team (only CHILD_CARE=FIC set; others average %)
+3. **Child Care sub-area detail** — optional expandable section inside the Child Care card
+   (the old 4-area cards: Immunization / Nutrition / Sick / SBI)
+4. Remaining Immunization files (5–8) when real data arrives; GeoJSON maps; ICTU deploy
 
-## Demo Period
-Immunization monthly: **January 2026**. Nutrition Q1 **2026**. File 6 annual: **Report Year 2026**.
-
-## Blocker / Gotcha
-- Staging holds **new/changed only** — full file view is Validate Preview, not batch review
-- Legacy bad % in DB may show as 143% vs 1.44% — incoming from formula is usually correct
-- `run startup protocols` to sync and start stack
+## Notes / Gotchas
+- `/api/overview/summary` (the old 4-area endpoint) is still live but no longer used by the
+  frontend — left in place intentionally; remove later if confirmed dead.
+- `PROGRAM_FLAGSHIPS` in `backend/app/services/analytics.py` is where to add each program's
+  headline KPI as templates land (one line per program).
+- Office DB birth-dose % fix may still be PENDING — see `project_state.md` startup reminder.
 
 ## First Command Next Session
 ```

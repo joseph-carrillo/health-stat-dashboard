@@ -33,18 +33,22 @@ Back on Phase 1 feature work: remaining FHSIS templates, then GeoJSON maps.
   + first pytest suite (9 tests). Applied on laptop DB; office DB pending (see reminder above).
 
 ## IN PROGRESS — Overview redesign (tiered, all programs)
-Agreed design: Tier 1 = executive glance (freshness banner + per-program KPI cards + map +
-"needs attention" panel); Tier 2 = expandable per-program detail for program managers.
-**Done this session (15% budget slice):**
-- Backend `analytics.overview_summary()` + `GET /api/overview/summary` (per-area completeness +
-  flagship regional %; flagships: FIC_PCT, NUT_MAM_CURED_PCT, PNEU_ABX_PCT, HPV1_SBI_PCT).
-- Frontend `Overview.jsx`: data-completeness banner + 4 KPI cards (Tier 1, top of page).
-- Existing map + ranking still render below.
+Agreed design: Tier 1 = executive glance (per-program cards + map); Tier 2 = drill-down.
+**Done (2026-06-17, latest):**
+- Tier 1 is now an **11-program at-a-glance grid** (one card per DOH program), replacing the
+  earlier 4 Child Care sub-area cards. Each card shows headline coverage for that program's
+  **latest reported period in the selected year**, status color, reporting count, on/below.
+- Backend `analytics.overview_programs(year)` + `GET /api/overview/programs?year=`;
+  `PROGRAM_FLAGSHIPS` config (CHILD_CARE→FIC_PCT; others average % indicators);
+  `_status_for_ratio()` helper. Period chosen relative to the flagship indicator.
+- Card click → drills the map/ranking into the program's flagship + scrolls to map.
+- Old `overview_summary()` / `/api/overview/summary` (4-area) left in place but unused by UI.
 **Next session (resume here):**
 1. **"Needs attention" panel** — bottom 5 LGUs + over-100% DQC flag count + # not reporting.
-2. **Tier 2 expandable per-program sections** (link out to Coverage/Rankings/Reports).
-3. **Confirm flagship KPIs** with the program team (current picks are first-pass straw-man).
-4. Trim the old summary cards / ranking if they now duplicate Tier 1.
+2. **Confirm flagship KPIs** with the program team (only CHILD_CARE=FIC_PCT set; rest average).
+3. **Optional Child Care sub-area detail** — expandable section restoring the old
+   Immunization / Nutrition / Sick / SBI breakdown inside the Child Care card.
+4. Trim the old 4 LGU-count summary cards if they now duplicate Tier 1.
 5. (Later) sparkline trends once >1 period of data exists.
 
 ## Open work (priority order)
@@ -63,7 +67,8 @@ Note: File 6 (Nutrition) + SBI (Annual, Td/MR/HPV) templates are DONE this sessi
 
 ## Git
 - Work goes **directly on `main`** (sole developer — no feature branches). Push when done.
-- Latest: `692ef0e` birth-dose % fix; `8a2ea98` containerization + docs.
+- Latest: Overview 11-program at-a-glance grid (this session); `15aec12` Overview Tier 1;
+  `692ef0e` birth-dose % fix; `8a2ea98` containerization + docs.
 
 ## Local dev
 - Stack: `docker compose up -d --build` → frontend `:5173`, backend `:8000/docs`, db `:5432`
