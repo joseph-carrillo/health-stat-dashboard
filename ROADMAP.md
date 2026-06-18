@@ -13,11 +13,15 @@
 - [x] React frontend with DOH branding
 - [x] Full-stack containerization (db + backend + frontend) + prod compose
 - [x] Sentinel-style session protocols + foundation docs
+- [x] `reset db protocols` — data-only DB wipe (`scripts/reset-db.ps1`) for clean testing
+- [x] Vite HMR fix for Docker-on-Windows (server.watch.usePolling)
 
 ### Analytics
 - [x] Home scorecard
 - [x] Overview (multi-indicator)
 - [x] Overview at-a-glance — 11-program performance grid (latest period per program, click-to-drill)
+- [x] Overview → Child Care expandable card: 4 sub-area mini-cards (Immunization / Nutrition / Sick / SBI) with UI-selectable KPI per area (`GET /api/overview/indicator`)
+- [x] Ranking consolidated onto the Rankings page (removed from Overview); Rankings broadened to full indicator set via shared config
 - [x] Coverage + Rankings (province / HUC grouping)
 - [x] Trends (SVG)
 - [x] Indicator Reports (API-driven, province filter, computed columns, NIR rollup)

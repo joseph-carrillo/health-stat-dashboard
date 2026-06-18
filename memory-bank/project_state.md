@@ -6,17 +6,22 @@
 **Phase 1 — FHSIS Excel upload → PostgreSQL.** Track 1 (province dashboard) active.
 Phase 2 (web form input) and Track 2 (LGU/barangay) are future.
 
-## ⚠️ STARTUP REMINDER — per-machine DB fix
-The File 1 birth-dose percentage fix (100× error) was **applied on the LAPTOP DB only**.
-Databases are NOT synced via git. **On each other machine, after pulling, run once:**
-`docker compose exec backend python backend/scripts/fix_birthdose_pct.py --apply`
-- Laptop DB: ✅ done (2026-06-17)
-- Office DB: ⬜ PENDING — surface this in the startup brief until done, then tick it off.
-Verify with `backend/scripts/audit_data_quality.py` (should report "clean").
+## ⚠️ STARTUP REMINDER — per-machine DB state (DBs are NOT git-synced)
+Each machine has its own Docker DB. After cloning/pulling on a machine:
+- **`.env` is gitignored** — if missing, `docker compose` fails ("DB_PASSWORD missing").
+  Copy it: `Copy-Item .env.example .env` (template has working local-dev values).
+- **Indicators may be stale.** The office DB was seeded before the Nutrition/Sick/SBI
+  templates existed (had only 43 immunization indicators). Fix is idempotent:
+  `docker compose exec backend python backend/bootstrap_db.py` → backfills all
+  (office DB now at **247 indicators**, done 2026-06-18).
+- **Birth-dose 100× fix:** office DB audit reports clean (section [3] none) — not needed here.
+  Laptop DB fixed 2026-06-17. Verify any machine with `backend/scripts/audit_data_quality.py`.
+- **Clean slate for testing:** type `reset db protocols` (truncates data, keeps indicators).
 
-## Current focus (as of 2026-06-17)
-Foundation complete (containerized + docs + protocols) and the birth-dose percentage bug fixed.
-Back on Phase 1 feature work: remaining FHSIS templates, then GeoJSON maps.
+## Current focus (as of 2026-06-18)
+Overview redesign + Child Care wiring. Ranking consolidated to the Rankings page; Overview
+summary cards removed; Child Care card now expands into 4 selectable sub-area KPIs. Next:
+confirm sub-area flagship KPIs with the program team and upload remaining Child Care files.
 
 ## Done
 - Full stack (React 19 + FastAPI + PostgreSQL 15) working on both machines
@@ -32,32 +37,36 @@ Back on Phase 1 feature work: remaining FHSIS templates, then GeoJSON maps.
   too large (244 rows, audit-logged); shipped `audit_data_quality.py` + `fix_birthdose_pct.py`
   + first pytest suite (9 tests). Applied on laptop DB; office DB pending (see reminder above).
 
-## IN PROGRESS — Overview redesign (tiered, all programs)
-Agreed design: Tier 1 = executive glance (per-program cards + map); Tier 2 = drill-down.
-**Done (2026-06-17, latest):**
-- Tier 1 is now an **11-program at-a-glance grid** (one card per DOH program), replacing the
-  earlier 4 Child Care sub-area cards. Each card shows headline coverage for that program's
-  **latest reported period in the selected year**, status color, reporting count, on/below.
-- Backend `analytics.overview_programs(year)` + `GET /api/overview/programs?year=`;
-  `PROGRAM_FLAGSHIPS` config (CHILD_CARE→FIC_PCT; others average % indicators);
-  `_status_for_ratio()` helper. Period chosen relative to the flagship indicator.
-- Card click → drills the map/ranking into the program's flagship + scrolls to map.
-- Old `overview_summary()` / `/api/overview/summary` (4-area) left in place but unused by UI.
+## Overview redesign — status (2026-06-18)
+**Done this session:**
+- Removed the duplicate LGU **ranking** and the **4 summary cards** from Overview.
+- **Rankings page** broadened to the full indicator set via shared `overviewIndicators.js`
+  (each option carries pct/total/denom codes; grouped `<optgroup>` selector).
+- **Child Care card is now expandable** → 4 sub-area mini-cards (Immunization / Nutrition /
+  Mgt of Sick / SBI), each with a **UI dropdown to pick the KPI** (defaults = flagships:
+  FIC / MAM cure / Pneumonia abx / HPV1). Big % drills the map.
+- New backend `analytics.indicator_overview()` + `GET /api/overview/indicator?indicator_code=&year=`
+  — frequency-agnostic, resolves each indicator's latest reported period (monthly/quarterly/annual).
+- Old `overview_summary()` / `/api/overview/summary` (4-area) still present but unused by UI.
 **Next session (resume here):**
-1. **"Needs attention" panel** — bottom 5 LGUs + over-100% DQC flag count + # not reporting.
-2. **Confirm flagship KPIs** with the program team (only CHILD_CARE=FIC_PCT set; rest average).
-3. **Optional Child Care sub-area detail** — expandable section restoring the old
-   Immunization / Nutrition / Sick / SBI breakdown inside the Child Care card.
-4. Trim the old 4 LGU-count summary cards if they now duplicate Tier 1.
-5. (Later) sparkline trends once >1 period of data exists.
+1. **Confirm sub-area flagship KPIs** with the program team (Nutrition/Sick/SBI defaults are
+   first-pass; `OVERVIEW_AREAS` + `PROGRAM_FLAGSHIPS` in `analytics.py`).
+2. **Maps are monthly-only** (`coverage-summary`/`coverage-breakdown` filter `period_type='monthly'`)
+   — generalize so drilling/Rankings work for quarterly/annual indicators.
+3. Overview filters + subtitle now only describe the maps — relabel as "Map filters" / rewrite subtitle.
+4. "Needs attention" panel (bottom LGUs, DQC flags, # not reporting).
+5. Seed indicators for the other 10 programs (only CHILD_CARE has indicators).
 
 ## Open work (priority order)
-1. Finish Overview redesign (see IN PROGRESS above)
-2. Remaining Immunization files (5–8) — when real data arrives
-3. ICTU deployment (pending IT: Linux VM for Docker, SSH vs RDP)
-4. Deferred best-practices: fail-fast secrets, bcrypt→argon2, CI
+1. Finish Overview redesign (see status above) + confirm Child Care sub-area KPIs
+2. Investigate **missing Feb FIC** (only Jan FIC landed; Feb File 8 sheet blank or unapproved?)
+3. Remaining Immunization files (5–8) — when real data arrives
+4. ICTU deployment (pending IT: Linux VM for Docker, SSH vs RDP)
+5. Deferred best-practices: fail-fast secrets, bcrypt→argon2, CI
 
-Note: File 6 (Nutrition) + SBI (Annual, Td/MR/HPV) templates are DONE this session.
+## Data currently in DB (office, 2026-06-18)
+CPAB (Jan + Feb), FIC (Jan only), Mgt of Sick File 2 (Q1, ~4 LGUs). Everything else empty
+(DB was wiped this session via `reset db protocols`, then re-uploaded for Child Care testing).
 
 ## Deferred best-practices (next foundation pass)
 - Fail-fast on missing secrets (remove `os.getenv` fallbacks in `db.py`/`auth.py`)
@@ -67,8 +76,9 @@ Note: File 6 (Nutrition) + SBI (Annual, Td/MR/HPV) templates are DONE this sessi
 
 ## Git
 - Work goes **directly on `main`** (sole developer — no feature branches). Push when done.
-- Latest: Overview 11-program at-a-glance grid (this session); `15aec12` Overview Tier 1;
-  `692ef0e` birth-dose % fix; `8a2ea98` containerization + docs.
+- Pulled 12 commits from laptop at session start (`29bcf8b` docs shutdown was tip).
+- **2026-06-18 session code changes** (Rankings/Overview/config/analytics/main/vite +
+  `scripts/reset-db.ps1`) committed at shutdown — see latest commit hash on `main`.
 
 ## Local dev
 - Stack: `docker compose up -d --build` → frontend `:5173`, backend `:8000/docs`, db `:5432`

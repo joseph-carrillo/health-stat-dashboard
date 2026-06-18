@@ -64,6 +64,17 @@ Short commands Joseph uses to drive a session. When he types one, follow it exac
 5. **Stop the stack** — `docker compose down`.
 6. **Report** — what shipped, commit hash, push status, services stopped, top 1–2 next items.
 
+### `reset db protocols`
+Wipes uploaded data for a clean testing slate — use when verifying values/bugs from a
+known-empty state. **Truncates only `health_data` + `staging_health_data`**; reference data
+(locations, indicators, report_periods), users, roles, and `audit_log` are preserved.
+1. **Show the damage** — run the row counts for both tables and state exactly how many rows
+   will be deleted.
+2. **Confirm** — ask Joseph to confirm. **Do not delete anything until he says yes.**
+3. **Wipe** — on confirmation, run `.\scripts\reset-db.ps1 -Force` (the script truncates both
+   tables with `RESTART IDENTITY`). The stack must be up (`db` container running).
+4. **Report** — new row counts (both should be 0) and confirm reference data is intact.
+
 ### Other triggers
 - `status` / `where are we` — concise: current phase, last milestone, next action, blockers.
 - `audit this` — adversarial review; find the flaws, don't praise.

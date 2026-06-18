@@ -53,3 +53,26 @@ Adopted Sentinel-FMS's `startup protocols` / `run shutdown protocols` discipline
 suite. **Why:** consistent, cold-start-friendly sessions across two machines and a durable
 written record. Local-first single mode (no Sentinel "LIVE-DIRECT" branch — this tool has no
 public live site).
+
+## ADR-008 — `reset db protocols` (data-only DB reset)
+**Status:** Accepted · **Date:** 2026-06-18
+Added a `reset db protocols` session command + `scripts/reset-db.ps1` that **truncates only
+`health_data` + `staging_health_data`** (RESTART IDENTITY), preserving reference data
+(locations, indicators, periods), users, roles, and `audit_log`. Protocol shows row counts and
+requires confirmation before wiping. **Why:** repeatable clean slate for verifying uploaded
+values/bugs without re-seeding the whole DB. **Trade-off:** databases are not git-synced, so
+each machine resets independently; reference data must already be seeded (see ADR-002 / the
+indicator backfill note in `project_state.md`).
+
+## ADR-009 — Overview information architecture: single ranking + Child Care sub-area drill
+**Status:** Accepted · **Date:** 2026-06-18
+Removed the duplicate LGU ranking and the 4 summary cards from Analytics → Overview. Ranking
+now lives only on the **Rankings** page, broadened to the full indicator set via a shared
+`overviewIndicators.js` config (each option carries its `pct` / `total` / `denom` codes,
+extracted from template formulas). The Child Care program card is now **expandable** into four
+sub-area mini-cards (Immunization / Nutrition / Mgt of Sick / SBI), each with a **UI-selectable
+KPI dropdown**, backed by a new frequency-agnostic `GET /api/overview/indicator` endpoint that
+resolves each indicator's latest reported period. **Why:** one source of truth per view; the
+at-a-glance grid stays clean while Child Care (the only program with data) drills into detail.
+**Trade-off:** the two maps still use the monthly-only `coverage-summary`, so drilling the map
+into a quarterly/annual indicator shows no map data (sub-area cards themselves are correct).
