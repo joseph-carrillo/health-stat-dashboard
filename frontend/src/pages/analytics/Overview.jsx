@@ -12,7 +12,13 @@ import {
   DEFAULT_OVERVIEW_INDICATOR,
   findOverviewIndicator,
   OVERVIEW_INDICATOR_GROUPS,
+  CHILD_CARE_SUBAREAS,
 } from "../../config/overviewIndicators";
+
+// Initial sub-area selections: each sub-area's default flagship indicator.
+const CC_DEFAULT_SEL = Object.fromEntries(
+  CHILD_CARE_SUBAREAS.map((s) => [s.key, s.default])
+);
 
 const MONTHS = [
   { value: 1, label: "January" }, { value: 2, label: "February" },
@@ -41,6 +47,11 @@ export default function Overview() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [programsData, setProgramsData] = useState(null);
+  // Child Care expandable card: open state, per-sub-area indicator selection,
+  // and per-sub-area regional rollups keyed by sub-area key.
+  const [ccExpanded, setCcExpanded] = useState(false);
+  const [ccSel, setCcSel] = useState(CC_DEFAULT_SEL);
+  const [ccData, setCcData] = useState({});
   const mapRef = useRef(null);
 
   // Load GeoJSON files once
@@ -62,10 +73,39 @@ export default function Overview() {
       .catch(() => setProgramsData(null));
   }, [year]);
 
+  // Child Care sub-area rollups: when expanded, fetch each selected indicator's
+  // regional summary (frequency-agnostic — resolves each indicator's latest period).
+  useEffect(() => {
+    if (!ccExpanded) return;
+    const token = localStorage.getItem("token");
+    let cancelled = false;
+    Promise.all(
+      CHILD_CARE_SUBAREAS.map((s) => {
+        const code = ccSel[s.key];
+        return fetch(
+          `/api/overview/indicator?indicator_code=${encodeURIComponent(code)}&year=${year}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => [s.key, d])
+          .catch(() => [s.key, null]);
+      })
+    ).then((entries) => {
+      if (!cancelled) setCcData(Object.fromEntries(entries));
+    });
+    return () => { cancelled = true; };
+  }, [ccExpanded, ccSel, year]);
+
   // Clicking a program card drills the map/ranking into its flagship indicator.
   function handleProgramClick(p) {
     if (!p.flagship_code || p.regional_pct == null) return;
     setIndicatorCode(p.flagship_code);
+    mapRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  // Drill the map into a sub-area's selected indicator.
+  function handleSubAreaDrill(code) {
+    setIndicatorCode(code);
     mapRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -94,12 +134,6 @@ export default function Overview() {
     [coverageData]
   );
 
-  // Summary counts
-  const onTarget   = coverageData.filter((d) => d.value !== null && d.value >= 0.95).length;
-  const nearTarget = coverageData.filter((d) => d.value !== null && d.value >= 0.80 && d.value < 0.95).length;
-  const belowTarget= coverageData.filter((d) => d.value !== null && d.value < 0.80).length;
-  const noData     = 63 - coverageData.filter((d) => d.value !== null).length;
-
   function getRatioForGeoName(geoName) {
     const key = resolveGeoLookupKey(geoName, coverageLookup);
     return coverageLookup[key] ?? null;
@@ -121,12 +155,6 @@ export default function Overview() {
     const display = ratio !== null ? `${(ratio * 100).toFixed(1)}%` : "No data";
     layer.bindTooltip(`${name}: ${display}`, { sticky: true });
   }
-
-  // Ranking uses the raw DB data, sorted by value desc
-  const ranking = [...coverageData]
-    .filter((d) => d.value !== null)
-    .sort((a, b) => b.value - a.value);
-  const maxValue = ranking[0]?.value || 1;
 
   return (
     <div style={styles.page}>
@@ -193,19 +221,28 @@ export default function Overview() {
               {programsData.programs.map((p) => {
                 const pct = p.regional_pct == null ? null : Math.round(p.regional_pct * 1000) / 10;
                 const color = getCoverageColor(p.regional_pct);
-                const clickable = p.flagship_code && p.regional_pct != null;
+                const isChildCare = p.program_code === "CHILD_CARE";
+                const clickable = isChildCare || (p.flagship_code && p.regional_pct != null);
                 return (
                   <div
                     key={p.program_code}
-                    onClick={() => handleProgramClick(p)}
+                    onClick={() => (isChildCare ? setCcExpanded((v) => !v) : handleProgramClick(p))}
                     style={{
                       ...styles.programCard,
                       borderTop: `4px solid ${color}`,
                       cursor: clickable ? "pointer" : "default",
+                      ...(isChildCare && ccExpanded ? styles.programCardActive : {}),
                     }}
-                    title={clickable ? `View ${p.flagship_label} on the map` : ""}
+                    title={
+                      isChildCare
+                        ? (ccExpanded ? "Hide sub-areas" : "Show Child Care sub-areas")
+                        : (clickable ? `View ${p.flagship_label} on the map` : "")
+                    }
                   >
-                    <p style={styles.programName}>{p.program_name}</p>
+                    <p style={styles.programName}>
+                      {p.program_name}
+                      {isChildCare && <span style={styles.caret}>{ccExpanded ? "▲" : "▼"}</span>}
+                    </p>
                     <p style={{ ...styles.programValue, color: pct == null ? "#94A3B8" : "#0F172A" }}>
                       {pct == null ? "—" : `${pct}%`}
                     </p>
@@ -222,38 +259,68 @@ export default function Overview() {
                         {p.locations_reporting}/{p.total_locations} LGUs · ▲{p.on_target} on-target · ⛔{p.below_target} below
                       </p>
                     )}
+                    {isChildCare && (
+                      <p style={styles.programNote}>
+                        {ccExpanded ? "click to collapse" : "click to see 4 sub-areas"}
+                      </p>
+                    )}
                   </div>
                 );
               })}
             </div>
+
+            {/* Child Care sub-area detail — expandable */}
+            {ccExpanded && (
+              <div style={styles.subAreaPanel}>
+                <p style={styles.subAreaPanelTitle}>
+                  Child Care sub-areas · pick an indicator per area
+                </p>
+                <div style={styles.subAreaGrid}>
+                  {CHILD_CARE_SUBAREAS.map((s) => {
+                    const d = ccData[s.key];
+                    const ratio = d ? d.regional_pct : null;
+                    const pct = ratio == null ? null : Math.round(ratio * 1000) / 10;
+                    const color = getCoverageColor(ratio);
+                    return (
+                      <div key={s.key} style={{ ...styles.subAreaCard, borderTop: `4px solid ${color}` }}>
+                        <p style={styles.subAreaName}>{s.label}</p>
+                        <select
+                          style={styles.subAreaSelect}
+                          value={ccSel[s.key]}
+                          onChange={(e) =>
+                            setCcSel((prev) => ({ ...prev, [s.key]: e.target.value }))
+                          }
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {s.options.map((o) => (
+                            <option key={o.code} value={o.code}>{o.label}</option>
+                          ))}
+                        </select>
+                        <p
+                          style={{ ...styles.subAreaValue, color: pct == null ? "#94A3B8" : "#0F172A" }}
+                          onClick={() => pct != null && handleSubAreaDrill(ccSel[s.key])}
+                          title={pct != null ? "View on the map" : ""}
+                        >
+                          {pct == null ? "—" : `${pct}%`}
+                        </p>
+                        {d == null ? (
+                          <p style={styles.subAreaNote}>loading…</p>
+                        ) : pct == null ? (
+                          <p style={styles.subAreaNote}>no data yet</p>
+                        ) : (
+                          <p style={styles.subAreaNote}>
+                            {d.period_label ? `${d.period_label} · ` : ""}
+                            {d.locations_reporting}/{d.total_locations} LGUs · ▲{d.on_target} · ⛔{d.below_target}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </>
         )}
-
-        {/* Summary Cards */}
-        <div style={styles.cardRow}>
-          <div style={{ ...styles.card, borderTop: "4px solid #0B4BAA" }}>
-            <p style={styles.cardLabel}>Total LGUs</p>
-            <p style={styles.cardNumber}>63</p>
-          </div>
-          <div style={{ ...styles.card, borderTop: "4px solid #16A34A" }}>
-            <p style={styles.cardLabel}>On Target (≥95%)</p>
-            <p style={{ ...styles.cardNumber, color: "#16A34A" }}>
-              {loading ? "—" : onTarget}
-            </p>
-          </div>
-          <div style={{ ...styles.card, borderTop: "4px solid #EAB308" }}>
-            <p style={styles.cardLabel}>Near Target (80–94%)</p>
-            <p style={{ ...styles.cardNumber, color: "#EAB308" }}>
-              {loading ? "—" : nearTarget}
-            </p>
-          </div>
-          <div style={{ ...styles.card, borderTop: "4px solid #DC2626" }}>
-            <p style={styles.cardLabel}>Below Target (&lt;80%)</p>
-            <p style={{ ...styles.cardNumber, color: "#DC2626" }}>
-              {loading ? "—" : belowTarget}
-            </p>
-          </div>
-        </div>
 
         {/* Two Maps */}
         <div style={styles.mapsRow} ref={mapRef}>
@@ -314,41 +381,6 @@ export default function Overview() {
           </div>
         </div>
 
-        {/* Ranking */}
-        <div style={styles.rankingCard}>
-          <h2 style={styles.mapTitle}>LGU Ranking</h2>
-          <p style={styles.mapSub}>
-            {loading ? "Loading…"
-              : ranking.length > 0
-                ? `${ranking.length} LGUs with data — ${selectedIndicator.label} (${indicatorCode}), ${MONTHS.find(m => m.value === month)?.label} ${year}`
-                : "No data available for this period. Upload data to see rankings."
-            }
-          </p>
-          {ranking.length === 0 && !loading && (
-            <div style={styles.noData}>
-              <p>No coverage data uploaded yet for this period.</p>
-            </div>
-          )}
-          <div style={styles.rankingList}>
-            {ranking.map(({ location, value }, index) => (
-              <div key={location} style={styles.rankingRow}>
-                <span style={styles.rankNum}>{index + 1}</span>
-                <span style={styles.rankName}>{location}</span>
-                <div style={styles.barTrack}>
-                  <div style={{
-                    ...styles.barFill,
-                    width: `${(value / maxValue) * 100}%`,
-                    backgroundColor: getCoverageColor(value),
-                  }} />
-                </div>
-                <span style={{ ...styles.rankValue, color: getCoverageColor(value) }}>
-                  {(value * 100).toFixed(1)}%
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
       </div>
     </div>
   );
@@ -372,10 +404,16 @@ const styles = {
   programValue: { fontSize: "28px", fontWeight: "800", margin: "6px 0 0" },
   programSub: { fontSize: "12px", color: "#475569", margin: "2px 0 0" },
   programNote: { fontSize: "11px", color: "#94A3B8", margin: "8px 0 0" },
-  cardRow: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" },
-  card: { backgroundColor: "#ffffff", borderRadius: "10px", padding: "20px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.07)" },
-  cardLabel: { fontSize: "11px", color: "#5A6A85", margin: "0 0 8px 0", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" },
-  cardNumber: { fontSize: "32px", fontWeight: "700", color: "#1F2A45", margin: 0, fontFamily: "'Montserrat', sans-serif" },
+  programCardActive: { boxShadow: "0 0 0 2px #0B4BAA, 0 2px 8px rgba(0,0,0,0.07)" },
+  caret: { fontSize: "10px", color: "#0B4BAA", marginLeft: "6px" },
+  subAreaPanel: { backgroundColor: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "16px 18px", marginBottom: "24px" },
+  subAreaPanelTitle: { fontSize: "12px", fontWeight: "700", color: "#475569", margin: "0 0 12px 0", textTransform: "uppercase", letterSpacing: "0.5px" },
+  subAreaGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "12px" },
+  subAreaCard: { backgroundColor: "#fff", borderRadius: "8px", padding: "12px 14px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" },
+  subAreaName: { fontSize: "12px", fontWeight: "700", color: "#1F2A45", margin: "0 0 8px 0" },
+  subAreaSelect: { width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #CBD5E1", fontSize: "12px", color: "#1F2A45", backgroundColor: "#fff", outline: "none" },
+  subAreaValue: { fontSize: "24px", fontWeight: "800", margin: "8px 0 0", cursor: "pointer" },
+  subAreaNote: { fontSize: "11px", color: "#94A3B8", margin: "6px 0 0" },
   mapsRow: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" },
   mapCard: { backgroundColor: "#ffffff", borderRadius: "10px", padding: "20px", boxShadow: "0 2px 8px rgba(0,0,0,0.07)" },
   mapTitle: { fontFamily: "'Montserrat', sans-serif", fontSize: "16px", fontWeight: "700", color: "#1F2A45", margin: "0 0 4px 0", display: "flex", alignItems: "center", gap: "10px" },
@@ -385,13 +423,4 @@ const styles = {
   mapLoading: { height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#5A6A85", fontSize: "14px" },
   legend: { marginTop: "10px", fontSize: "11px", color: "#5A6A85", display: "flex", alignItems: "center", flexWrap: "wrap", gap: "4px" },
   legendDot: { display: "inline-block", width: "10px", height: "10px", borderRadius: "50%", marginRight: "4px" },
-  rankingCard: { backgroundColor: "#ffffff", borderRadius: "10px", padding: "20px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.07)" },
-  noData: { padding: "24px", textAlign: "center", color: "#94A3B8", fontSize: "13px" },
-  rankingList: { display: "flex", flexDirection: "column", gap: "8px", marginTop: "12px" },
-  rankingRow: { display: "grid", gridTemplateColumns: "28px 200px 1fr 60px", alignItems: "center", gap: "10px" },
-  rankNum: { fontSize: "12px", color: "#94A3B8", fontWeight: "700", textAlign: "right" },
-  rankName: { fontSize: "13px", color: "#1F2A45", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
-  barTrack: { backgroundColor: "#F0F4F8", borderRadius: "4px", height: "14px", overflow: "hidden" },
-  barFill: { height: "100%", borderRadius: "4px", transition: "width 0.4s ease" },
-  rankValue: { fontSize: "12px", fontWeight: "700", textAlign: "right" },
 };

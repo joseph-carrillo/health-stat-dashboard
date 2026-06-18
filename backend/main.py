@@ -482,6 +482,17 @@ def get_overview_programs(
     return analytics.overview_programs(year=year)
 
 
+@app.get("/api/overview/indicator")
+def get_overview_indicator(
+    indicator_code: str,
+    year: int = 2026,
+    current_user: dict = Depends(get_current_user),
+):
+    """Regional rollup for one indicator at its latest reported period.
+    Frequency-agnostic; powers the Child Care sub-area mini-cards."""
+    return analytics.indicator_overview(indicator_code=indicator_code, year=year)
+
+
 @app.get("/api/coverage")
 def get_coverage(
     indicator_code: str,

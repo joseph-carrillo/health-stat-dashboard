@@ -1185,3 +1185,71 @@ def overview_programs(year: int = 2026) -> dict:
         "total_locations": OVERVIEW_TOTAL_LOCATIONS,
         "programs": programs,
     }
+
+
+def indicator_overview(indicator_code: str, year: int = 2026) -> dict:
+    """Regional rollup for a single indicator at its latest reported period.
+
+    Frequency-agnostic: picks the latest period this year that has data for the
+    indicator (monthly, quarterly, or annual), then averages the % across
+    province/city LGUs. Powers the selectable Child Care sub-area mini-cards,
+    where the user picks which indicator each sub-area headlines.
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Latest period this year that actually has data for this indicator.
+    cur.execute(
+        """SELECT h.period_id, rp.label
+           FROM health_data h
+           JOIN indicators i ON i.id = h.indicator_id
+           JOIN report_periods rp ON rp.id = h.period_id
+           WHERE i.code = %s AND rp.year = %s
+           ORDER BY h.period_id DESC
+           LIMIT 1""",
+        [indicator_code, year],
+    )
+    period = cur.fetchone()
+
+    if not period:
+        cur.close()
+        conn.close()
+        return {
+            "indicator_code": indicator_code,
+            "year": year,
+            "period_label": None,
+            "regional_pct": None,
+            "status": "no_data",
+            "on_target": 0,
+            "below_target": 0,
+            "locations_reporting": 0,
+            "total_locations": OVERVIEW_TOTAL_LOCATIONS,
+        }
+
+    period_id, period_label = period
+    cur.execute(
+        """SELECT h.value
+           FROM health_data h
+           JOIN indicators i ON i.id = h.indicator_id
+           JOIN locations l ON l.id = h.location_id
+           WHERE i.code = %s
+             AND h.period_id = %s
+             AND l.level IN ('province', 'city_municipality')""",
+        [indicator_code, period_id],
+    )
+    vals = [float(v[0]) for v in cur.fetchall() if v[0] is not None]
+    avg = round(sum(vals) / len(vals), 4) if vals else None
+
+    cur.close()
+    conn.close()
+    return {
+        "indicator_code": indicator_code,
+        "year": year,
+        "period_label": period_label,
+        "regional_pct": avg,
+        "status": _status_for_ratio(avg),
+        "on_target": sum(1 for v in vals if v >= _ON_TARGET),
+        "below_target": sum(1 for v in vals if v < _BELOW_TARGET),
+        "locations_reporting": len(vals),
+        "total_locations": OVERVIEW_TOTAL_LOCATIONS,
+    }

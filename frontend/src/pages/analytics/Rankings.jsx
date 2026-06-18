@@ -1,19 +1,11 @@
 import { useState, useEffect } from "react";
 import api from "../../services/api";
 import Navbar from "../../components/Navbar";
-
-const PROGRAMS = [
-  { label: "CPAB",         totalCode: "CPAB_TOTAL",        pctCode: "CPAB_PCT",        denomCode: "IMMUN_POP_0_11M" },
-  { label: "BCG ≤24H",    totalCode: "BCG_24H_TOTAL",     pctCode: "BCG_24H_PCT",     denomCode: "IMMUN_POP_0_11M" },
-  { label: "BCG >24H",    totalCode: "BCG_GT24H_TOTAL",   pctCode: "BCG_GT24H_PCT",   denomCode: "IMMUN_POP_0_11M" },
-  { label: "HepaB ≤24H",  totalCode: "HEPAB_24H_TOTAL",   pctCode: "HEPAB_24H_PCT",   denomCode: "IMMUN_POP_0_11M" },
-  { label: "HepaB >24H",  totalCode: "HEPAB_GT24H_TOTAL", pctCode: "HEPAB_GT24H_PCT", denomCode: "IMMUN_POP_0_11M" },
-  { label: "CIC",          totalCode: "CIC_TOTAL",          pctCode: "CIC_PCT",          denomCode: "IMMUN_POP_0_11M" },
-  { label: "FIC",          totalCode: "FIC_TOTAL",          pctCode: "FIC_PCT",          denomCode: "IMMUN_POP_0_11M" },
-  { label: "DPT1",         totalCode: "DPT1_TOTAL",         pctCode: "DPT1_PCT",         denomCode: "DPT_POP_2026" },
-  { label: "DPT2",         totalCode: "DPT2_TOTAL",         pctCode: "DPT2_PCT",         denomCode: "DPT_POP_2026" },
-  { label: "DPT3",         totalCode: "DPT3_TOTAL",         pctCode: "DPT3_PCT",         denomCode: "DPT_POP_2026" },
-];
+import {
+  OVERVIEW_INDICATOR_GROUPS,
+  DEFAULT_OVERVIEW_INDICATOR,
+  findOverviewIndicator,
+} from "../../config/overviewIndicators";
 
 const MONTHS = [
   "January","February","March","April","May","June",
@@ -62,7 +54,7 @@ function CoverageBar({ pct }) {
 }
 
 export default function Rankings() {
-  const [program, setProgram] = useState(0);
+  const [indicatorCode, setIndicatorCode] = useState(DEFAULT_OVERVIEW_INDICATOR);
   const [year, setYear] = useState(2026);
   const [month, setMonth] = useState(1);
   const [sort, setSort] = useState("desc");
@@ -72,16 +64,16 @@ export default function Rankings() {
   const [loaded, setLoaded] = useState(false);
 
   async function load() {
-    const prog = PROGRAMS[program];
+    const prog = findOverviewIndicator(indicatorCode);
     setLoading(true);
     setError(null);
     try {
       const res = await api.get("/api/coverage-breakdown", {
         params: {
           year, month,
-          total_code: prog.totalCode,
-          pct_code: prog.pctCode,
-          denom_code: prog.denomCode,
+          total_code: prog.total,
+          pct_code: prog.code,
+          denom_code: prog.denom,
         }
       });
       setData(res.data.data || []);
@@ -93,9 +85,9 @@ export default function Rankings() {
     }
   }
 
-  useEffect(() => { load(); }, [program, year, month]);
+  useEffect(() => { load(); }, [indicatorCode, year, month]);
 
-  const prog = PROGRAMS[program];
+  const prog = findOverviewIndicator(indicatorCode);
   const withData = data.filter(r => r.pct !== null && r.pct !== undefined);
   const sorted = [...withData].sort((a, b) =>
     sort === "desc" ? b.pct - a.pct : a.pct - b.pct
@@ -120,14 +112,18 @@ export default function Rankings() {
         {/* Filters */}
         <div style={styles.filterRow}>
           <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Program</label>
+            <label style={styles.filterLabel}>Indicator</label>
             <select
               style={styles.select}
-              value={program}
-              onChange={e => setProgram(Number(e.target.value))}
+              value={indicatorCode}
+              onChange={e => setIndicatorCode(e.target.value)}
             >
-              {PROGRAMS.map((p, i) => (
-                <option key={p.label} value={i}>{p.label}</option>
+              {OVERVIEW_INDICATOR_GROUPS.map(g => (
+                <optgroup key={g.group} label={g.group}>
+                  {g.options.map(o => (
+                    <option key={o.code} value={o.code}>{o.label}</option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </div>
@@ -175,7 +171,7 @@ export default function Rankings() {
 
         {loaded && data.length === 0 && (
           <div style={styles.emptyBox}>
-            No data found for {MONTHS[month - 1]} {year} — {prog.label}.
+            No data found for {MONTHS[month - 1]} {year} — {prog.group ? `${prog.group} · ` : ""}{prog.label}.
             Upload the report first via Management → Upload.
           </div>
         )}
