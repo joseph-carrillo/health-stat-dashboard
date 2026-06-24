@@ -20,7 +20,10 @@
 - [x] Home scorecard
 - [x] Overview (multi-indicator)
 - [x] Overview at-a-glance — 11-program performance grid (latest period per program, click-to-drill)
-- [x] Overview → Child Care expandable card: 4 sub-area mini-cards (Immunization / Nutrition / Sick / SBI) with UI-selectable KPI per area (`GET /api/overview/indicator`)
+- [x] Overview → Child Care card lists **every** sub-area KPI at once (Immunization / Nutrition / Sick / SBI), no-data as "—", click-to-drill (`GET /api/overview/indicators` batch)
+- [x] Overview "Needs Attention" panel — bottom LGUs, over-100% DQC flags, stopped-reporting (`GET /api/overview/needs-attention`)
+- [x] Overview header rescoped to whole-page; filters captioned "Map filters"; period moved to a maps header
+- [x] Maps + Rankings frequency-agnostic — quarterly/annual indicators resolve to latest period (`resolve_coverage_period`)
 - [x] Ranking consolidated onto the Rankings page (removed from Overview); Rankings broadened to full indicator set via shared config
 - [x] Coverage + Rankings (province / HUC grouping)
 - [x] Trends (SVG)

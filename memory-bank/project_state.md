@@ -18,10 +18,13 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   Laptop DB fixed 2026-06-17. Verify any machine with `backend/scripts/audit_data_quality.py`.
 - **Clean slate for testing:** type `reset db protocols` (truncates data, keeps indicators).
 
-## Current focus (as of 2026-06-18)
-Overview redesign + Child Care wiring. Ranking consolidated to the Rankings page; Overview
-summary cards removed; Child Care card now expands into 4 selectable sub-area KPIs. Next:
-confirm sub-area flagship KPIs with the program team and upload remaining Child Care files.
+## Current focus (as of 2026-06-24)
+Overview redesign loop **closed out**. This session: maps/Rankings made frequency-agnostic
+(quarterly/annual now render), Overview header rescoped + filters labeled "Map filters",
+"Needs Attention" panel added, and the Child Care card now lists **every** sub-area KPI at once
+(no-data shown as "—"). All shipped to `origin/main` (tip `6da0943`). Next: extend the
+all-indicators card pattern to the other programs once they have seeded indicators / data; or
+the Feb FIC investigation.
 
 ## Done
 - Full stack (React 19 + FastAPI + PostgreSQL 15) working on both machines
@@ -37,32 +40,35 @@ confirm sub-area flagship KPIs with the program team and upload remaining Child 
   too large (244 rows, audit-logged); shipped `audit_data_quality.py` + `fix_birthdose_pct.py`
   + first pytest suite (9 tests). Applied on laptop DB; office DB pending (see reminder above).
 
-## Overview redesign — status (2026-06-18)
-**Done this session:**
-- Removed the duplicate LGU **ranking** and the **4 summary cards** from Overview.
-- **Rankings page** broadened to the full indicator set via shared `overviewIndicators.js`
-  (each option carries pct/total/denom codes; grouped `<optgroup>` selector).
-- **Child Care card is now expandable** → 4 sub-area mini-cards (Immunization / Nutrition /
-  Mgt of Sick / SBI), each with a **UI dropdown to pick the KPI** (defaults = flagships:
-  FIC / MAM cure / Pneumonia abx / HPV1). Big % drills the map.
-- New backend `analytics.indicator_overview()` + `GET /api/overview/indicator?indicator_code=&year=`
-  — frequency-agnostic, resolves each indicator's latest reported period (monthly/quarterly/annual).
-- Old `overview_summary()` / `/api/overview/summary` (4-area) still present but unused by UI.
-**Next session (resume here):**
-1. **Confirm sub-area flagship KPIs** with the program team (Nutrition/Sick/SBI defaults are
-   first-pass; `OVERVIEW_AREAS` + `PROGRAM_FLAGSHIPS` in `analytics.py`).
-2. **Maps are monthly-only** (`coverage-summary`/`coverage-breakdown` filter `period_type='monthly'`)
-   — generalize so drilling/Rankings work for quarterly/annual indicators.
-3. Overview filters + subtitle now only describe the maps — relabel as "Map filters" / rewrite subtitle.
-4. "Needs attention" panel (bottom LGUs, DQC flags, # not reporting).
-5. Seed indicators for the other 10 programs (only CHILD_CARE has indicators).
+## Overview redesign — DONE (2026-06-24)
+The redesign loop is complete. Shipped across this session + 2026-06-18:
+- Ranking moved to Rankings page; 4 summary cards removed; Rankings broadened via shared
+  `overviewIndicators.js`.
+- 11-program at-a-glance grid; Child Care card now lists **every** sub-area KPI at once
+  (Immunization 10 / Nutrition 11 / Sick 5 / SBI 6), no-data as "—", click-to-drill. Backed by
+  batch `GET /api/overview/indicators?codes=…` (replaced the per-sub-area dropdown + 4 single
+  `GET /api/overview/indicator` calls; that endpoint still exists/unused by Overview).
+- **Maps + Rankings frequency-agnostic:** `resolve_coverage_period()` in `main.py` resolves
+  monthly via `month`, quarterly/annual to latest period with data. Endpoints return
+  `period_label`/`period_type`; UI shows "Showing: <period>" + disables Month for non-monthly.
+- **Needs Attention panel** (`GET /api/overview/needs-attention`): bottom LGUs, over-100% DQC
+  flags, stopped-reporting (computed vs **prior period**, not the 66 roster — avoids false alarms
+  for province-aggregated indicators).
+- Overview header rescoped to whole-page; filters captioned "Map filters"; period in a maps header.
+- Config knobs: `OVERVIEW_AREAS` + `PROGRAM_FLAGSHIPS` (`analytics.py`), `CHILD_CARE_SUBAREAS`
+  (`overviewIndicators.js`).
+**Resume here:** the all-indicators card is Child Care-only by design; extending it to the other
+10 programs needs their indicators seeded first.
 
 ## Open work (priority order)
-1. Finish Overview redesign (see status above) + confirm Child Care sub-area KPIs
-2. Investigate **missing Feb FIC** (only Jan FIC landed; Feb File 8 sheet blank or unapproved?)
-3. Remaining Immunization files (5–8) — when real data arrives
-4. ICTU deployment (pending IT: Linux VM for Docker, SSH vs RDP)
-5. Deferred best-practices: fail-fast secrets, bcrypt→argon2, CI
+1. Extend the all-indicators card pattern to the other 10 programs — **blocked**: only
+   CHILD_CARE has indicators seeded. Seed indicators for the other programs first (#2 below).
+2. Seed indicators for the other 10 programs (only CHILD_CARE has them) — then their Overview
+   cards stop showing "no data".
+3. Investigate **missing Feb FIC** (only Jan FIC landed; Feb File 8 sheet blank or unapproved?)
+4. Remaining Immunization files (5–8) — when real data arrives
+5. ICTU deployment (pending IT: Linux VM for Docker, SSH vs RDP)
+6. Deferred best-practices: fail-fast secrets, bcrypt→argon2, CI, split `main.py` (now ~1300 lines)
 
 ## Data currently in DB (office, 2026-06-18)
 CPAB (Jan + Feb), FIC (Jan only), Mgt of Sick File 2 (Q1, ~4 LGUs). Everything else empty
@@ -76,9 +82,10 @@ CPAB (Jan + Feb), FIC (Jan only), Mgt of Sick File 2 (Q1, ~4 LGUs). Everything e
 
 ## Git
 - Work goes **directly on `main`** (sole developer — no feature branches). Push when done.
-- Pulled 12 commits from laptop at session start (`29bcf8b` docs shutdown was tip).
-- **2026-06-18 session code changes** (Rankings/Overview/config/analytics/main/vite +
-  `scripts/reset-db.ps1`) committed at shutdown — see latest commit hash on `main`.
+- **2026-06-24 session** pushed to `origin/main`, tip **`6da0943`**. Four feature commits:
+  `41c5bbd` (frequency-agnostic maps/Rankings), `8835a3b` (Overview header/filters relabel),
+  `7df2707` (Needs Attention panel), `6da0943` (Child Care all-KPI card).
+- `.claude/settings.local.json` is intentionally left uncommitted (local settings).
 
 ## Local dev
 - Stack: `docker compose up -d --build` → frontend `:5173`, backend `:8000/docs`, db `:5432`

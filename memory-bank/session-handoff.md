@@ -1,35 +1,36 @@
 # session-handoff.md
 
 ## Last Updated
-2026-06-18 (Overview redesign + Child Care expandable sub-area card)
+2026-06-24 (Overview redesign closed out: frequency-agnostic maps, Needs Attention, all-KPI card)
 
 ## Current Objective
-Track 1 province dashboard. Overview now leads with the 11-program grid; Child Care expands
-into 4 selectable sub-area KPIs. Ranking lives on the Rankings page only.
+Track 1 province dashboard. Overview leads with the 11-program grid; Child Care lists every
+sub-area KPI; maps/Rankings/Needs-Attention all work across monthly/quarterly/annual.
 
 ## Done This Session
-- Ranking moved Overview → Rankings; Rankings broadened to full indicator set (shared config).
-- Removed Overview's 4 summary cards.
-- `reset db protocols` + `scripts/reset-db.ps1` (data-only wipe); ran it.
-- Vite HMR fix for Docker-on-Windows (usePolling).
-- Backfilled office DB indicators (43 → 247) via `bootstrap_db.py`.
-- Child Care expandable card: 4 sub-area mini-cards, per-area KPI dropdown, new
-  `GET /api/overview/indicator` (frequency-agnostic).
-- Uploaded test data: CPAB Jan+Feb, FIC Jan, Sick File 2 (Q1).
+- Maps + Rankings frequency-agnostic (`resolve_coverage_period`); endpoints return period
+  label/type; UI shows "Showing: <period>" and disables Month for non-monthly indicators.
+- Overview header rescoped to whole-page; filters labeled "Map filters"; period in a maps header.
+- "Needs Attention" panel: bottom LGUs, over-100% DQC flags, stopped-reporting (vs prior period).
+- Child Care card lists every sub-area KPI (batch `GET /api/overview/indicators`); no-data = "—".
+- Pushed to `origin/main`, tip `6da0943` (commits 41c5bbd, 8835a3b, 7df2707, 6da0943).
 
 ## Next Session — Pick One
-1. Confirm Child Care sub-area flagship KPIs with the program team.
-2. Generalize maps + Rankings beyond `period_type='monthly'` (quarterly/annual support).
-3. Investigate missing Feb FIC (only Jan landed).
-4. Relabel Overview filters as map-scoped + rewrite the subtitle (whole-page scope).
+1. Seed indicators for the other 10 programs (only CHILD_CARE has them) — unblocks their
+   Overview cards and lets the all-indicators card pattern extend beyond Child Care.
+2. Investigate missing Feb FIC (only Jan landed; Feb File 8 blank or unapproved?).
+3. Deferred best-practices: split `main.py` (~1300 lines), fail-fast secrets, bcrypt→argon2, CI.
 
 ## Notes / Gotchas
 - DBs are NOT git-synced. New machine: copy `.env`, run `bootstrap_db.py`, then upload data.
-- Maps/Rankings use monthly-only endpoints; quarterly/annual indicators won't render there yet
-  (the Child Care sub-area cards use the new frequency-agnostic endpoint and are fine).
-- `OVERVIEW_AREAS` + `PROGRAM_FLAGSHIPS` (analytics.py) + `CHILD_CARE_SUBAREAS`
-  (overviewIndicators.js) are where sub-area/flagship KPIs are configured.
-- Only CHILD_CARE has indicators seeded; the other 10 program cards show "no data".
+- Maps/Rankings show the indicator's **latest** period for quarterly/annual — this is display,
+  not full period navigation (can't pick Q1 vs Q2 yet).
+- "Stopped reporting" in Needs Attention is vs the **prior period** on purpose (province-
+  aggregated indicators like Mgt of Sick report 4/66; a full-roster diff would be false alarms).
+- Config knobs: `OVERVIEW_AREAS` + `PROGRAM_FLAGSHIPS` (`analytics.py`), `CHILD_CARE_SUBAREAS`
+  (`overviewIndicators.js`).
+- Only CHILD_CARE has indicators seeded; the other 10 program cards still show "no data".
+- Data in DB: CPAB (Jan+Feb), FIC (Jan), Mgt of Sick File 2 (Q1, ~4 LGUs).
 
 ## First Command Next Session
 ```

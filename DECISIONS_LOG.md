@@ -76,3 +76,27 @@ resolves each indicator's latest reported period. **Why:** one source of truth p
 at-a-glance grid stays clean while Child Care (the only program with data) drills into detail.
 **Trade-off:** the two maps still use the monthly-only `coverage-summary`, so drilling the map
 into a quarterly/annual indicator shows no map data (sub-area cards themselves are correct).
+*(Trade-off resolved in ADR-010.)*
+
+## ADR-010 — Frequency-agnostic maps/Rankings, Needs Attention panel, Child Care all-KPI card
+**Status:** Accepted · **Date:** 2026-06-24
+Three related Overview changes:
+1. **Maps + Rankings are now frequency-agnostic.** `coverage-summary` and `coverage-breakdown`
+   no longer hardcode `period_type='monthly'`; a new `resolve_coverage_period()` reads the
+   indicator's `frequency_type` — monthly uses the `month` param, quarterly/annual resolve to
+   the latest period with data. Endpoints return `period_label` + `period_type`; the UI shows a
+   "Showing: <period>" tag and disables the Month dropdown for non-monthly indicators. Resolves
+   the ADR-009 trade-off. **Note:** this is latest-period *display*, not full period navigation
+   (can't yet pick Q1 vs Q2).
+2. **"Needs Attention" panel** on Overview (`GET /api/overview/needs-attention`), scoped to the
+   selected map indicator: lowest-coverage LGUs (<80%), over-100% values (the same
+   `over_threshold` DQC rule as the Indicator Report red cells), and LGUs that **stopped
+   reporting**. *Decision:* "stopped reporting" is computed against the **prior period**, not the
+   full 66-LGU roster — province-aggregated indicators (e.g. Mgt of Sick reports 4/66) would
+   otherwise flag every component LGU as missing, a false alarm.
+3. **Child Care card lists every sub-area KPI** instead of one dropdown-selected KPI per
+   sub-area. New batch `GET /api/overview/indicators?codes=…` returns rollups for many codes in
+   one round-trip. No-data indicators render as "—". **Scope:** Child Care only — the other 10
+   program cards are unchanged (pending indicator seeding / real data).
+**Also:** Overview page subtitle rescoped to the whole page; the Indicator/Month/Year filters
+captioned "Map filters" and the selected-indicator + period moved to a header above the maps.
