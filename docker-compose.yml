@@ -64,6 +64,9 @@ services:
       - ./frontend:/app
       # Keep the image's node_modules — don't let the host mount clobber it.
       - /app/node_modules
+      # Read-only .git so vite.config.js can stamp the build with the commit SHA.
+      # Mounted outside /app so the file-watcher doesn't scan it.
+      - ./.git:/git:ro
     ports:
       - "5173:5173"
     depends_on:

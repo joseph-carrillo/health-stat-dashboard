@@ -257,11 +257,13 @@ function isPctColumn(col) {
   return col.is_percentage || String(col.indicator_code || "").endsWith("_PCT");
 }
 
-// DB/parser store coverage as ratios (0.5 = 50%). API may also return 0–100.
+// The report API already returns _PCT values on a 0–100 display scale
+// (backend _normalize_pct_display_values multiplies the stored ratio by 100),
+// so values arrive ready to show — no further scaling. Guard against NaN only.
+// (Previously this re-multiplied values <= 1.5, so a true 1% rendered as 100%.)
 function toDisplayPercent(value) {
   const n = Number(value);
   if (Number.isNaN(n)) return null;
-  if (n >= 0 && n <= 1.5) return n * 100;
   return n;
 }
 

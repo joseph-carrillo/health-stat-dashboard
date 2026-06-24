@@ -3,6 +3,7 @@
 
 import { useNavigate, useLocation } from "react-router-dom";
 import { getUser, can, logout } from "../services/auth";
+import { APP_VERSION, BUILD_TIME } from "../version";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -113,6 +114,16 @@ export default function Navbar() {
         <button style={styles.logoutBtn} onClick={handleLogout}>
           Sign Out
         </button>
+        <p
+          style={styles.version}
+          title={
+            BUILD_TIME
+              ? `Commit ${APP_VERSION} · started ${BUILD_TIME.slice(0, 16).replace("T", " ")} UTC`
+              : `Commit ${APP_VERSION}`
+          }
+        >
+          build {APP_VERSION}
+        </p>
       </div>
 
     </div>
@@ -236,5 +247,14 @@ const styles = {
     cursor: "pointer",
     fontSize: "12px",
     fontWeight: "600",
+  },
+  version: {
+    color: "#64748B",
+    fontSize: "10px",
+    fontFamily: "'Barlow', monospace",
+    letterSpacing: "0.5px",
+    margin: "10px 0 0 0",
+    textAlign: "center",
+    cursor: "default",
   },
 };
