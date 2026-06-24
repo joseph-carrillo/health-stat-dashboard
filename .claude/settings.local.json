@@ -20,7 +20,30 @@
       "Bash(taskkill /F /PID 21456 /PID 24228 /PID 23560)",
       "Bash(netstat -ano)",
       "Bash(kill -9 21456 24228 23560)",
-      "PowerShell(Get-Process *)"
+      "PowerShell(Get-Process *)",
+      "Bash(git fetch *)",
+      "Bash(git rev-list *)",
+      "Bash(docker --version)",
+      "Bash(git pull *)",
+      "Bash(docker compose *)",
+      "Bash(curl -s -o /dev/null -w \"backend /docs: %{http_code}\\\\n\" http://localhost:8000/docs)",
+      "Bash(curl -s -o /dev/null -w \"frontend :5173: %{http_code}\\\\n\" http://localhost:5173)",
+      "PowerShell(.\\\\scripts\\\\reset-db.ps1 -Force)",
+      "Bash(curl -s -o /dev/null -w \"frontend: %{http_code}\\\\n\" http://localhost:5173)",
+      "Bash(curl -s -X POST http://localhost:8000/api/auth/login -H \"Content-Type: application/json\" -d '{\"username\":\"admin\",\"password\":\"Admin@2026!\"}')",
+      "Bash(curl -s -X POST http://localhost:8000/api/login -d \"username=admin&password=Admin@2026!\")",
+      "Bash(git push *)",
+      "PowerShell(docker compose up *)",
+      "PowerShell($b = try { \\(Invoke-WebRequest http://localhost:8000/docs -UseBasicParsing -TimeoutSec 5\\).StatusCode } catch { \"FAIL\" }; $f = try { \\(Invoke-WebRequest http://localhost:5173 -UseBasicParsing -TimeoutSec 5\\).StatusCode } catch { \"FAIL\" }; \"backend: $b   frontend: $f\")",
+      "Skill(run)",
+      "PowerShell(Start-Process \"http://localhost:5173\")",
+      "Bash(xargs -n1 basename)",
+      "PowerShell(docker compose restart *)",
+      "PowerShell(docker compose logs *)",
+      "Bash(git stash *)",
+      "PowerShell(docker compose exec *)",
+      "PowerShell(\\(Invoke-WebRequest \"http://localhost:5173/src/version.js\" -UseBasicParsing -TimeoutSec 5\\).Content)",
+      "Bash(curl -s -o /dev/null -w \"backend: %{http_code}\\\\n\" http://localhost:8000/docs)"
     ]
   }
 }
