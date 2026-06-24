@@ -44,6 +44,7 @@ export default function Overview() {
   const [month, setMonth] = useState(1); // Jan 2026 — latest committed Immunization period in DB
   const [indicatorCode, setIndicatorCode] = useState(DEFAULT_OVERVIEW_INDICATOR);
   const [coverageData, setCoverageData] = useState([]);
+  const [mapPeriod, setMapPeriod] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [programsData, setProgramsData] = useState(null);
@@ -122,10 +123,16 @@ export default function Overview() {
         if (!r.ok) throw new Error("coverage fetch failed");
         return r.json();
       })
-      .then((d) => setCoverageData(d.data || []))
+      .then((d) => {
+        setCoverageData(d.data || []);
+        setMapPeriod({ label: d.period_label, type: d.period_type });
+      })
       .catch(() => setError("Could not load coverage data."))
       .finally(() => setLoading(false));
   }, [year, month, indicatorCode]);
+
+  const mapIsMonthly = !mapPeriod || mapPeriod.type === "monthly";
+  const mapPeriodLabel = mapPeriod?.label || (mapIsMonthly ? `${MONTHS[month - 1]?.label} ${year}` : `${year}`);
 
   const selectedIndicator = findOverviewIndicator(indicatorCode);
 
@@ -169,6 +176,7 @@ export default function Overview() {
               {selectedIndicator.group
                 ? `${selectedIndicator.group} · ${selectedIndicator.label} coverage`
                 : "Child Care — Immunization coverage"}
+              <span style={styles.periodTag}>Showing: {mapPeriodLabel}</span>
             </p>
           </div>
           <div style={styles.filterRow}>
@@ -190,8 +198,13 @@ export default function Overview() {
             </div>
             <div style={styles.filterGroup}>
               <label style={styles.filterLabel}>Month</label>
-              <select style={styles.select} value={month}
-                onChange={(e) => setMonth(Number(e.target.value))}>
+              <select
+                style={{ ...styles.select, ...(mapIsMonthly ? {} : styles.selectDisabled) }}
+                value={month}
+                onChange={(e) => setMonth(Number(e.target.value))}
+                disabled={!mapIsMonthly}
+                title={mapIsMonthly ? "" : "This indicator is not monthly — showing its latest reported period"}
+              >
                 {MONTHS.map((m) => (
                   <option key={m.value} value={m.value}>{m.label}</option>
                 ))}
@@ -396,6 +409,8 @@ const styles = {
   filterGroup: { display: "flex", flexDirection: "column", gap: "6px" },
   filterLabel: { fontSize: "12px", fontWeight: "600", color: "#1F2A45" },
   select: { padding: "8px 14px", borderRadius: "6px", border: "1px solid #CBD5E1", fontSize: "13px", color: "#1F2A45", backgroundColor: "#ffffff", outline: "none" },
+  selectDisabled: { backgroundColor: "#F1F5F9", color: "#94A3B8", cursor: "not-allowed" },
+  periodTag: { marginLeft: "10px", padding: "2px 8px", backgroundColor: "#EFF6FF", color: "#2563EB", borderRadius: "4px", fontSize: "12px", fontWeight: 600 },
   errorBox: { backgroundColor: "#FEE2E2", color: "#991B1B", padding: "12px 16px", borderRadius: "6px", fontSize: "13px", marginBottom: "16px" },
   glanceNote: { fontSize: "12px", color: "#5A6A85", margin: "0 0 12px 0", fontStyle: "italic" },
   programGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "14px", marginBottom: "24px" },

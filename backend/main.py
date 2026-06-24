@@ -975,6 +975,45 @@ def deactivate_user(
 # PROVINCE DASHBOARD — coverage summary / breakdown / batch history
 # (powers Overview, Coverage, Rankings from origin/main)
 # =====================================================
+def resolve_coverage_period(cur, indicator_code: str, year: int, month: int):
+    """Resolve which report period a coverage view should show for an indicator.
+
+    Frequency-aware (the maps/Rankings would otherwise only ever see monthly):
+      - monthly indicators  -> the requested (year, month) period
+      - quarterly / annual  -> the latest period of that frequency in `year`
+                               that actually has data for the indicator
+
+    Returns (period_id, period_label, period_type). period_id is None when no
+    matching period exists (caller returns an empty result).
+    """
+    cur.execute("SELECT frequency_type FROM indicators WHERE code = %s", (indicator_code,))
+    row = cur.fetchone()
+    freq = (row[0] if row else None) or "monthly"
+
+    if freq == "monthly":
+        cur.execute(
+            """SELECT id, label FROM report_periods
+               WHERE year = %s AND period_type = 'monthly' AND period_value = %s""",
+            (year, month),
+        )
+        p = cur.fetchone()
+        return (p[0], p[1], "monthly") if p else (None, None, "monthly")
+
+    # quarterly / annual: latest period of that frequency this year with data.
+    cur.execute(
+        """SELECT rp.id, rp.label
+           FROM report_periods rp
+           JOIN health_data h ON h.period_id = rp.id
+           JOIN indicators i ON i.id = h.indicator_id
+           WHERE i.code = %s AND rp.year = %s AND rp.period_type = %s
+           ORDER BY rp.period_value DESC NULLS LAST
+           LIMIT 1""",
+        (indicator_code, year, freq),
+    )
+    p = cur.fetchone()
+    return (p[0], p[1], freq) if p else (None, None, freq)
+
+
 @app.get("/api/coverage-summary")
 def get_coverage_summary(
     year: int = 2026,
@@ -982,23 +1021,39 @@ def get_coverage_summary(
     indicator_code: str = "CPAB_PCT",
     current_user: dict = Depends(get_current_user),
 ):
-    """Per-LGU coverage values for maps. PCT stored as decimal ratios."""
+    """Per-LGU coverage values for maps. PCT stored as decimal ratios.
+
+    Frequency-agnostic: monthly indicators use ``month``; quarterly/annual
+    indicators resolve to their latest reported period this year.
+    """
     conn = get_db_connection()
     cur = conn.cursor()
+    period_id, period_label, period_type = resolve_coverage_period(
+        cur, indicator_code, year, month
+    )
+    if period_id is None:
+        cur.close()
+        conn.close()
+        return {
+            "indicator_code": indicator_code,
+            "year": year,
+            "month": month,
+            "period_label": period_label,
+            "period_type": period_type,
+            "count": 0,
+            "data": [],
+        }
     cur.execute(
         """
         SELECT l.name, h.value
         FROM health_data h
         JOIN locations l ON l.id = h.location_id
         JOIN indicators i ON i.id = h.indicator_id
-        JOIN report_periods rp ON rp.id = h.period_id
         WHERE i.code = %s
-          AND rp.year = %s
-          AND rp.period_value = %s
-          AND rp.period_type = 'monthly'
+          AND h.period_id = %s
         ORDER BY l.name
         """,
-        (indicator_code, year, month),
+        (indicator_code, period_id),
     )
     rows = cur.fetchall()
     cur.close()
@@ -1014,6 +1069,8 @@ def get_coverage_summary(
         "indicator_code": indicator_code,
         "year": year,
         "month": month,
+        "period_label": period_label,
+        "period_type": period_type,
         "count": len(data),
         "data": data,
     }
@@ -1078,11 +1135,33 @@ def get_coverage_breakdown(
     denom_code: str = "IMMUN_POP_0_11M",
     current_user: dict = Depends(get_current_user),
 ):
-    """Per-LGU numerator, denominator, and PCT for Coverage/Rankings."""
+    """Per-LGU numerator, denominator, and PCT for Coverage/Rankings.
+
+    Frequency-agnostic: the ``pct_code`` indicator's frequency drives period
+    resolution (monthly uses ``month``; quarterly/annual use the latest period
+    this year with data), then all three codes are read for that period.
+    """
     from collections import defaultdict
 
     conn = get_db_connection()
     cur = conn.cursor()
+    period_id, period_label, period_type = resolve_coverage_period(
+        cur, pct_code, year, month
+    )
+    if period_id is None:
+        cur.close()
+        conn.close()
+        return {
+            "year": year,
+            "month": month,
+            "period_label": period_label,
+            "period_type": period_type,
+            "total_code": total_code,
+            "pct_code": pct_code,
+            "denom_code": denom_code,
+            "count": 0,
+            "data": [],
+        }
     cur.execute(
         """
         SELECT
@@ -1097,14 +1176,11 @@ def get_coverage_breakdown(
         LEFT JOIN locations p
             ON p.psgc = l.parent_psgc AND p.level = 'province'
         JOIN indicators i ON i.id = h.indicator_id
-        JOIN report_periods rp ON rp.id = h.period_id
         WHERE i.code = ANY(%s)
-          AND rp.year = %s
-          AND rp.period_value = %s
-          AND rp.period_type = 'monthly'
+          AND h.period_id = %s
         ORDER BY p.name, l.name
         """,
-        ([total_code, pct_code, denom_code], year, month),
+        ([total_code, pct_code, denom_code], period_id),
     )
     rows = cur.fetchall()
     cur.close()
@@ -1138,6 +1214,8 @@ def get_coverage_breakdown(
     return {
         "year": year,
         "month": month,
+        "period_label": period_label,
+        "period_type": period_type,
         "total_code": total_code,
         "pct_code": pct_code,
         "denom_code": denom_code,

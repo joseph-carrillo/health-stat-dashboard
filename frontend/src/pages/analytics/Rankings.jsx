@@ -59,6 +59,7 @@ export default function Rankings() {
   const [month, setMonth] = useState(1);
   const [sort, setSort] = useState("desc");
   const [data, setData] = useState([]);
+  const [periodInfo, setPeriodInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loaded, setLoaded] = useState(false);
@@ -77,6 +78,7 @@ export default function Rankings() {
         }
       });
       setData(res.data.data || []);
+      setPeriodInfo({ label: res.data.period_label, type: res.data.period_type });
       setLoaded(true);
     } catch (e) {
       setError("Failed to load data.");
@@ -88,6 +90,8 @@ export default function Rankings() {
   useEffect(() => { load(); }, [indicatorCode, year, month]);
 
   const prog = findOverviewIndicator(indicatorCode);
+  const isMonthly = !periodInfo || periodInfo.type === "monthly";
+  const periodLabel = periodInfo?.label || (isMonthly ? `${MONTHS[month - 1]} ${year}` : `${year}`);
   const withData = data.filter(r => r.pct !== null && r.pct !== undefined);
   const sorted = [...withData].sort((a, b) =>
     sort === "desc" ? b.pct - a.pct : a.pct - b.pct
@@ -106,7 +110,10 @@ export default function Rankings() {
         {/* Header */}
         <div style={styles.header}>
           <h1 style={styles.title}>Rankings</h1>
-          <p style={styles.subtitle}>LGU ranking by coverage rate — top and bottom performers</p>
+          <p style={styles.subtitle}>
+            LGU ranking by coverage rate — top and bottom performers
+            {loaded && <span style={styles.periodTag}>Showing: {periodLabel}</span>}
+          </p>
         </div>
 
         {/* Filters */}
@@ -142,9 +149,11 @@ export default function Rankings() {
           <div style={styles.filterGroup}>
             <label style={styles.filterLabel}>Month</label>
             <select
-              style={styles.select}
+              style={{ ...styles.select, ...(isMonthly ? {} : styles.selectDisabled) }}
               value={month}
               onChange={e => setMonth(Number(e.target.value))}
+              disabled={!isMonthly}
+              title={isMonthly ? "" : "This indicator is not monthly — showing its latest reported period"}
             >
               {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
             </select>
@@ -171,7 +180,7 @@ export default function Rankings() {
 
         {loaded && data.length === 0 && (
           <div style={styles.emptyBox}>
-            No data found for {MONTHS[month - 1]} {year} — {prog.group ? `${prog.group} · ` : ""}{prog.label}.
+            No data found for {periodLabel} — {prog.group ? `${prog.group} · ` : ""}{prog.label}.
             Upload the report first via Management → Upload.
           </div>
         )}
@@ -285,6 +294,8 @@ const styles = {
   filterGroup:    { display: "flex", flexDirection: "column", gap: 4 },
   filterLabel:    { fontSize: 12, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" },
   select:         { padding: "8px 12px", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 14, background: "#fff", color: "#1e293b", cursor: "pointer" },
+  selectDisabled: { background: "#f1f5f9", color: "#94a3b8", cursor: "not-allowed" },
+  periodTag:      { marginLeft: 10, padding: "2px 8px", background: "#eff6ff", color: "#2563eb", borderRadius: 4, fontSize: 12, fontWeight: 600 },
   loadBtn:        { padding: "9px 24px", background: "#2563eb", color: "#fff", border: "none", borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: "pointer", alignSelf: "flex-end" },
 
   errorBox:       { padding: "12px 16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6, color: "#dc2626", marginBottom: 24, fontSize: 14 },
