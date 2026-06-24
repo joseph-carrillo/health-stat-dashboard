@@ -1253,3 +1253,115 @@ def indicator_overview(indicator_code: str, year: int = 2026) -> dict:
         "locations_reporting": len(vals),
         "total_locations": OVERVIEW_TOTAL_LOCATIONS,
     }
+
+
+def _reporters_at(cur, indicator_code: str, period_id: int) -> set:
+    """LGU names (province + city/municipality) with a value for an indicator
+    at a given period."""
+    cur.execute(
+        """SELECT l.name
+           FROM health_data h
+           JOIN indicators i ON i.id = h.indicator_id
+           JOIN locations l ON l.id = h.location_id
+           WHERE i.code = %s
+             AND h.period_id = %s
+             AND h.value IS NOT NULL
+             AND l.level IN ('province', 'city_municipality')""",
+        [indicator_code, period_id],
+    )
+    return {r[0].strip() for r in cur.fetchall()}
+
+
+def needs_attention(indicator_code: str, year: int = 2026, bottom_n: int = 5) -> dict:
+    """What needs attention for one indicator at its latest reported period.
+
+    Scoped to the selected map indicator and reuses the Overview conventions
+    (province + city/municipality LGUs, below-target < 80%). Surfaces three
+    things in one panel:
+      - bottom: the lowest-coverage LGUs that are below target
+      - over_100: LGUs whose value exceeds 100% (the over_threshold DQC flag,
+        same rule the Indicator Report red cells use — a likely data error)
+      - dropped: LGUs that reported in the prior period but not the latest one.
+        (Defined against the prior period rather than the full 66-LGU roster so
+        province-aggregated indicators don't show every component LGU as
+        "missing" — that would be a false alarm.)
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Two most recent periods this year with data for this indicator
+    # (frequency-agnostic — latest first).
+    cur.execute(
+        """SELECT DISTINCT h.period_id, rp.label
+           FROM health_data h
+           JOIN indicators i ON i.id = h.indicator_id
+           JOIN report_periods rp ON rp.id = h.period_id
+           WHERE i.code = %s AND rp.year = %s
+           ORDER BY h.period_id DESC
+           LIMIT 2""",
+        [indicator_code, year],
+    )
+    periods = cur.fetchall()
+
+    if not periods:
+        cur.close()
+        conn.close()
+        return {
+            "indicator_code": indicator_code,
+            "year": year,
+            "period_label": None,
+            "prior_period_label": None,
+            "bottom": [],
+            "over_100": [],
+            "dropped": [],
+            "reporting_count": 0,
+            "total_locations": OVERVIEW_TOTAL_LOCATIONS,
+        }
+
+    period_id, period_label = periods[0]
+    cur.execute(
+        """SELECT l.name, l.is_huc, h.value
+           FROM health_data h
+           JOIN indicators i ON i.id = h.indicator_id
+           JOIN locations l ON l.id = h.location_id
+           WHERE i.code = %s
+             AND h.period_id = %s
+             AND l.level IN ('province', 'city_municipality')""",
+        [indicator_code, period_id],
+    )
+    rows = [
+        {"location": name.strip(), "is_huc": is_huc, "pct": float(value)}
+        for name, is_huc, value in cur.fetchall()
+        if value is not None
+    ]
+
+    reported = {r["location"] for r in rows}
+    bottom = sorted(
+        (r for r in rows if r["pct"] < _BELOW_TARGET), key=lambda r: r["pct"]
+    )[:bottom_n]
+    over_100 = sorted(
+        (r for r in rows if r["pct"] > 1.0), key=lambda r: -r["pct"]
+    )
+
+    # LGUs that reported the prior period but not the latest one.
+    prior_period_label = None
+    dropped = []
+    if len(periods) > 1:
+        prior_id, prior_period_label = periods[1]
+        prior_reporters = _reporters_at(cur, indicator_code, prior_id)
+        dropped = sorted(prior_reporters - reported)
+
+    cur.close()
+    conn.close()
+
+    return {
+        "indicator_code": indicator_code,
+        "year": year,
+        "period_label": period_label,
+        "prior_period_label": prior_period_label,
+        "bottom": bottom,
+        "over_100": over_100,
+        "dropped": dropped,
+        "reporting_count": len(reported),
+        "total_locations": OVERVIEW_TOTAL_LOCATIONS,
+    }

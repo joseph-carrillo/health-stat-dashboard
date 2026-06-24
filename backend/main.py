@@ -493,6 +493,17 @@ def get_overview_indicator(
     return analytics.indicator_overview(indicator_code=indicator_code, year=year)
 
 
+@app.get("/api/overview/needs-attention")
+def get_needs_attention(
+    indicator_code: str = "CPAB_PCT",
+    year: int = 2026,
+    current_user: dict = Depends(get_current_user),
+):
+    """What needs attention for one indicator at its latest reported period:
+    lowest-coverage LGUs, over-100% data-quality flags, and non-reporting LGUs."""
+    return analytics.needs_attention(indicator_code=indicator_code, year=year)
+
+
 @app.get("/api/coverage")
 def get_coverage(
     indicator_code: str,

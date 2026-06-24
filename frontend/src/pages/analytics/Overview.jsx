@@ -45,6 +45,7 @@ export default function Overview() {
   const [indicatorCode, setIndicatorCode] = useState(DEFAULT_OVERVIEW_INDICATOR);
   const [coverageData, setCoverageData] = useState([]);
   const [mapPeriod, setMapPeriod] = useState(null);
+  const [attention, setAttention] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [programsData, setProgramsData] = useState(null);
@@ -133,6 +134,19 @@ export default function Overview() {
 
   const mapIsMonthly = !mapPeriod || mapPeriod.type === "monthly";
   const mapPeriodLabel = mapPeriod?.label || (mapIsMonthly ? `${MONTHS[month - 1]?.label} ${year}` : `${year}`);
+
+  // Needs-attention panel: bottom LGUs, >100% DQC flags, dropped-off LGUs for
+  // the selected map indicator (frequency-agnostic — its latest reported period).
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    fetch(
+      `/api/overview/needs-attention?indicator_code=${encodeURIComponent(indicatorCode)}&year=${year}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    )
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setAttention)
+      .catch(() => setAttention(null));
+  }, [indicatorCode, year]);
 
   const selectedIndicator = findOverviewIndicator(indicatorCode);
 
@@ -405,6 +419,93 @@ export default function Overview() {
           </div>
         </div>
 
+        {/* NEEDS ATTENTION — scoped to the selected map indicator */}
+        {attention && attention.reporting_count > 0 && (
+          <div style={styles.attnPanel}>
+            <div style={styles.attnHeader}>
+              <h2 style={styles.attnTitle}>⚠ Needs Attention</h2>
+              <span style={styles.attnSub}>
+                {selectedIndicator.group
+                  ? `${selectedIndicator.group} · ${selectedIndicator.label}`
+                  : "Child Care — Immunization"}{" "}
+                · {attention.period_label || mapPeriodLabel} ·{" "}
+                {attention.reporting_count}/{attention.total_locations} LGUs reporting
+              </span>
+            </div>
+            <div style={styles.attnGrid}>
+              {/* Lowest coverage */}
+              <div style={styles.attnCard}>
+                <p style={styles.attnCardTitle}>Lowest coverage (below 80%)</p>
+                {attention.bottom.length === 0 ? (
+                  <p style={styles.attnEmpty}>None below target 🎉</p>
+                ) : (
+                  <ul style={styles.attnList}>
+                    {attention.bottom.map((r) => (
+                      <li key={r.location} style={styles.attnItem}>
+                        <span>
+                          {r.location}
+                          {r.is_huc && <span style={styles.hucTag}>HUC</span>}
+                        </span>
+                        <span style={{ ...styles.attnPct, color: getCoverageColor(r.pct) }}>
+                          {(r.pct * 100).toFixed(1)}%
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* Data-quality flags: over 100% */}
+              <div style={styles.attnCard}>
+                <p style={styles.attnCardTitle}>Data quality — over 100%</p>
+                {attention.over_100.length === 0 ? (
+                  <p style={styles.attnEmpty}>No values over 100% ✓</p>
+                ) : (
+                  <>
+                    <ul style={styles.attnList}>
+                      {attention.over_100.map((r) => (
+                        <li key={r.location} style={styles.attnItem}>
+                          <span>
+                            {r.location}
+                            {r.is_huc && <span style={styles.hucTag}>HUC</span>}
+                          </span>
+                          <span style={{ ...styles.attnPct, color: "#DC2626" }}>
+                            {(r.pct * 100).toFixed(1)}%
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p style={styles.attnHint}>
+                      Over 100% usually means a data-entry error — check the source file.
+                    </p>
+                  </>
+                )}
+              </div>
+
+              {/* Stopped reporting since prior period */}
+              <div style={styles.attnCard}>
+                <p style={styles.attnCardTitle}>
+                  Stopped reporting
+                  {attention.prior_period_label ? ` since ${attention.prior_period_label}` : ""}
+                </p>
+                {!attention.prior_period_label ? (
+                  <p style={styles.attnEmpty}>No prior period to compare</p>
+                ) : attention.dropped.length === 0 ? (
+                  <p style={styles.attnEmpty}>All prior reporters still reporting ✓</p>
+                ) : (
+                  <ul style={styles.attnList}>
+                    {attention.dropped.map((name) => (
+                      <li key={name} style={styles.attnItem}>
+                        <span>{name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
@@ -444,6 +545,19 @@ const styles = {
   subAreaNote: { fontSize: "11px", color: "#94A3B8", margin: "6px 0 0" },
   mapsHeader: { display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px", flexWrap: "wrap" },
   mapsHeaderTitle: { fontFamily: "'Montserrat', sans-serif", fontSize: "16px", fontWeight: "700", color: "#1F2A45", margin: 0 },
+  attnPanel: { backgroundColor: "#fff", border: "1px solid #FCD9B6", borderRadius: "10px", padding: "18px 20px", marginBottom: "24px", boxShadow: "0 2px 8px rgba(0,0,0,0.07)" },
+  attnHeader: { display: "flex", alignItems: "baseline", gap: "12px", marginBottom: "14px", flexWrap: "wrap" },
+  attnTitle: { fontFamily: "'Montserrat', sans-serif", fontSize: "16px", fontWeight: "700", color: "#B45309", margin: 0 },
+  attnSub: { fontSize: "12px", color: "#5A6A85" },
+  attnGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px" },
+  attnCard: { backgroundColor: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "12px 14px" },
+  attnCardTitle: { fontSize: "11px", fontWeight: "700", color: "#475569", margin: "0 0 10px 0", textTransform: "uppercase", letterSpacing: "0.4px" },
+  attnList: { listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "6px" },
+  attnItem: { display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px", color: "#1F2A45" },
+  attnPct: { fontWeight: "700", fontVariantNumeric: "tabular-nums" },
+  attnEmpty: { fontSize: "12px", color: "#94A3B8", margin: 0 },
+  attnHint: { fontSize: "11px", color: "#94A3B8", margin: "10px 0 0", lineHeight: 1.4 },
+  hucTag: { marginLeft: "6px", backgroundColor: "#EDE9FE", color: "#7C3AED", fontSize: "9px", fontWeight: "700", padding: "1px 5px", borderRadius: "3px" },
   mapsRow: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" },
   mapCard: { backgroundColor: "#ffffff", borderRadius: "10px", padding: "20px", boxShadow: "0 2px 8px rgba(0,0,0,0.07)" },
   mapTitle: { fontFamily: "'Montserrat', sans-serif", fontSize: "16px", fontWeight: "700", color: "#1F2A45", margin: "0 0 4px 0", display: "flex", alignItems: "center", gap: "10px" },
