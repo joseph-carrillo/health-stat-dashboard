@@ -19,6 +19,7 @@
 
   "display": {
     "label": "File 1 - Breastfeeding and LBW",
+    "dqc_highlight": true,
     "id_columns": [
       { "key": "psgc", "label": "PSGC" },
       { "key": "location", "label": "Name of City / Municipality" }
@@ -52,8 +53,8 @@
   ],
 
   "dqc_rules": [
-    { "rule_type": "over_threshold", "indicator_code": "NUT_BF_1H_PCT", "threshold": 1.0, "message": "Breastfeeding within 1 hour percentage exceeds 100% of live births" },
-    { "rule_type": "over_threshold", "indicator_code": "NUT_LBW_IRON_PCT", "threshold": 1.0, "message": "LBW iron supplementation percentage exceeds 100% of LBW cases" }
+    { "rule_type": "over_threshold", "indicator_code": "NUT_BF_1H_PCT", "threshold": 1.0, "numerator_code": "NUT_BF_1H_TOTAL", "denominator_code": "NUT_BF_LIVE_BIRTHS", "message": "Breastfed within 1 hour exceeds live births (over 100%)", "hint": "You cannot breastfeed more newborns within 1 hour than were born alive. Over 100% means a value is wrong: check the source file (live births entered too low, or breastfed count too high) and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "NUT_LBW_IRON_PCT", "threshold": 1.0, "numerator_code": "NUT_LBW_IRON_TOTAL", "denominator_code": "NUT_LBW_COUNT", "message": "LBW iron supplementation exceeds LBW cases (over 100%)", "hint": "You cannot give iron to more low-birth-weight infants than were recorded. Over 100% means a value is wrong: check the source file (LBW count entered too low, or supplemented count too high) and re-upload." }
   ],
 
   "notes": "Quarterly Q1–Q4 + Annual sheets. DQC threshold 100% per FHSIS template."

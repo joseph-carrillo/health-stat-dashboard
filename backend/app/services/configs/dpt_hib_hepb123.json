@@ -19,6 +19,7 @@
 
   "display": {
     "label": "File 4 - DPT-HiB-HepB 1/2/3",
+    "dqc_highlight": true,
     "id_columns": [
       { "key": "psgc", "label": "PSGC" },
       { "key": "location", "label": "Name of City / Municipality" }
@@ -134,24 +135,9 @@
   ],
 
   "dqc_rules": [
-    {
-      "rule_type": "over_threshold",
-      "indicator_code": "DPT1_PCT",
-      "threshold": 2.0,
-      "message": "DPT dose 1 percentage exceeds 200% of projected population"
-    },
-    {
-      "rule_type": "over_threshold",
-      "indicator_code": "DPT2_PCT",
-      "threshold": 2.0,
-      "message": "DPT dose 2 percentage exceeds 200% of projected population"
-    },
-    {
-      "rule_type": "over_threshold",
-      "indicator_code": "DPT3_PCT",
-      "threshold": 2.0,
-      "message": "DPT dose 3 percentage exceeds 200% of projected population"
-    }
+    { "rule_type": "over_threshold", "indicator_code": "DPT1_PCT", "threshold": 2.0, "numerator_code": "DPT1_TOTAL", "denominator_code": "DPT_POP_2026", "message": "DPT dose 1 coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "DPT2_PCT", "threshold": 2.0, "numerator_code": "DPT2_TOTAL", "denominator_code": "DPT_POP_2026", "message": "DPT dose 2 coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "DPT3_PCT", "threshold": 2.0, "numerator_code": "DPT3_TOTAL", "denominator_code": "DPT_POP_2026", "message": "DPT dose 3 coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." }
   ],
 
   "notes": "Current-year columns only (cols 2-14). Previous-year cols 15-27 not imported in Phase 1. Sequence rule (dose1>=dose2>=dose3) omitted — often violated in real FHSIS data; review in Excel instead."

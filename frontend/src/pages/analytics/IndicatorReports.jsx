@@ -291,7 +291,10 @@ function dqcForCell(row, col, value, dqcRules = [], dqcHighlight = false) {
   let flagged = Boolean(apiMessage);
   if (!flagged && rule && pct != null) {
     const threshold = rule.threshold ?? 1;
-    const thresholdPct = threshold <= 1.5 ? threshold * 100 : threshold;
+    // Config thresholds are ratios (1.0 = 100%, 2.0 = 200%); cell values reach
+    // the frontend already on a 0–100 scale, so scale the threshold to match.
+    // The <= 5 guard tolerates a threshold that is already expressed as a percent.
+    const thresholdPct = threshold <= 5 ? threshold * 100 : threshold;
     flagged = pct > thresholdPct;
   }
   if (!flagged) return null;
@@ -832,12 +835,15 @@ export default function IndicatorReports() {
         {dqcHighlight && dqcIssues.length > 0 && (
           <div style={styles.dqcPanel}>
             <div style={styles.dqcPanelHead}>
-              ⚠ Data-quality issues ({dqcIssues.length}) — values over 100%
+              ⚠ Data-quality issues ({dqcIssues.length}) — a reported count exceeds
+              what's plausible
             </div>
             <p style={styles.dqcPanelIntro}>
-              These cells are flagged because a treatment count exceeds the cases
-              seen. The numbers may be exactly as reported — verify against the
-              source Excel file before correcting.
+              Each flagged cell has a numerator larger than its denominator beyond
+              the allowed limit: for counts measured against cases seen / enrolled
+              learners the ceiling is 100%; for coverage against a projected
+              population it is 200%. The numbers may be exactly as reported — verify
+              against the source Excel file before correcting.
             </p>
             <table style={styles.dqcTable}>
               <thead>
@@ -845,7 +851,7 @@ export default function IndicatorReports() {
                   <th style={styles.dqcTh}>Location</th>
                   <th style={styles.dqcTh}>Indicator</th>
                   <th style={styles.dqcThNum}>Counted</th>
-                  <th style={styles.dqcThNum}>Cases seen</th>
+                  <th style={styles.dqcThNum}>Denominator</th>
                   <th style={styles.dqcThNum}>%</th>
                   <th style={styles.dqcTh}>Likely cause / action</th>
                 </tr>

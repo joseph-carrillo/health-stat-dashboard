@@ -19,6 +19,7 @@
 
   "display": {
     "label": "File 7 - PCV 1/2/3",
+    "dqc_highlight": true,
     "id_columns": [
       { "key": "psgc", "label": "PSGC" },
       { "key": "location", "label": "Name of City / Municipality" }
@@ -63,9 +64,9 @@
   ],
 
   "dqc_rules": [
-    { "rule_type": "over_threshold", "indicator_code": "PCV1_PCT", "threshold": 2.0, "message": "PCV dose 1 percentage exceeds 200% of projected population" },
-    { "rule_type": "over_threshold", "indicator_code": "PCV2_PCT", "threshold": 2.0, "message": "PCV dose 2 percentage exceeds 200% of projected population" },
-    { "rule_type": "over_threshold", "indicator_code": "PCV3_PCT", "threshold": 2.0, "message": "PCV dose 3 percentage exceeds 200% of projected population" }
+    { "rule_type": "over_threshold", "indicator_code": "PCV1_PCT", "threshold": 2.0, "numerator_code": "PCV1_TOTAL", "denominator_code": "PCV_POP_2026", "message": "PCV dose 1 coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "PCV2_PCT", "threshold": 2.0, "numerator_code": "PCV2_TOTAL", "denominator_code": "PCV_POP_2026", "message": "PCV dose 2 coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "PCV3_PCT", "threshold": 2.0, "numerator_code": "PCV3_TOTAL", "denominator_code": "PCV_POP_2026", "message": "PCV dose 3 coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." }
   ],
 
   "notes": "Current-year columns only (cols 2-14). Previous-year cols 15-27 not imported in Phase 1."

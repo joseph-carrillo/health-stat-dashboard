@@ -19,6 +19,7 @@
 
   "display": {
     "label": "File 1 - Sick Children Given Vitamin A",
+    "dqc_highlight": true,
     "id_columns": [
       { "key": "psgc", "label": "PSGC" },
       { "key": "location", "label": "Name of City / Municipality" }
@@ -56,8 +57,8 @@
   ],
 
   "dqc_rules": [
-    { "rule_type": "over_threshold", "indicator_code": "SICK_VITA_GIVEN_611_PCT", "threshold": 1.0, "message": "Vitamin A (6-11m) percentage exceeds 100% of children seen" },
-    { "rule_type": "over_threshold", "indicator_code": "SICK_VITA_GIVEN_1259_PCT", "threshold": 1.0, "message": "Vitamin A (12-59m) percentage exceeds 100% of children seen" }
+    { "rule_type": "over_threshold", "indicator_code": "SICK_VITA_GIVEN_611_PCT", "threshold": 1.0, "numerator_code": "SICK_VITA_GIVEN_611_TOTAL", "denominator_code": "SICK_VITA_SEEN_611_TOTAL", "message": "Vitamin A given (6-11m) exceeds sick children seen (over 100%)", "hint": "You cannot give Vitamin A to more sick children than were seen. Over 100% means a value is wrong: check the source file (children seen entered too low, or given count too high) and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "SICK_VITA_GIVEN_1259_PCT", "threshold": 1.0, "numerator_code": "SICK_VITA_GIVEN_1259_TOTAL", "denominator_code": "SICK_VITA_SEEN_1259_TOTAL", "message": "Vitamin A given (12-59m) exceeds sick children seen (over 100%)", "hint": "You cannot give Vitamin A to more sick children than were seen. Over 100% means a value is wrong: check the source file (children seen entered too low, or given count too high) and re-upload." }
   ],
 
   "notes": "Quarterly + Annual sheets. Phase 1: quarterly upload (Qtr1–Qtr4). Denominator is Seen (facility visits), not projected population."

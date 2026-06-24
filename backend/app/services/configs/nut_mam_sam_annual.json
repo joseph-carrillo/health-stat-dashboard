@@ -19,6 +19,7 @@
 
   "display": {
     "label": "File 6 - Nutritional Status (MAM & SAM, annual)",
+    "dqc_highlight": true,
     "id_columns": [
       { "key": "psgc", "label": "PSGC" },
       { "key": "location", "label": "Name of City / Municipality" }
@@ -100,10 +101,10 @@
   ],
 
   "dqc_rules": [
-    { "rule_type": "over_threshold", "indicator_code": "NUT_MAM_ID_PCT", "threshold": 1.0, "message": "MAM identified percentage exceeds 100% of children seen" },
-    { "rule_type": "over_threshold", "indicator_code": "NUT_MAM_SFP_PCT", "threshold": 1.0, "message": "MAM SFP enrollment percentage exceeds 100% of children seen" },
-    { "rule_type": "over_threshold", "indicator_code": "NUT_SAM_ID_PCT", "threshold": 1.0, "message": "SAM identified percentage exceeds 100% of children seen" },
-    { "rule_type": "over_threshold", "indicator_code": "NUT_SAM_OTC_PCT", "threshold": 1.0, "message": "SAM OTC admission percentage exceeds 100% of children seen" }
+    { "rule_type": "over_threshold", "indicator_code": "NUT_MAM_ID_PCT", "threshold": 1.0, "numerator_code": "NUT_MAM_ID_TOTAL", "denominator_code": "NUT_MAM_SEEN_TOTAL", "message": "MAM identified exceeds children seen (over 100%)", "hint": "You cannot identify more MAM cases than children were seen. Over 100% means a value is wrong: check the source file (children seen entered too low, or identified count too high) and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "NUT_MAM_SFP_PCT", "threshold": 1.0, "numerator_code": "NUT_MAM_SFP_TOTAL", "denominator_code": "NUT_MAM_SEEN_TOTAL", "message": "MAM SFP enrollment exceeds children seen (over 100%)", "hint": "You cannot enrol more children in supplementary feeding than were seen. Over 100% means a value is wrong: check the source file (children seen entered too low, or enrolled count too high) and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "NUT_SAM_ID_PCT", "threshold": 1.0, "numerator_code": "NUT_SAM_ID_TOTAL", "denominator_code": "NUT_SAM_SEEN_TOTAL", "message": "SAM identified exceeds children seen (over 100%)", "hint": "You cannot identify more SAM cases than children were seen. Over 100% means a value is wrong: check the source file (children seen entered too low, or identified count too high) and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "NUT_SAM_OTC_PCT", "threshold": 1.0, "numerator_code": "NUT_SAM_OTC_TOTAL", "denominator_code": "NUT_SAM_SEEN_TOTAL", "message": "SAM OTC admission exceeds children seen (over 100%)", "hint": "You cannot admit more children to outpatient therapeutic care than were seen. Over 100% means a value is wrong: check the source file (children seen entered too low, or admitted count too high) and re-upload." }
   ],
 
   "notes": "Annual file: Excel tabs are MAM and SAM (not quarter/month sheets). Choose the report year on upload; both tabs are parsed for that year."

@@ -19,6 +19,7 @@
 
   "display": {
     "label": "File 5 - LNS-SQ Supplementation",
+    "dqc_highlight": true,
     "id_columns": [
       { "key": "psgc", "label": "PSGC" },
       { "key": "location", "label": "Name of City / Municipality" }
@@ -52,8 +53,8 @@
   ],
 
   "dqc_rules": [
-    { "rule_type": "over_threshold", "indicator_code": "NUT_LNS_611_PCT", "threshold": 2.0, "message": "LNS-SQ (6-11m) percentage exceeds 200% of projected population" },
-    { "rule_type": "over_threshold", "indicator_code": "NUT_LNS_1223_PCT", "threshold": 2.0, "message": "LNS-SQ (12-23m) percentage exceeds 200% of projected population" }
+    { "rule_type": "over_threshold", "indicator_code": "NUT_LNS_611_PCT", "threshold": 2.0, "numerator_code": "NUT_LNS_611_TOTAL", "denominator_code": "NUT_LNS_POP_611", "message": "LNS-SQ (6-11m) coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "NUT_LNS_1223_PCT", "threshold": 2.0, "numerator_code": "NUT_LNS_1223_TOTAL", "denominator_code": "NUT_LNS_POP_1223", "message": "LNS-SQ (12-23m) coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." }
   ],
 
   "notes": "Quarterly LNS-SQ supplementation. DQC threshold 200% per FHSIS template."

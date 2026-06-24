@@ -19,6 +19,7 @@
 
   "display": {
     "label": "File 2-3 - Vitamin A Supplementation",
+    "dqc_highlight": true,
     "id_columns": [
       { "key": "psgc", "label": "PSGC" },
       { "key": "location", "label": "Name of City / Municipality" }
@@ -52,8 +53,8 @@
   ],
 
   "dqc_rules": [
-    { "rule_type": "over_threshold", "indicator_code": "NUT_VITA_611_PCT", "threshold": 2.0, "message": "Vitamin A (6-11m) percentage exceeds 200% of projected population" },
-    { "rule_type": "over_threshold", "indicator_code": "NUT_VITA_1259_PCT", "threshold": 2.0, "message": "Vitamin A (12-59m) percentage exceeds 200% of projected population" }
+    { "rule_type": "over_threshold", "indicator_code": "NUT_VITA_611_PCT", "threshold": 2.0, "numerator_code": "NUT_VITA_611_TOTAL", "denominator_code": "NUT_VITA_POP_611", "message": "Vitamin A (6-11m) coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "NUT_VITA_1259_PCT", "threshold": 2.0, "numerator_code": "NUT_VITA_1259_TOTAL", "denominator_code": "NUT_VITA_POP_1259", "message": "Vitamin A (12-59m) coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." }
   ],
 
   "notes": "Files 2-3 combined in FHSIS. DQC threshold 200% per template."

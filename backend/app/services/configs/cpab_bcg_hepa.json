@@ -19,6 +19,7 @@
 
   "display": {
     "label": "File 1 - CPAB / BCG / HepaB (Birth Dose)",
+    "dqc_highlight": true,
     "id_columns": [
       { "key": "psgc", "label": "PSGC" },
       { "key": "location", "label": "Name of City / Municipality" }
@@ -186,36 +187,11 @@
   ],
 
   "dqc_rules": [
-    {
-      "rule_type": "over_threshold",
-      "indicator_code": "CPAB_PCT",
-      "threshold": 2.0,
-      "message": "CPAB percentage exceeds 200% of projected population"
-    },
-    {
-      "rule_type": "over_threshold",
-      "indicator_code": "BCG_24H_PCT",
-      "threshold": 2.0,
-      "message": "BCG within 24h percentage exceeds 200% of projected population"
-    },
-    {
-      "rule_type": "over_threshold",
-      "indicator_code": "BCG_GT24H_PCT",
-      "threshold": 2.0,
-      "message": "BCG >24h percentage exceeds 200% of projected population"
-    },
-    {
-      "rule_type": "over_threshold",
-      "indicator_code": "HEPAB_24H_PCT",
-      "threshold": 2.0,
-      "message": "HepaB within 24h percentage exceeds 200% of projected population"
-    },
-    {
-      "rule_type": "over_threshold",
-      "indicator_code": "HEPAB_GT24H_PCT",
-      "threshold": 2.0,
-      "message": "HepaB >24h percentage exceeds 200% of projected population"
-    }
+    { "rule_type": "over_threshold", "indicator_code": "CPAB_PCT", "threshold": 2.0, "numerator_code": "CPAB_TOTAL", "denominator_code": "IMMUN_POP_0_11M", "message": "CPAB coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "BCG_24H_PCT", "threshold": 2.0, "numerator_code": "BCG_24H_TOTAL", "denominator_code": "IMMUN_POP_0_11M", "message": "BCG within 24h coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "BCG_GT24H_PCT", "threshold": 2.0, "numerator_code": "BCG_GT24H_TOTAL", "denominator_code": "IMMUN_POP_0_11M", "message": "BCG >24h coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "HEPAB_24H_PCT", "threshold": 2.0, "numerator_code": "HEPAB_24H_TOTAL", "denominator_code": "IMMUN_POP_0_11M", "message": "HepaB within 24h coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "HEPAB_GT24H_PCT", "threshold": 2.0, "numerator_code": "HEPAB_GT24H_TOTAL", "denominator_code": "IMMUN_POP_0_11M", "message": "HepaB >24h coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." }
   ],
 
   "notes": "Monthly uploads only. Quarterly and annual views computed by dashboard from stored monthly data. DQC threshold 200% for all percentage indicators."

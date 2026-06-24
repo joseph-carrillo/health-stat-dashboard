@@ -19,6 +19,7 @@
 
   "display": {
     "label": "File 8 - MMR 1/2, FIC, CIC",
+    "dqc_highlight": true,
     "id_columns": [
       { "key": "psgc", "label": "PSGC" },
       { "key": "location", "label": "Name of City / Municipality" }
@@ -73,11 +74,11 @@
   ],
 
   "dqc_rules": [
-    { "rule_type": "over_threshold", "indicator_code": "MMR1_PCT", "threshold": 2.0, "message": "MMR dose 1 percentage exceeds 200% of projected population" },
-    { "rule_type": "over_threshold", "indicator_code": "MMR1_PREV_PCT", "threshold": 2.0, "message": "MMR dose 1 (prev year) percentage exceeds 200%" },
-    { "rule_type": "over_threshold", "indicator_code": "MMR2_PCT", "threshold": 2.0, "message": "MMR dose 2 percentage exceeds 200%" },
-    { "rule_type": "over_threshold", "indicator_code": "FIC_PCT", "threshold": 2.0, "message": "FIC percentage exceeds 200%" },
-    { "rule_type": "over_threshold", "indicator_code": "CIC_PCT", "threshold": 2.0, "message": "CIC percentage exceeds 200%" }
+    { "rule_type": "over_threshold", "indicator_code": "MMR1_PCT", "threshold": 2.0, "numerator_code": "MMR1_TOTAL", "denominator_code": "MMR_POP_2026", "message": "MMR dose 1 coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "MMR1_PREV_PCT", "threshold": 2.0, "numerator_code": "MMR1_PREV_TOTAL", "denominator_code": "IMMUN_POP_0_11M_PREV", "message": "MMR dose 1 (prev year) coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "MMR2_PCT", "threshold": 2.0, "numerator_code": "MMR2_TOTAL", "denominator_code": "IMMUN_POP_0_11M_PREV", "message": "MMR dose 2 coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "FIC_PCT", "threshold": 2.0, "numerator_code": "FIC_TOTAL", "denominator_code": "IMMUN_POP_0_11M_PREV", "message": "FIC coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "CIC_PCT", "threshold": 2.0, "numerator_code": "CIC_TOTAL", "denominator_code": "PREV_POP_MINUS_FIC", "message": "CIC coverage exceeds 200% of (projected population minus FIC)", "hint": "CIC is measured against the projected population not yet fully immunized (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." }
   ],
 
   "notes": "Monthly data cols 2-24 per FHSIS layout. MMR2/FIC/CIC use previous-year population denominators per template formulas."
