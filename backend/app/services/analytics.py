@@ -1272,6 +1272,68 @@ def _reporters_at(cur, indicator_code: str, period_id: int) -> set:
     return {r[0].strip() for r in cur.fetchall()}
 
 
+def indicators_overview(codes: list, year: int = 2026) -> dict:
+    """Regional rollup for many indicators at once, in a single connection.
+
+    Each entry resolves the indicator's latest reported period this year
+    (frequency-agnostic) and averages its % across province/city LGUs — the
+    same logic as indicator_overview, batched. Indicators with no committed
+    data come back with regional_pct = None. Powers the remodeled Child Care
+    card that lists every sub-area KPI at once.
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+    results = {}
+    for code in codes:
+        cur.execute(
+            """SELECT h.period_id, rp.label
+               FROM health_data h
+               JOIN indicators i ON i.id = h.indicator_id
+               JOIN report_periods rp ON rp.id = h.period_id
+               WHERE i.code = %s AND rp.year = %s
+               ORDER BY h.period_id DESC
+               LIMIT 1""",
+            [code, year],
+        )
+        period = cur.fetchone()
+        if not period:
+            results[code] = {
+                "indicator_code": code,
+                "period_label": None,
+                "regional_pct": None,
+                "status": "no_data",
+                "locations_reporting": 0,
+                "total_locations": OVERVIEW_TOTAL_LOCATIONS,
+            }
+            continue
+
+        period_id, period_label = period
+        cur.execute(
+            """SELECT h.value
+               FROM health_data h
+               JOIN indicators i ON i.id = h.indicator_id
+               JOIN locations l ON l.id = h.location_id
+               WHERE i.code = %s
+                 AND h.period_id = %s
+                 AND l.level IN ('province', 'city_municipality')""",
+            [code, period_id],
+        )
+        vals = [float(v[0]) for v in cur.fetchall() if v[0] is not None]
+        avg = round(sum(vals) / len(vals), 4) if vals else None
+        results[code] = {
+            "indicator_code": code,
+            "period_label": period_label,
+            "regional_pct": avg,
+            "status": _status_for_ratio(avg),
+            "locations_reporting": len(vals),
+            "total_locations": OVERVIEW_TOTAL_LOCATIONS,
+        }
+
+    cur.close()
+    conn.close()
+    return {"year": year, "indicators": results}
+
+
 def needs_attention(indicator_code: str, year: int = 2026, bottom_n: int = 5) -> dict:
     """What needs attention for one indicator at its latest reported period.
 

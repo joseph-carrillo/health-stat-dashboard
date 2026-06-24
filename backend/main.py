@@ -493,6 +493,18 @@ def get_overview_indicator(
     return analytics.indicator_overview(indicator_code=indicator_code, year=year)
 
 
+@app.get("/api/overview/indicators")
+def get_overview_indicators(
+    codes: str,
+    year: int = 2026,
+    current_user: dict = Depends(get_current_user),
+):
+    """Regional rollups for several indicators (comma-separated codes) at their
+    latest reported periods. Powers the Child Care all-indicators card."""
+    code_list = [c.strip() for c in codes.split(",") if c.strip()]
+    return analytics.indicators_overview(code_list, year=year)
+
+
 @app.get("/api/overview/needs-attention")
 def get_needs_attention(
     indicator_code: str = "CPAB_PCT",

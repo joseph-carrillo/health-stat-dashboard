@@ -15,9 +15,10 @@ import {
   CHILD_CARE_SUBAREAS,
 } from "../../config/overviewIndicators";
 
-// Initial sub-area selections: each sub-area's default flagship indicator.
-const CC_DEFAULT_SEL = Object.fromEntries(
-  CHILD_CARE_SUBAREAS.map((s) => [s.key, s.default])
+// Every Child Care KPI code across the four sub-areas (fetched in one batch
+// when the card is expanded).
+const CC_ALL_CODES = CHILD_CARE_SUBAREAS.flatMap((s) =>
+  s.options.map((o) => o.code)
 );
 
 const MONTHS = [
@@ -49,10 +50,9 @@ export default function Overview() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [programsData, setProgramsData] = useState(null);
-  // Child Care expandable card: open state, per-sub-area indicator selection,
-  // and per-sub-area regional rollups keyed by sub-area key.
+  // Child Care expandable card: open state + regional rollups for every
+  // sub-area KPI, keyed by indicator code.
   const [ccExpanded, setCcExpanded] = useState(false);
-  const [ccSel, setCcSel] = useState(CC_DEFAULT_SEL);
   const [ccData, setCcData] = useState({});
   const mapRef = useRef(null);
 
@@ -75,28 +75,21 @@ export default function Overview() {
       .catch(() => setProgramsData(null));
   }, [year]);
 
-  // Child Care sub-area rollups: when expanded, fetch each selected indicator's
-  // regional summary (frequency-agnostic — resolves each indicator's latest period).
+  // Child Care sub-area rollups: when expanded, fetch every sub-area KPI in one
+  // batch (frequency-agnostic — each resolves its own latest period).
   useEffect(() => {
     if (!ccExpanded) return;
     const token = localStorage.getItem("token");
     let cancelled = false;
-    Promise.all(
-      CHILD_CARE_SUBAREAS.map((s) => {
-        const code = ccSel[s.key];
-        return fetch(
-          `/api/overview/indicator?indicator_code=${encodeURIComponent(code)}&year=${year}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        )
-          .then((r) => (r.ok ? r.json() : null))
-          .then((d) => [s.key, d])
-          .catch(() => [s.key, null]);
-      })
-    ).then((entries) => {
-      if (!cancelled) setCcData(Object.fromEntries(entries));
-    });
+    fetch(
+      `/api/overview/indicators?codes=${encodeURIComponent(CC_ALL_CODES.join(","))}&year=${year}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!cancelled) setCcData(d?.indicators || {}); })
+      .catch(() => { if (!cancelled) setCcData({}); });
     return () => { cancelled = true; };
-  }, [ccExpanded, ccSel, year]);
+  }, [ccExpanded, year]);
 
   // Clicking a program card drills the map/ranking into its flagship indicator.
   function handleProgramClick(p) {
@@ -296,53 +289,51 @@ export default function Overview() {
               })}
             </div>
 
-            {/* Child Care sub-area detail — expandable */}
+            {/* Child Care sub-area detail — expandable: every KPI per sub-area */}
             {ccExpanded && (
               <div style={styles.subAreaPanel}>
                 <p style={styles.subAreaPanelTitle}>
-                  Child Care sub-areas · pick an indicator per area
+                  Child Care · all indicators by sub-area — click any value to map it
                 </p>
                 <div style={styles.subAreaGrid}>
-                  {CHILD_CARE_SUBAREAS.map((s) => {
-                    const d = ccData[s.key];
-                    const ratio = d ? d.regional_pct : null;
-                    const pct = ratio == null ? null : Math.round(ratio * 1000) / 10;
-                    const color = getCoverageColor(ratio);
-                    return (
-                      <div key={s.key} style={{ ...styles.subAreaCard, borderTop: `4px solid ${color}` }}>
-                        <p style={styles.subAreaName}>{s.label}</p>
-                        <select
-                          style={styles.subAreaSelect}
-                          value={ccSel[s.key]}
-                          onChange={(e) =>
-                            setCcSel((prev) => ({ ...prev, [s.key]: e.target.value }))
-                          }
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {s.options.map((o) => (
-                            <option key={o.code} value={o.code}>{o.label}</option>
-                          ))}
-                        </select>
-                        <p
-                          style={{ ...styles.subAreaValue, color: pct == null ? "#94A3B8" : "#0F172A" }}
-                          onClick={() => pct != null && handleSubAreaDrill(ccSel[s.key])}
-                          title={pct != null ? "View on the map" : ""}
-                        >
-                          {pct == null ? "—" : `${pct}%`}
-                        </p>
-                        {d == null ? (
-                          <p style={styles.subAreaNote}>loading…</p>
-                        ) : pct == null ? (
-                          <p style={styles.subAreaNote}>no data yet</p>
-                        ) : (
-                          <p style={styles.subAreaNote}>
-                            {d.period_label ? `${d.period_label} · ` : ""}
-                            {d.locations_reporting}/{d.total_locations} LGUs · ▲{d.on_target} · ⛔{d.below_target}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {CHILD_CARE_SUBAREAS.map((s) => (
+                    <div key={s.key} style={styles.subAreaCard}>
+                      <p style={styles.subAreaName}>
+                        {s.label}
+                        <span style={styles.subAreaCount}>{s.options.length}</span>
+                      </p>
+                      <ul style={styles.kpiList}>
+                        {s.options.map((o) => {
+                          const d = ccData[o.code];
+                          const ratio = d ? d.regional_pct : null;
+                          const pct = ratio == null ? null : Math.round(ratio * 1000) / 10;
+                          const hasData = pct != null;
+                          return (
+                            <li
+                              key={o.code}
+                              style={{ ...styles.kpiRow, cursor: hasData ? "pointer" : "default" }}
+                              onClick={() => hasData && handleSubAreaDrill(o.code)}
+                              title={
+                                hasData
+                                  ? `${d.period_label} · ${d.locations_reporting}/${d.total_locations} LGUs · view on the map`
+                                  : "No data yet"
+                              }
+                            >
+                              <span style={styles.kpiLabel}>{o.label}</span>
+                              <span
+                                style={{
+                                  ...styles.kpiValue,
+                                  color: hasData ? getCoverageColor(ratio) : "#CBD5E1",
+                                }}
+                              >
+                                {hasData ? `${pct}%` : "—"}
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -539,10 +530,12 @@ const styles = {
   subAreaPanelTitle: { fontSize: "12px", fontWeight: "700", color: "#475569", margin: "0 0 12px 0", textTransform: "uppercase", letterSpacing: "0.5px" },
   subAreaGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "12px" },
   subAreaCard: { backgroundColor: "#fff", borderRadius: "8px", padding: "12px 14px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" },
-  subAreaName: { fontSize: "12px", fontWeight: "700", color: "#1F2A45", margin: "0 0 8px 0" },
-  subAreaSelect: { width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #CBD5E1", fontSize: "12px", color: "#1F2A45", backgroundColor: "#fff", outline: "none" },
-  subAreaValue: { fontSize: "24px", fontWeight: "800", margin: "8px 0 0", cursor: "pointer" },
-  subAreaNote: { fontSize: "11px", color: "#94A3B8", margin: "6px 0 0" },
+  subAreaName: { fontSize: "12px", fontWeight: "700", color: "#1F2A45", margin: "0 0 8px 0", display: "flex", alignItems: "center", justifyContent: "space-between" },
+  subAreaCount: { fontSize: "10px", fontWeight: "700", color: "#64748B", backgroundColor: "#EEF2F7", borderRadius: "10px", padding: "1px 7px" },
+  kpiList: { listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column" },
+  kpiRow: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px", padding: "5px 0", borderTop: "1px solid #F1F5F9" },
+  kpiLabel: { fontSize: "12px", color: "#475569", lineHeight: 1.3 },
+  kpiValue: { fontSize: "13px", fontWeight: "800", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" },
   mapsHeader: { display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px", flexWrap: "wrap" },
   mapsHeaderTitle: { fontFamily: "'Montserrat', sans-serif", fontSize: "16px", fontWeight: "700", color: "#1F2A45", margin: 0 },
   attnPanel: { backgroundColor: "#fff", border: "1px solid #FCD9B6", borderRadius: "10px", padding: "18px 20px", marginBottom: "24px", boxShadow: "0 2px 8px rgba(0,0,0,0.07)" },
