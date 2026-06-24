@@ -173,13 +173,12 @@ export default function Overview() {
           <div>
             <h1 style={styles.pageTitle}>Analytics — Overview</h1>
             <p style={styles.pageSub}>
-              {selectedIndicator.group
-                ? `${selectedIndicator.group} · ${selectedIndicator.label} coverage`
-                : "Child Care — Immunization coverage"}
-              <span style={styles.periodTag}>Showing: {mapPeriodLabel}</span>
+              Regional program performance at a glance — drill into any indicator on the maps below.
             </p>
           </div>
-          <div style={styles.filterRow}>
+          <div style={styles.filterWrap}>
+            <span style={styles.filterCaption}>Map filters</span>
+            <div style={styles.filterRow}>
             <div style={styles.filterGroup}>
               <label style={styles.filterLabel}>Indicator</label>
               <select
@@ -218,6 +217,7 @@ export default function Overview() {
                   <option key={y} value={y}>{y}</option>
                 ))}
               </select>
+            </div>
             </div>
           </div>
         </div>
@@ -335,8 +335,19 @@ export default function Overview() {
           </>
         )}
 
+        {/* Maps section header — reflects the Map filters at the top of the page */}
+        <div style={styles.mapsHeader} ref={mapRef}>
+          <h2 style={styles.mapsHeaderTitle}>
+            Coverage map —{" "}
+            {selectedIndicator.group
+              ? `${selectedIndicator.group} · ${selectedIndicator.label}`
+              : "Child Care — Immunization"}
+          </h2>
+          <span style={styles.periodTag}>Showing: {mapPeriodLabel}</span>
+        </div>
+
         {/* Two Maps */}
-        <div style={styles.mapsRow} ref={mapRef}>
+        <div style={styles.mapsRow}>
           <div style={styles.mapCard}>
             <h2 style={styles.mapTitle}>
               Negros Island Region
@@ -405,6 +416,8 @@ const styles = {
   topRow: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "24px", flexWrap: "wrap", gap: "12px" },
   pageTitle: { fontFamily: "'Montserrat', sans-serif", fontSize: "22px", fontWeight: "700", color: "#1F2A45", margin: "0 0 4px 0" },
   pageSub: { fontSize: "13px", color: "#5A6A85", margin: 0 },
+  filterWrap: { display: "flex", flexDirection: "column", gap: "6px", alignItems: "flex-start" },
+  filterCaption: { fontSize: "11px", fontWeight: "700", color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.5px" },
   filterRow: { display: "flex", gap: "16px", alignItems: "flex-end" },
   filterGroup: { display: "flex", flexDirection: "column", gap: "6px" },
   filterLabel: { fontSize: "12px", fontWeight: "600", color: "#1F2A45" },
@@ -429,6 +442,8 @@ const styles = {
   subAreaSelect: { width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #CBD5E1", fontSize: "12px", color: "#1F2A45", backgroundColor: "#fff", outline: "none" },
   subAreaValue: { fontSize: "24px", fontWeight: "800", margin: "8px 0 0", cursor: "pointer" },
   subAreaNote: { fontSize: "11px", color: "#94A3B8", margin: "6px 0 0" },
+  mapsHeader: { display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px", flexWrap: "wrap" },
+  mapsHeaderTitle: { fontFamily: "'Montserrat', sans-serif", fontSize: "16px", fontWeight: "700", color: "#1F2A45", margin: 0 },
   mapsRow: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" },
   mapCard: { backgroundColor: "#ffffff", borderRadius: "10px", padding: "20px", boxShadow: "0 2px 8px rgba(0,0,0,0.07)" },
   mapTitle: { fontFamily: "'Montserrat', sans-serif", fontSize: "16px", fontWeight: "700", color: "#1F2A45", margin: "0 0 4px 0", display: "flex", alignItems: "center", gap: "10px" },
