@@ -43,7 +43,25 @@
       "Bash(git stash *)",
       "PowerShell(docker compose exec *)",
       "PowerShell(\\(Invoke-WebRequest \"http://localhost:5173/src/version.js\" -UseBasicParsing -TimeoutSec 5\\).Content)",
-      "Bash(curl -s -o /dev/null -w \"backend: %{http_code}\\\\n\" http://localhost:8000/docs)"
+      "Bash(curl -s -o /dev/null -w \"backend: %{http_code}\\\\n\" http://localhost:8000/docs)",
+      "Bash(xargs wc -l)",
+      "PowerShell(git fetch *)",
+      "PowerShell(git *)",
+      "PowerShell(docker compose *)",
+      "PowerShell(Out-Null *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash 'C:/Users/Joseph/Desktop/ECC/skills/continuous-learning-v2/hooks/observe.sh' post"
+          }
+        ]
+      }
     ]
   }
 }

@@ -9,6 +9,7 @@
 - [`session-handoff.md`](session-handoff.md) — shortest "start cold" summary + first command
 
 ## Standing context
+- [`working-agreement.md`](working-agreement.md) — how Joseph wants to work (solo non-coder PM, burnt out): carry the grind, he decides, keep building together but lighter
 - [`CLAUDE.md`](CLAUDE.md) — builder profile, non-negotiable rules, data source strategy, sensitive indicators
 - [`architecture.md`](architecture.md) — system architecture notes
 - [`adding_templates.md`](adding_templates.md) — recipe for adding a new Excel template (JSON config)
