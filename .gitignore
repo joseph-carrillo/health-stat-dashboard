@@ -28,6 +28,9 @@ desktop.ini
 .vscode/
 *.code-workspace
 
+# Claude Code — per-machine local settings (not synced; each machine keeps its own)
+.claude/settings.local.json
+
 # Health data files — never push to GitHub
 *.xlsx
 *.xls
