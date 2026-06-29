@@ -18,13 +18,15 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   Laptop DB fixed 2026-06-17. Verify any machine with `backend/scripts/audit_data_quality.py`.
 - **Clean slate for testing:** type `reset db protocols` (truncates data, keeps indicators).
 
-## Current focus (as of 2026-06-24)
-Overview redesign loop **closed out**. This session: maps/Rankings made frequency-agnostic
-(quarterly/annual now render), Overview header rescoped + filters labeled "Map filters",
-"Needs Attention" panel added, and the Child Care card now lists **every** sub-area KPI at once
-(no-data shown as "—"). All shipped to `origin/main` (tip `6da0943`). Next: extend the
-all-indicators card pattern to the other programs once they have seeded indicators / data; or
-the Feb FIC investigation.
+## Current focus (as of 2026-06-29)
+**Engineering-practices uplift** — adapting proven practices from a sibling production project,
+one reversible step at a time (propose → review → approve → build). Owner is a data analyst, not
+a coder: write readable code, explain in plain language, be a cold auditor not a yes-man.
+**Step C (versioning + changelog) DONE this session** — see below. **Next: step E+G** (move the
+hardcoded coverage/alert thresholds in `analytics.py` into a config module, with the first real
+tests). Full plan + audit findings in ROADMAP "Engineering-practices uplift" + ADR-011.
+
+The Overview redesign work (prior focus) remains closed out (tip was `6da0943`).
 
 ## Done
 - Full stack (React 19 + FastAPI + PostgreSQL 15) working on both machines
@@ -61,6 +63,16 @@ The redesign loop is complete. Shipped across this session + 2026-06-18:
 10 programs needs their indicators seeded first.
 
 ## Open work (priority order)
+**Engineering-practices uplift (active):**
+- E+G. **Thresholds → config + first real tests** ← recommended next. Move `NEAR_TARGET=80`,
+  `_ON_TARGET=0.95`, `_BELOW_TARGET=0.80` (and the "<80%" / "over-100%" Needs-Attention rules)
+  out of `analytics.py` into one config module; ship happy-path + edge tests for the band logic.
+- I. CI gate (GitHub Actions: pytest + lint). F. Pin Python deps (exact versions).
+- F. Privacy: small-cell suppression (needs owner decision on the cut-off count) + fix
+  `SECURITY.md` (claims sensitive = "aggregated totals only"; code does full exclusion — code wins).
+- F. Per-indicator data dictionary + provenance doc.
+
+**Product backlog:**
 1. Extend the all-indicators card pattern to the other 10 programs — **blocked**: only
    CHILD_CARE has indicators seeded. Seed indicators for the other programs first (#2 below).
 2. Seed indicators for the other 10 programs (only CHILD_CARE has them) — then their Overview
@@ -82,10 +94,14 @@ CPAB (Jan + Feb), FIC (Jan only), Mgt of Sick File 2 (Q1, ~4 LGUs). Everything e
 
 ## Git
 - Work goes **directly on `main`** (sole developer — no feature branches). Push when done.
-- **2026-06-24 session** pushed to `origin/main`, tip **`6da0943`**. Four feature commits:
-  `41c5bbd` (frequency-agnostic maps/Rankings), `8835a3b` (Overview header/filters relabel),
-  `7df2707` (Needs Attention panel), `6da0943` (Child Care all-KPI card).
-- `.claude/settings.local.json` is intentionally left uncommitted (local settings).
+- **2026-06-29 session:** `ff40ba1` (feat: changelog + version v0.9.0) + the docs(shutdown)
+  commit. Also pulled the prior shutdown's housekeeping (`4bdb3f7` untracks settings.local.json,
+  `28a0356` working-agreement memory).
+- **2026-06-24 session** pushed tip `6da0943`: `41c5bbd` (frequency-agnostic maps/Rankings),
+  `8835a3b` (Overview header/filters relabel), `7df2707` (Needs Attention), `6da0943` (Child
+  Care all-KPI card).
+- `.claude/settings.local.json` is now **gitignored** (untracked, per-machine) — was untracked
+  in `4bdb3f7`.
 
 ## Local dev
 - Stack: `docker compose up -d --build` → frontend `:5173`, backend `:8000/docs`, db `:5432`

@@ -100,3 +100,18 @@ Three related Overview changes:
    program cards are unchanged (pending indicator seeding / real data).
 **Also:** Overview page subtitle rescoped to the whole page; the Indicator/Month/Year filters
 captioned "Map filters" and the selected-indicator + period moved to a header above the maps.
+
+## ADR-011 — Versioning + changelog (SemVer 0.x + Keep a Changelog)
+**Status:** Accepted · **Date:** 2026-06-29
+Adopted a human-readable `CHANGELOG.md` (Keep a Changelog format) as the record of what
+changed per release, with `frontend/package.json` `version` as the machine-readable source of
+truth (the two must agree). SemVer on the **0.x** line while pre-deployment: MINOR for
+features, PATCH for fixes; **1.0.0 reserved for the first ICTU production deployment**. The app
+footer now shows `v<semver> · <commit>` (Vite reads the version from `package.json` at
+build/dev start). Started the project at **0.9.0**. **Why:** answer "what changed / what's
+deployed" without reading git; surface a real version to users; set the discipline every later
+change uses (each lands a line under `[Unreleased]`). **Why not CalVer:** SemVer distinguishes
+feature vs fix at a glance. First step of an engineering-practices uplift (adapted from a
+sibling production project) — remaining steps tracked in `ROADMAP.md` / `project_state.md`.
+**Trade-off:** changelog/version sync is currently manual; a CI check to enforce it is a later
+step in the same uplift.

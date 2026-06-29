@@ -50,11 +50,25 @@
 ## Track 2 — LGU / barangay drill-down (future)
 - [ ] Sub-province location reporting and dashboards
 
+## Engineering-practices uplift (in progress — adapted from sibling production project)
+Owner-approved plan, one reversible step at a time (propose → review → approve → build).
+- [x] **C. Versioning + changelog** — `CHANGELOG.md` (Keep a Changelog) + SemVer 0.x;
+  `package.json` is the source of truth; footer shows `v<semver> · <commit>`. Started 0.9.0,
+  1.0.0 = first ICTU deploy (ADR-011). _Done 2026-06-29._
+- [ ] **E+G. Thresholds → config + first real tests** — move hardcoded coverage/alert cut-offs
+  (`NEAR_TARGET=80`, `_ON_TARGET=0.95`, `_BELOW_TARGET=0.80` in `analytics.py`) into one config
+  module, ship with happy-path + edge tests. **← recommended next**
+- [ ] **I. CI gate** — GitHub Actions: pytest + lint must pass before shipping.
+- [ ] **F. Pin Python deps** — exact versions in `requirements.txt` (frontend already locked).
+- [ ] **F. Privacy** — small-cell suppression (needs owner decision: cut-off count); fix
+  `SECURITY.md` (it claims sensitive = "aggregated totals only"; code does full exclusion).
+- [ ] **F. Data dictionary + provenance** — per-indicator numerator/denominator/bands; lock it.
+
 ## Deferred best-practices (next foundation pass)
 - [ ] Fail-fast on missing secrets (remove `os.getenv` fallbacks)
 - [ ] bcrypt → argon2 migration
-- [ ] ruff / mypy / pytest tooling + GitHub Actions CI
-- [ ] Split `backend/main.py` (1100+ lines) and oversized frontend pages (>800 lines)
+- [ ] Split `backend/main.py` (~1300 lines) and oversized frontend pages (>800 lines)
+- [ ] Roadmap milestones: add explicit exit criteria per phase
 
 ## Pending (external — team / higher ops)
 - Template fixes: envi_sanitation, nata_lb_abr, morta_mmr, pre_gd_screening, Vitamin A, schisto

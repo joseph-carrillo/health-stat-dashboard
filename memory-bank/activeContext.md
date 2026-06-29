@@ -1,28 +1,36 @@
 # activeContext.md
 
 ## Current Session Goal
-Close out the Overview redesign. Work goes directly on `main` (sole developer).
+**Engineering-practices uplift** — bring proven practices from a sibling production project into
+this dashboard, adapted (don't copy blindly, no new frameworks). Work directly on `main`.
 
-## Strategic Decision (unchanged)
-Two-Track strategy: Track 1 province dashboard for ops feedback; Track 2 LGU/barangay later.
+## How the owner wants to work (read this)
+Joseph is a **data analyst, not a coder**. Write code he can read; explain every non-obvious
+command/pattern in plain language ("smart 10-year-old"). Be a **cold auditor, not a yes-man** —
+if a request is wrong/risky, say so and propose an alternative. Strict cadence:
+**propose → he reviews → he approves → you build.** One reversible change at a time, verified
+before the next. Never dump many files at once. Flag any new dependency and ask first.
+See `working-agreement.md` for the deeper context (burnout → "manage, don't grind").
 
-## What Was Just Completed (2026-06-24 — office machine)
-- **Maps + Rankings frequency-agnostic:** `resolve_coverage_period()` (`main.py`) — monthly uses
-  `month`, quarterly/annual resolve to latest period with data. `coverage-summary` /
-  `coverage-breakdown` return `period_label`/`period_type`; UI shows "Showing: <period>" and
-  disables the Month dropdown for non-monthly indicators.
-- **Overview header rescoped** to the whole page; filters captioned "Map filters"; selected
-  indicator + period moved to a header above the maps.
-- **"Needs Attention" panel** (`GET /api/overview/needs-attention`): bottom LGUs (<80%),
-  over-100% DQC flags, stopped-reporting (vs **prior period**, not the 66 roster).
-- **Child Care card lists every sub-area KPI** (no dropdown), no-data as "—", click-to-drill.
-  New batch `GET /api/overview/indicators?codes=…`. Child Care only — other 10 programs unchanged.
-- All pushed to `origin/main`, tip `6da0943`.
+## What Was Just Completed (2026-06-29)
+- **Audit** of the repo vs practices A–I. Headline: already strong on docs/ADRs/protocols/commit
+  hygiene; real gaps are testing, changelog, and a few health-data correctness/privacy items.
+- **Step C — versioning + changelog (DONE, committed `ff40ba1`):** `CHANGELOG.md` (Keep a
+  Changelog), `package.json` 0.0.0→0.9.0 (source of truth), footer now shows `v0.9.0 · <commit>`.
+  Verified: frontend restarts clean, `:5173` 200. Decision logged as ADR-011.
 
-## What Happens Next
-1. Seed indicators for the other 10 programs (only CHILD_CARE has them) → then extend the
-   all-indicators card pattern to those programs.
-2. Investigate missing Feb FIC (only Jan landed).
+## What Happens Next — recommended: Step E+G
+Move the hardcoded coverage/alert thresholds out of `backend/app/services/analytics.py`
+(`NEAR_TARGET=80`, `_ON_TARGET=0.95`, `_BELOW_TARGET=0.80`, plus the "<80%" / "over-100%"
+Needs-Attention rules) into **one config module**, and ship the **first real tests** for the
+band-classification logic (happy path + edges). This demonstrates practices E (config) + G
+(tests) + H (logic in a tested function) at once, and the numbers are owner-verifiable.
+Then: I (CI gate) → F (pin Python deps) → F (small-cell suppression, needs his cut-off decision)
+→ F (data dictionary). Full list in ROADMAP "Engineering-practices uplift".
+
+## Decisions waiting on Joseph
+- (when we reach Step F privacy) the **small-cell suppression cut-off** — what count is too small
+  to display (common: <5 or <10). Domain call, only he can set it.
 
 ## API and Frontend Ports
 - API: http://localhost:8000/docs  ·  Frontend: http://localhost:5173
