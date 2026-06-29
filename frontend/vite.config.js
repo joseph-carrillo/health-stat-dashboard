@@ -41,8 +41,14 @@ function readGitSha() {
 // import.meta.env) and via define (applied by esbuild in prod builds).
 const APP_VERSION = process.env.VITE_APP_VERSION || readGitSha()
 const BUILD_TIME = new Date().toISOString()
+// Human SemVer (source of truth: package.json "version"; kept in sync with CHANGELOG.md).
+// Read from disk so it works in the container without extra build args.
+const APP_SEMVER = JSON.parse(
+  readFileSync(resolve(process.cwd(), 'package.json'), 'utf8')
+).version
 process.env.VITE_APP_VERSION = APP_VERSION
 process.env.VITE_BUILD_TIME = BUILD_TIME
+process.env.VITE_APP_SEMVER = APP_SEMVER
 
 export default defineConfig({
   plugins: [
@@ -52,6 +58,7 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(APP_VERSION),
     __BUILD_TIME__: JSON.stringify(BUILD_TIME),
+    __APP_SEMVER__: JSON.stringify(APP_SEMVER),
   },
   server: {
     // Bind 0.0.0.0 so the dev server is reachable from outside the container.

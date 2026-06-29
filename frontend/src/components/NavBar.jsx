@@ -3,7 +3,7 @@
 
 import { useNavigate, useLocation } from "react-router-dom";
 import { getUser, can, logout } from "../services/auth";
-import { APP_VERSION, BUILD_TIME } from "../version";
+import { APP_VERSION, BUILD_TIME, APP_SEMVER } from "../version";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -118,11 +118,11 @@ export default function Navbar() {
           style={styles.version}
           title={
             BUILD_TIME
-              ? `Commit ${APP_VERSION} · started ${BUILD_TIME.slice(0, 16).replace("T", " ")} UTC`
-              : `Commit ${APP_VERSION}`
+              ? `Version ${APP_SEMVER} · commit ${APP_VERSION} · started ${BUILD_TIME.slice(0, 16).replace("T", " ")} UTC`
+              : `Version ${APP_SEMVER} · commit ${APP_VERSION}`
           }
         >
-          build {APP_VERSION}
+          v{APP_SEMVER} · {APP_VERSION}
         </p>
       </div>
 
