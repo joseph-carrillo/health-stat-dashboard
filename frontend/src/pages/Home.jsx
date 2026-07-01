@@ -13,6 +13,12 @@ import {
   statusLabel,
 } from "../services/constants";
 
+// API returns coverage as a ratio (0.771 = 77.1%) — same convention as
+// every other page (Coverage, Rankings, Overview).
+function formatPct(ratio) {
+  return ratio != null ? `${(ratio * 100).toFixed(1)}%` : "—";
+}
+
 function buildAlerts(scorecard) {
   const alerts = [];
   scorecard.forEach((p) => {
@@ -20,13 +26,13 @@ function buildAlerts(scorecard) {
       alerts.push({
         type: "danger",
         program: p.program,
-        message: `Below target at ${p.coverage}% coverage.`,
+        message: `Below target at ${formatPct(p.coverage)} coverage.`,
       });
     } else if (p.status === "near") {
       alerts.push({
         type: "warning",
         program: p.program,
-        message: `Near target at ${p.coverage}% — push to reach 95%.`,
+        message: `Near target at ${formatPct(p.coverage)} — push to reach 95%.`,
       });
     } else if (p.status === "no_data") {
       alerts.push({
@@ -156,9 +162,7 @@ export default function Home() {
                   {scorecard.map((p) => (
                     <tr key={p.program_code} style={styles.tr}>
                       <td style={styles.td}>{p.program}</td>
-                      <td style={styles.td}>
-                        {p.coverage !== null ? `${p.coverage}%` : "—"}
-                      </td>
+                      <td style={styles.td}>{formatPct(p.coverage)}</td>
                       <td style={styles.td}>
                         <span
                           style={{

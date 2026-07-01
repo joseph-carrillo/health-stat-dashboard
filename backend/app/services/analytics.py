@@ -8,6 +8,11 @@
 #  it avoids re-deriving denominators across periods.)
 
 from app.core.db import get_db_connection
+from app.core.thresholds import (
+    NEAR_TARGET_RATIO,
+    ON_TARGET_RATIO,
+    OVER_REPORT_RATIO,
+)
 
 QUARTER_MONTHS = {
     1: [1, 2, 3],
@@ -17,10 +22,6 @@ QUARTER_MONTHS = {
 }
 
 RATE_FORMULAS = ("percentage", "rate", "ratio")
-
-# Coverage status thresholds (percent)
-ON_TARGET = 95
-NEAR_TARGET = 80
 
 
 # =====================================================
@@ -169,12 +170,12 @@ def get_monthly_period_ids(cur, year: int, months: list) -> list:
 
 
 def status_for(coverage):
-    """Classify a coverage percentage into a status band."""
+    """Classify a coverage ratio (0.0-1.0) into a status band. None -> 'no_data'."""
     if coverage is None:
         return "no_data"
-    if coverage >= ON_TARGET:
+    if coverage >= ON_TARGET_RATIO:
         return "on"
-    if coverage >= NEAR_TARGET:
+    if coverage >= NEAR_TARGET_RATIO:
         return "near"
     return "below"
 
@@ -368,7 +369,7 @@ def get_scorecard(year: int, period_type: str, period_value,
 
     result = []
     for r in rows:
-        coverage = round(float(r[2]), 1) if r[2] is not None else None
+        coverage = round(float(r[2]), 4) if r[2] is not None else None
         result.append({
             "program_code": r[0],
             "program": r[1],
@@ -961,22 +962,6 @@ OVERVIEW_AREAS = [
      "codes_like": ["SBI%", "HPV%"]},
 ]
 
-# Coverage bands (ratios): on-target >= 0.95, below-target < 0.80.
-_ON_TARGET = 0.95
-_BELOW_TARGET = 0.80
-
-
-def _status_for_ratio(ratio):
-    """Status band for a 0-1 ratio. None -> 'no_data'."""
-    if ratio is None:
-        return "no_data"
-    if ratio >= _ON_TARGET:
-        return "on"
-    if ratio >= _BELOW_TARGET:
-        return "near"
-    return "below"
-
-
 # Headline KPI per program for the Overview at-a-glance grid.
 # Add (indicator_code, label) as each program's template and headline metric
 # are defined. Programs not listed fall back to averaging their % indicators.
@@ -1034,8 +1019,8 @@ def overview_summary(year: int = 2026) -> dict:
             "flagship_code": a["flagship"],
             "flagship_label": a["flagship_label"],
             "regional_pct": avg,
-            "on_target": sum(1 for v in vals if v >= _ON_TARGET),
-            "below_target": sum(1 for v in vals if v < _BELOW_TARGET),
+            "on_target": sum(1 for v in vals if v >= ON_TARGET_RATIO),
+            "below_target": sum(1 for v in vals if v < NEAR_TARGET_RATIO),
             "locations_reporting": reporting,
             "total_locations": OVERVIEW_TOTAL_LOCATIONS,
         })
@@ -1171,9 +1156,9 @@ def overview_programs(year: int = 2026) -> dict:
             "period_label": period_label,
             "period_type": period_type,
             "regional_pct": avg,
-            "status": _status_for_ratio(avg),
-            "on_target": sum(1 for v in vals if v >= _ON_TARGET),
-            "below_target": sum(1 for v in vals if v < _BELOW_TARGET),
+            "status": status_for(avg),
+            "on_target": sum(1 for v in vals if v >= ON_TARGET_RATIO),
+            "below_target": sum(1 for v in vals if v < NEAR_TARGET_RATIO),
             "locations_reporting": reporting,
             "total_locations": OVERVIEW_TOTAL_LOCATIONS,
         })
@@ -1247,9 +1232,9 @@ def indicator_overview(indicator_code: str, year: int = 2026) -> dict:
         "year": year,
         "period_label": period_label,
         "regional_pct": avg,
-        "status": _status_for_ratio(avg),
-        "on_target": sum(1 for v in vals if v >= _ON_TARGET),
-        "below_target": sum(1 for v in vals if v < _BELOW_TARGET),
+        "status": status_for(avg),
+        "on_target": sum(1 for v in vals if v >= ON_TARGET_RATIO),
+        "below_target": sum(1 for v in vals if v < NEAR_TARGET_RATIO),
         "locations_reporting": len(vals),
         "total_locations": OVERVIEW_TOTAL_LOCATIONS,
     }
@@ -1324,7 +1309,7 @@ def indicators_overview(codes: list, year: int = 2026) -> dict:
             "indicator_code": code,
             "period_label": period_label,
             "regional_pct": avg,
-            "status": _status_for_ratio(avg),
+            "status": status_for(avg),
             "locations_reporting": len(vals),
             "total_locations": OVERVIEW_TOTAL_LOCATIONS,
         }
@@ -1399,10 +1384,10 @@ def needs_attention(indicator_code: str, year: int = 2026, bottom_n: int = 5) ->
 
     reported = {r["location"] for r in rows}
     bottom = sorted(
-        (r for r in rows if r["pct"] < _BELOW_TARGET), key=lambda r: r["pct"]
+        (r for r in rows if r["pct"] < NEAR_TARGET_RATIO), key=lambda r: r["pct"]
     )[:bottom_n]
     over_100 = sorted(
-        (r for r in rows if r["pct"] > 1.0), key=lambda r: -r["pct"]
+        (r for r in rows if r["pct"] > OVER_REPORT_RATIO), key=lambda r: -r["pct"]
     )
 
     # LGUs that reported the prior period but not the latest one.
