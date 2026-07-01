@@ -30,7 +30,7 @@
 - [x] Indicator Reports (API-driven, province filter, computed columns, NIR rollup)
 - [x] Data Availability, Targets
 
-### Templates
+### Templates — Child Care (done)
 - [x] Immunization File 1 (CPAB / BCG / HepaB)
 - [x] Immunization File 4 (DPT-HiB-HepB)
 - [x] Nutrition Files 1–6 (incl. File 6 annual MAM/SAM)
@@ -38,6 +38,23 @@
 - [x] Birth-dose % fix (CPAB/BCG/HepaB stored 100× too large) + reusable data-quality audit
 - [x] SBI (Annual) — Td (#9), MR (#10), HPV (#11) configs + 27 indicators
 - [ ] Remaining Immunization files (5–8) — when real data arrives
+
+### Build out the other 10 programs (← active focus, 2026-07-01)
+Only CHILD_CARE has indicators seeded (247); the other 10 programs have 0. Per-program build
+loop (analyze → seed indicators → write configs → validate → dry-run → Joseph tests), **one
+program end-to-end at a time**. Files land in `backend/data/<PROGRAM_CODE>/` (folders scaffolded).
+Recipe: `memory-bank/adding_templates.md`.
+- [x] Scaffold `backend/data/<PROGRAM_CODE>/` intake folders (10 programs)
+- [ ] Maternal Care and Services
+- [ ] Family Planning Services
+- [ ] Vital Statistics
+- [ ] Morbidity
+- [ ] Infectious Disease Prevention and Control
+- [ ] Non-Communicable Disease Prevention and Control
+- [ ] Oral Health Care and Services
+- [ ] Geriatric Health
+- [ ] Demographics
+- [ ] Water, Sanitation, and Hygiene (WASH)
 
 ### Remaining
 - [ ] GeoJSON choropleth maps (`frontend/public/geojson/`)

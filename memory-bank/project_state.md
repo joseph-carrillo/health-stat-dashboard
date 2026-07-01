@@ -10,100 +10,104 @@ Phase 2 (web form input) and Track 2 (LGU/barangay) are future.
 Each machine has its own Docker DB. After cloning/pulling on a machine:
 - **`.env` is gitignored** — if missing, `docker compose` fails ("DB_PASSWORD missing").
   Copy it: `Copy-Item .env.example .env` (template has working local-dev values).
-- **Indicators may be stale.** The office DB was seeded before the Nutrition/Sick/SBI
-  templates existed (had only 43 immunization indicators). Fix is idempotent:
-  `docker compose exec backend python backend/bootstrap_db.py` → backfills all
-  (office DB now at **247 indicators**, done 2026-06-18).
-- **Birth-dose 100× fix:** office DB audit reports clean (section [3] none) — not needed here.
-  Laptop DB fixed 2026-06-17. Verify any machine with `backend/scripts/audit_data_quality.py`.
+- **Indicators may be stale.** Fix is idempotent:
+  `docker compose exec backend python backend/bootstrap_db.py` → backfills all.
+  (office DB at 247 indicators — all CHILD_CARE — done 2026-06-18).
+- **pytest/ruff install per-container.** The dev image doesn't bundle them; CI installs
+  from `requirements-dev.txt`. To run tests locally after the stack is up:
+  `docker compose exec backend pip install -r requirements-dev.txt` then
+  `docker compose exec backend python -m pytest backend/tests/ -q`.
 - **Clean slate for testing:** type `reset db protocols` (truncates data, keeps indicators).
 
-## Current focus (as of 2026-06-29)
-**Engineering-practices uplift** — adapting proven practices from a sibling production project,
-one reversible step at a time (propose → review → approve → build). Owner is a data analyst, not
-a coder: write readable code, explain in plain language, be a cold auditor not a yes-man.
-**Step C (versioning + changelog) DONE this session** — see below. **Next: step E+G** (move the
-hardcoded coverage/alert thresholds in `analytics.py` into a config module, with the first real
-tests). Full plan + audit findings in ROADMAP "Engineering-practices uplift" + ADR-011.
+## Current focus (as of 2026-07-01)
+**PIVOT — building out the other 10 programs.** The engineering-practices uplift is essentially
+done this session (see below); the next big thread is **seeding indicators + writing parser
+configs for the 10 non-Child-Care programs**, so their Overview cards stop showing "no data".
 
-The Overview redesign work (prior focus) remains closed out (tip was `6da0943`).
+**The plan Joseph approved:** he drops the real FHSIS Excel files into per-program folders under
+`backend/data/<PROGRAM_CODE>/` (already scaffolded this session — see below); then, **one program
+at a time, end-to-end**, Claude: analyzes each file column-by-column (into
+`fhsis_template_analysis.md`, same rigor as Child Care) → seeds indicators
+(`backend/app/core/seed_indicators.py`) → writes JSON config(s)
+(`backend/app/services/configs/`) → validates → dry-run parses → hands to Joseph to upload/test.
+Recipe: `memory-bank/adding_templates.md`. **Do NOT analyze all 10 at once** — one program fully,
+reviewed, before the next. Order: "whichever program's files are ready first."
 
-## Done
-- Full stack (React 19 + FastAPI + PostgreSQL 15) working on both machines
-- Reference data seeded: 128 NIR locations, 11 programs, 34 periods, immunization + nutrition indicators
-- Upload pipeline: validate-first → staging (deltas only) → conflict review → approve → commit
-- Templates live: Immunization File 1 (CPAB/BCG/HepaB) + File 4 (DPT-HiB-HepB), Nutrition 1–6, Sick 1–3
-- Analytics: Home scorecard, Overview, Coverage, Rankings, Trends, Indicator Reports (API-driven), Data Availability, Targets
-- Auth: JWT login, RBAC, user/role management, audit logging
-- **Containerization (this session):** backend + frontend Dockerfiles, full dev `docker-compose.yml`,
-  `docker-compose.prod.yml`, `.env`/`.env.example`, env-driven CORS
-- **Foundation docs (this session):** root doc suite + memory-bank index + project_state
-- **Birth-dose % fix (this session):** recomputed File 1 CPAB/BCG/HepaB percentages stored 100×
-  too large (244 rows, audit-logged); shipped `audit_data_quality.py` + `fix_birthdose_pct.py`
-  + first pytest suite (9 tests). Applied on laptop DB; office DB pending (see reminder above).
+**Next session first move:** check which `backend/data/<PROGRAM>/` folders now contain `.xlsx`
+files (`ls backend/data/*/`), list what's there, confirm the read with Joseph, then start that
+program's analysis. If no files dropped yet, Joseph needs to add them first.
 
-## Overview redesign — DONE (2026-06-24)
-The redesign loop is complete. Shipped across this session + 2026-06-18:
-- Ranking moved to Rankings page; 4 summary cards removed; Rankings broadened via shared
-  `overviewIndicators.js`.
-- 11-program at-a-glance grid; Child Care card now lists **every** sub-area KPI at once
-  (Immunization 10 / Nutrition 11 / Sick 5 / SBI 6), no-data as "—", click-to-drill. Backed by
-  batch `GET /api/overview/indicators?codes=…` (replaced the per-sub-area dropdown + 4 single
-  `GET /api/overview/indicator` calls; that endpoint still exists/unused by Overview).
-- **Maps + Rankings frequency-agnostic:** `resolve_coverage_period()` in `main.py` resolves
-  monthly via `month`, quarterly/annual to latest period with data. Endpoints return
-  `period_label`/`period_type`; UI shows "Showing: <period>" + disables Month for non-monthly.
-- **Needs Attention panel** (`GET /api/overview/needs-attention`): bottom LGUs, over-100% DQC
-  flags, stopped-reporting (computed vs **prior period**, not the 66 roster — avoids false alarms
-  for province-aggregated indicators).
-- Overview header rescoped to whole-page; filters captioned "Map filters"; period in a maps header.
-- Config knobs: `OVERVIEW_AREAS` + `PROGRAM_FLAGSHIPS` (`analytics.py`), `CHILD_CARE_SUBAREAS`
-  (`overviewIndicators.js`).
-**Resume here:** the all-indicators card is Child Care-only by design; extending it to the other
-10 programs needs their indicators seeded first.
+## Engineering-practices uplift — DONE this session (2026-07-01)
+Adapted from a sibling production project, one reversible step at a time. Shipped:
+- **E+G. Thresholds → config + first real tests** (`7f0f547`). New `backend/app/core/thresholds.py`
+  (ratio-scale `ON_TARGET_RATIO=0.95`, `NEAR_TARGET_RATIO=0.80`, `OVER_REPORT_RATIO=1.0`), merged
+  the two duplicate band-classifier fns into one `status_for`, added `backend/tests/test_thresholds.py`.
+  **Fixed a real bug found while consolidating:** Home scorecard compared ratio values against
+  percent-scale thresholds → every program showed "Below Target" and Home.jsx rendered "0.77%"
+  instead of "77%". Now matches the `value*100` display used by every other page. ADR-012.
+- **I. CI gate** (`0196e82`). `.github/workflows/ci.yml`: backend job = pytest + ruff, frontend
+  job = eslint. Runs on push/PR to main. ADR-013/015/016.
+- **F. Pin Python deps** (`0196e82`). `requirements.txt` now exact `==` (pinned from the running
+  container; note this locks `pandas==3.0.3`, already proven). `requirements-dev.txt` adds
+  `ruff==0.15.20`, pins `pytest==9.1.1`. ADR-014.
+- **Lint cleanup** (`0196e82`). Backend: removed 2 unused imports. Frontend: fixed vite.config.js
+  Node-env gap, removed dead imports/vars across ~8 files, disabled 2 React-Compiler-only ESLint
+  rules that don't apply (app doesn't use React Compiler). Both lint clean now. ADR-015.
+- **Data-folder scaffold** (`8e09a4e`). 10 `backend/data/<PROGRAM_CODE>/` folders + a
+  `_PUT_FILES_HERE.txt` note in each (raw `.xlsx` stay gitignored; the `.txt` markers carry the
+  folder structure across machines).
+
+## Done (foundation — unchanged, still true)
+- Full stack (React 19 + FastAPI + PostgreSQL 15 + Docker) on both machines; prod compose.
+- Reference data: 128 NIR locations, 11 programs, 34 periods. **Indicators: only CHILD_CARE
+  seeded (247).** Other 10 programs have 0 indicators (this is the current focus to fix).
+- Upload pipeline: validate-first → staging (deltas) → conflict review → approve → commit.
+- CHILD_CARE templates live: Immunization File 1 + File 4, Nutrition 1–6, Sick 1–3, SBI annual
+  (Td/MR/HPV). 16 configs in `backend/app/services/configs/`.
+- Analytics: Home scorecard, Overview (11-program grid + Child Care all-KPI card + Needs
+  Attention), Coverage, Rankings, Trends, Indicator Reports, Data Availability, Targets.
+- Auth: JWT login, RBAC, user/role management, audit logging.
+- Foundation docs (root suite + memory-bank), session protocols, versioning/changelog (v0.9.0).
 
 ## Open work (priority order)
-**Engineering-practices uplift (active):**
-- E+G. **Thresholds → config + first real tests** ← recommended next. Move `NEAR_TARGET=80`,
-  `_ON_TARGET=0.95`, `_BELOW_TARGET=0.80` (and the "<80%" / "over-100%" Needs-Attention rules)
-  out of `analytics.py` into one config module; ship happy-path + edge tests for the band logic.
-- I. CI gate (GitHub Actions: pytest + lint). F. Pin Python deps (exact versions).
-- F. Privacy: small-cell suppression (needs owner decision on the cut-off count) + fix
-  `SECURITY.md` (claims sensitive = "aggregated totals only"; code does full exclusion — code wins).
-- F. Per-indicator data dictionary + provenance doc.
+**Product — building the 10 programs (active, top priority):**
+1. **Per-program build loop** (see Current focus). Start with whichever program's `.xlsx` files
+   Joseph has dropped into `backend/data/<PROGRAM>/`. One program end-to-end at a time.
+2. Extend the Overview all-indicators card pattern to each program once its indicators are seeded
+   (currently CHILD_CARE-only by design).
+3. Investigate **missing Feb FIC** (only Jan FIC landed; Feb File 8 sheet blank or unapproved?).
+4. Remaining Immunization files 5–8 for CHILD_CARE — when real data arrives.
 
-**Product backlog:**
-1. Extend the all-indicators card pattern to the other 10 programs — **blocked**: only
-   CHILD_CARE has indicators seeded. Seed indicators for the other programs first (#2 below).
-2. Seed indicators for the other 10 programs (only CHILD_CARE has them) — then their Overview
-   cards stop showing "no data".
-3. Investigate **missing Feb FIC** (only Jan FIC landed; Feb File 8 sheet blank or unapproved?)
-4. Remaining Immunization files (5–8) — when real data arrives
-5. ICTU deployment (pending IT: Linux VM for Docker, SSH vs RDP)
-6. Deferred best-practices: fail-fast secrets, bcrypt→argon2, CI, split `main.py` (now ~1300 lines)
+**Engineering-practices uplift — remaining (both BLOCKED on Joseph's decision, not code):**
+- **F. Privacy — small-cell suppression.** Needs Joseph's cut-off count (common: <5 or <10) for
+  hiding small counts on sensitive indicators (HIV/syphilis reactive). Also fix `SECURITY.md`
+  (claims sensitive = "aggregated totals only"; code does full exclusion — code wins).
+- **F. Data dictionary + provenance.** Per-indicator numerator/denominator/target; Claude can
+  draft from configs but Joseph must review/lock the domain definitions.
+- **I2 follow-up (optional):** 9 non-blocking ESLint warnings remain (missing hook deps); not
+  errors, CI passes. Clean up someday.
 
-## Data currently in DB (office, 2026-06-18)
-CPAB (Jan + Feb), FIC (Jan only), Mgt of Sick File 2 (Q1, ~4 LGUs). Everything else empty
-(DB was wiped this session via `reset db protocols`, then re-uploaded for Child Care testing).
+**Deferred best-practices (lower priority):**
+- Fail-fast on missing secrets (remove `os.getenv` fallbacks in `db.py`/`auth.py`).
+- bcrypt → argon2 migration.
+- Split `backend/main.py` (~1259 lines) and oversized frontend pages (>800 lines).
 
-## Deferred best-practices (next foundation pass)
-- Fail-fast on missing secrets (remove `os.getenv` fallbacks in `db.py`/`auth.py`)
-- bcrypt → argon2 migration
-- ruff/mypy/pytest tooling + GitHub Actions CI
-- Split `backend/main.py` (1100+ lines) and oversized frontend pages (>800 lines)
+## Data currently in DB (office, last known)
+CPAB (Jan + Feb), FIC (Jan only), Mgt of Sick File 2 (Q1, ~4 LGUs). Mostly CHILD_CARE test data.
+Other 10 programs: no indicators, no data.
 
 ## Git
 - Work goes **directly on `main`** (sole developer — no feature branches). Push when done.
-- **2026-06-29 session:** `ff40ba1` (feat: changelog + version v0.9.0) + the docs(shutdown)
-  commit. Also pulled the prior shutdown's housekeeping (`4bdb3f7` untracks settings.local.json,
-  `28a0356` working-agreement memory).
-- **2026-06-24 session** pushed tip `6da0943`: `41c5bbd` (frequency-agnostic maps/Rankings),
-  `8835a3b` (Overview header/filters relabel), `7df2707` (Needs Attention), `6da0943` (Child
-  Care all-KPI card).
-- `.claude/settings.local.json` is now **gitignored** (untracked, per-machine) — was untracked
-  in `4bdb3f7`.
+- **2026-07-01 session** pushed tip **`8e09a4e`**. New commits this session:
+  `7f0f547` (thresholds+Home fix), `0196e82` (CI+deps+lint), `c62f4b5` (docs),
+  `8e09a4e` (data-folder scaffold), plus the shutdown docs/memory commit.
+- **CI runs for the first time on GitHub now** — check the repo **Actions** tab; both jobs
+  (backend pytest+ruff, frontend eslint) verified green locally in clean containers, but confirm
+  the first real run passed.
+- `.claude/settings.local.json` is gitignored (per-machine). Raw `.xlsx` in `backend/data/` is
+  gitignored; only the `_PUT_FILES_HERE.txt` markers are tracked.
 
 ## Local dev
-- Stack: `docker compose up -d --build` → frontend `:5173`, backend `:8000/docs`, db `:5432`
+- Stack: `docker compose up -d` → frontend `:5173`, backend `:8000/docs`, db `:5432`
 - DB: `doh_nir_dashboard` · `doh_admin` / `doh_password_2026`
 - Admin login: `admin` / `Admin@2026!`
