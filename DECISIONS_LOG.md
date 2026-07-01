@@ -115,3 +115,85 @@ feature vs fix at a glance. First step of an engineering-practices uplift (adapt
 sibling production project) — remaining steps tracked in `ROADMAP.md` / `project_state.md`.
 **Trade-off:** changelog/version sync is currently manual; a CI check to enforce it is a later
 step in the same uplift.
+
+## ADR-012 — Coverage thresholds moved to config; Home scorecard scale bug fixed
+**Status:** Accepted · **Date:** 2026-07-01
+Moved the coverage/alert cut-offs out of `analytics.py` into one module,
+`backend/app/core/thresholds.py` (`ON_TARGET_RATIO=0.95`, `NEAR_TARGET_RATIO=0.80`,
+`OVER_REPORT_RATIO=1.0`), and merged the two duplicate band-classifier functions
+(`status_for` / `_status_for_ratio`) into one. While consolidating, found and fixed a real bug:
+`status_for`'s old thresholds (`ON_TARGET=95`, `NEAR_TARGET=80`) were percent-scale, but the
+values they classified — `percentage`/`rate`/`ratio` indicators — are stored as decimal ratios
+(0.0–1.0) per the PCT convention. A ratio never reaches 80, so the Home page scorecard
+(`get_scorecard` → `/api/scorecard`) always classified programs as "below target," and
+`Home.jsx` displayed the raw ratio with a bare `%` appended (e.g. "0.77%" instead of "77%").
+Fixed `get_scorecard`'s rounding (was collapsing the ratio to 1 decimal place) and `Home.jsx`'s
+display to match the `value * 100` convention already used by every other page (Coverage,
+Rankings, Overview, Indicator Reports). Added `backend/tests/test_thresholds.py` — the first
+tests for the band-classification logic, including the exact scale bug as a regression case.
+**Why:** a single, tested, ratio-scale source of truth for coverage bands prevents this class of
+bug recurring, and the Home page (first thing users see after login) was silently showing wrong
+numbers. **Trade-off:** none — pure bug fix + refactor, no behavior change beyond the correction.
+Step E+G of the engineering-practices uplift; remaining steps in `ROADMAP.md`.
+
+## ADR-013 — CI gate, scoped to pytest only
+**Status:** Accepted · **Date:** 2026-07-01
+Added `.github/workflows/ci.yml`: installs from `requirements.txt` + `requirements-dev.txt` and
+runs `pytest backend/tests/` on every push/PR to `main`. Deliberately left lint out of the gate
+for now: `npm run lint` currently fails with 32 pre-existing ESLint errors (a Node/browser env
+gap in `vite.config.js`, plus a handful of real React `setState`-in-effect issues), and no
+Python lint tool is installed yet. **Why not fix lint first and gate on everything at once (as
+originally scoped in ROADMAP item "I")?** Cleaning up 32 errors across several files is its own
+chunk of work, separate from wiring up CI — bundling them would make this step bigger and less
+reversible than the "one step at a time" cadence calls for. **Decision on the Python lint tool:**
+`ruff` — fast, covers most of flake8 + isort + pyupgrade in one dependency — but not installed
+yet; picked now so the choice doesn't get re-litigated later. Follow-ups tracked as ROADMAP I2
+(frontend lint gate, after cleanup) and I3 (`ruff` gate, after install). Step I of the
+engineering-practices uplift.
+
+## ADR-014 — Pin Python dependencies to exact versions
+**Status:** Accepted · **Date:** 2026-07-01
+`requirements.txt` switched from `>=` ranges to exact `==` versions, pinned from `pip freeze` in
+the running backend container (image built 2026-06-18) — i.e. the versions already proven
+working, not a fresh resolve. **Note for the record:** this locks in `pandas==3.0.3`, a major-
+version jump from the `>=2.2.0` the range originally allowed. It's already been running for
+~2 weeks without incident (this session's Upload/Home verification also passed against it), so
+pinning it is lower-risk than it looks — the alternative (re-resolving to a "safer" 2.x) would
+be an untested change instead. Rebuilt the backend image against the pinned file and re-verified
+`:8000/docs` responds. **Why:** matches the frontend's `package-lock.json` guarantee — a fresh
+`pip install` on a new machine can no longer silently drift onto an untested version.
+**Trade-off:** this pins direct dependencies only, not a full transitive lock (no `pip-tools` /
+`poetry` — that would be a new tool and a bigger step; revisit if drift becomes a real problem).
+Step F of the engineering-practices uplift.
+
+## ADR-015 — Frontend lint cleanup: fixed real issues, disabled two rules that don't apply
+**Status:** Accepted · **Date:** 2026-07-01
+Cleared all 32 pre-existing ESLint errors and added `frontend-lint` (`npm ci` + `npm run lint`)
+as a second CI job. Two different kinds of fix:
+1. **Genuine issues (19 errors):** `vite.config.js` was linted under browser globals instead of
+   Node, so every `process.env` reference errored (`no-undef`) — added a separate Node-env
+   config block for it. The rest were dead imports/variables (`useEffect`, `MONTHS`, an unused
+   `getUser()` helper, unused `catch` bindings, unused map-callback indices) — deleted, verified
+   nothing else referenced them, and confirmed Home/Overview/Indicator Reports still render
+   correctly afterward.
+2. **Rule doesn't apply here (13 errors):** `react-hooks/set-state-in-effect` and
+   `react-hooks/preserve-manual-memoization`, both part of `eslint-plugin-react-hooks` v7's
+   "recommended" config, target **React Compiler** projects — this app doesn't use React
+   Compiler (no `babel-plugin-react-compiler`). The pattern the first rule flagged
+   (`setLoading(true)` synchronously at the top of an effect, then an async fetch, guarded by an
+   `active` cleanup flag) is this codebase's consistent, deliberate fetch-on-mount convention
+   used on every data page — not a bug. Turned both rules off with a comment explaining why,
+   rather than rewriting the pattern across ~10 files for a rule aimed at a different
+   architecture. **Trade-off:** if this app adopts React Compiler later, re-enable both rules and
+   address them properly at that point. Step I2 of the engineering-practices uplift.
+
+## ADR-016 — Python lint gate (ruff)
+**Status:** Accepted · **Date:** 2026-07-01
+Added `ruff==0.15.20` to `requirements-dev.txt` and a `ruff check backend/` step in the
+`backend-tests` CI job. The backend codebase only had 2 issues (unused imports in `auth.py` and
+`upload_catalog.py`), both dead and safely removed — much lighter than the frontend cleanup.
+**Why ruff over flake8:** single fast tool covering most of flake8 + isort + pyupgrade; the
+default choice for new Python projects (decided earlier in ADR-013, installed now). Verified
+`pytest` + `ruff check` both pass in a clean `python:3.12-slim` container against the pinned
+`requirements.txt`, matching what CI will run. Closes out the "I. CI gate" item of the
+engineering-practices uplift (I, I2, I3 all done).

@@ -55,11 +55,27 @@ Owner-approved plan, one reversible step at a time (propose → review → appro
 - [x] **C. Versioning + changelog** — `CHANGELOG.md` (Keep a Changelog) + SemVer 0.x;
   `package.json` is the source of truth; footer shows `v<semver> · <commit>`. Started 0.9.0,
   1.0.0 = first ICTU deploy (ADR-011). _Done 2026-06-29._
-- [ ] **E+G. Thresholds → config + first real tests** — move hardcoded coverage/alert cut-offs
-  (`NEAR_TARGET=80`, `_ON_TARGET=0.95`, `_BELOW_TARGET=0.80` in `analytics.py`) into one config
-  module, ship with happy-path + edge tests. **← recommended next**
-- [ ] **I. CI gate** — GitHub Actions: pytest + lint must pass before shipping.
-- [ ] **F. Pin Python deps** — exact versions in `requirements.txt` (frontend already locked).
+- [x] **E+G. Thresholds → config + first real tests** — moved coverage/alert cut-offs into
+  `backend/app/core/thresholds.py` (one ratio-scale source of truth), merged the duplicate
+  band-classifier functions, and shipped `test_thresholds.py` (happy-path + edges). Found and
+  fixed a real bug while consolidating: the Home scorecard compared ratio values against
+  percent-scale thresholds, so it always showed "Below Target" with a garbled percent — see
+  ADR-012. _Done 2026-07-01._
+- [x] **I. CI gate (pytest)** — `.github/workflows/ci.yml` runs the backend pytest suite on
+  every push/PR to `main`. _Done 2026-07-01._
+- [x] **I2. Frontend lint gate** — cleaned up all 32 ESLint errors: fixed the `vite.config.js`
+  Node/browser env gap, deleted ~10 dead imports/variables, and turned off two React-Compiler-
+  only rules (`set-state-in-effect`, `preserve-manual-memoization`) that don't apply — this app
+  doesn't use React Compiler, and the flagged pattern (fetch-on-mount with a cleanup flag) is
+  the codebase's deliberate, safe convention on every data page. Added `frontend-lint` as a
+  second CI job (`npm ci` + `npm run lint`). 9 non-blocking warnings remain (missing hook deps),
+  not part of this cleanup. _Done 2026-07-01._
+- [x] **I3. Python lint gate** — installed `ruff` (`requirements-dev.txt`), fixed the 2 issues
+  it found (unused imports in `auth.py` and `upload_catalog.py`), and added `ruff check` as a
+  step in the `backend-tests` CI job. _Done 2026-07-01._
+- [x] **F. Pin Python deps** — `requirements.txt` now uses exact `==` versions (was `>=`),
+  matching what's actually installed and running. Rebuilt the backend image and re-verified
+  clean. _Done 2026-07-01._
 - [ ] **F. Privacy** — small-cell suppression (needs owner decision: cut-off count); fix
   `SECURITY.md` (it claims sensitive = "aggregated totals only"; code does full exclusion).
 - [ ] **F. Data dictionary + provenance** — per-indicator numerator/denominator/bands; lock it.

@@ -18,6 +18,29 @@ always agree (a future CI check will enforce it).
 ### Added
 - This changelog and a real version number (`0.9.0`), replacing the placeholder
   `0.0.0`. First step of an engineering-practices uplift (versioning + changelog).
+- Coverage/alert thresholds moved into one config module
+  (`backend/app/core/thresholds.py`), with the first tests for the on/near/below-
+  target classification logic. Second step of the engineering-practices uplift.
+- **CI gate** — GitHub Actions runs the backend pytest suite, `ruff` lint, and
+  frontend ESLint on every push/PR to `main` (`.github/workflows/ci.yml`, two
+  jobs). Third step of the engineering-practices uplift.
+
+### Changed
+- **Python dependencies pinned** — `requirements.txt` uses exact versions instead
+  of `>=` ranges, so a fresh install can't silently drift onto a newer major
+  version. Fourth step of the engineering-practices uplift.
+- **ESLint cleanup** — fixed a Node/browser environment gap in `vite.config.js`,
+  removed dead imports/variables across ~10 files, and turned off two React-
+  Compiler-only lint rules that don't apply to this app (it doesn't use React
+  Compiler). Frontend now lints clean.
+- **Ruff added** — first Python lint tool for the backend; fixed the 2 unused-
+  import issues it found. Backend now lints clean.
+
+### Fixed
+- **Home page scorecard** was always showing "Below Target" and a garbled coverage
+  number (e.g. "0.77%" instead of "77%") — the status check compared ratio-scale
+  values against percent-scale thresholds. Now shows the real percentage and the
+  correct on/near/below status, matching every other page.
 
 ## [0.9.0] - 2026-06-29
 
