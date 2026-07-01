@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import Navbar from "../../components/Navbar";
 import LineChart from "../../components/LineChart";
 import { getTrend, getIndicators, getLocations } from "../../services/api";
-import { YEARS, MONTHS } from "../../services/constants";
+import { YEARS } from "../../services/constants";
 
 const DEFAULT_INDICATOR = "CPAB_PCT";
 

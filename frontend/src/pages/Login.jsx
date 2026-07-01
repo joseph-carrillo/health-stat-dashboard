@@ -45,7 +45,7 @@ export default function Login() {
       }
       navigate("/home");
 
-    } catch (err) {
+    } catch {
       setError("Cannot connect to server. Is the API running?");
       setLoading(false);
     }

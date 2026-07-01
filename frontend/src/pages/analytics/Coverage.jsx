@@ -102,7 +102,7 @@ export default function Coverage() {
       setData(res.data.data || []);
       setPeriodInfo({ label: res.data.period_label, type: res.data.period_type });
       setLoaded(true);
-    } catch (e) {
+    } catch {
       setError("Failed to load data.");
     } finally {
       setLoading(false);

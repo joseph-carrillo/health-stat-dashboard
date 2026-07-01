@@ -8,16 +8,6 @@ import {
   computeSubtotal,
 } from "../../config/indicatorReportTemplates";
 
-function getUser() {
-  const token = localStorage.getItem("token");
-  if (!token) return {};
-  try {
-    return JSON.parse(atob(token.split(".")[1]));
-  } catch {
-    return {};
-  }
-}
-
 // ── Location order — matches Excel row order exactly ──────────────────────────
 const LOCATION_ORDER = [
   { name: "Negros Occidental", isHeader: true },
@@ -389,7 +379,7 @@ export default function IndicatorReport() {
                           {row.location}
                           {isHUC && <span style={styles.hucBadge}>HUC</span>}
                         </td>
-                        {ALL_CODES.map((code, ci) => (
+                        {ALL_CODES.map((code) => (
                           <td
                             key={code}
                             style={{
@@ -417,7 +407,7 @@ export default function IndicatorReport() {
                       <td style={{ ...styles.td, ...styles.stickyTd, textAlign: "left", fontWeight: "500", color: isEmpty ? "#94A3B8" : "#1F2A45" }}>
                         {row.location}
                       </td>
-                      {ALL_CODES.map((code, ci) => (
+                      {ALL_CODES.map((code) => (
                         <td
                           key={code}
                           style={{

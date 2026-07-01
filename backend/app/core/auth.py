@@ -8,7 +8,7 @@ from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-from app.core.db import DB_CONFIG, get_db_connection
+from app.core.db import get_db_connection
 
 # =====================================================
 # SECURITY SETTINGS

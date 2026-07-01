@@ -47,7 +47,7 @@ export default function Overview() {
   const [coverageData, setCoverageData] = useState([]);
   const [mapPeriod, setMapPeriod] = useState(null);
   const [attention, setAttention] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [programsData, setProgramsData] = useState(null);
   // Child Care expandable card: open state + regional rollups for every

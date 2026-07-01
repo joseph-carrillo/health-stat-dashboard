@@ -1,6 +1,6 @@
 // frontend/src/components/management/StagingTab.jsx
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function StagingTab() {
   const [batchId, setBatchId] = useState("");

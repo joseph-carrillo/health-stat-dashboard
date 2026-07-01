@@ -1,7 +1,6 @@
 """Upload catalog — program hierarchy + template metadata for the upload UI."""
 
 import json
-from pathlib import Path
 
 from app.services.parser import CONFIGS_DIR, report_sheets_from_config, template_sort_order
 
