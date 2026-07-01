@@ -1,0 +1,10 @@
+Program folder: ORAL_HEALTH
+
+Put this program's FHSIS Excel (.xlsx) files in THIS folder.
+
+You do NOT need to rename them — I read the filenames directly.
+If a filename is cryptic, or a file contains something unexpected,
+add a line under NOTES below so I map it correctly.
+
+NOTES (optional — one line per file, "filename = what it tracks"):
+-
