@@ -1,36 +1,46 @@
 # session-handoff.md
 
 ## Last Updated
-2026-07-01 (engineering-practices uplift finished; pivoted to building the other 10 programs;
-data-intake folders scaffolded and pushed)
+2026-07-03 (office — git sync only, no product work; see below)
 
 ## Current Objective
 **Build out the 10 non-Child-Care programs.** Joseph has the FHSIS Excel files for all programs
-and will drop them into `backend/data/<PROGRAM_CODE>/` (folders already created). Then, **one
-program at a time, end-to-end**, Claude analyzes each file (column-by-column, into
-`fhsis_template_analysis.md`) → seeds indicators → writes JSON parser config(s) → validates →
-dry-runs → hands to Joseph to upload/test. Recipe: `adding_templates.md`. Cadence:
-**propose → Joseph reviews → approves → build.** One program fully before the next.
+and will drop them into `backend/data/<PROGRAM_CODE>/` (folders already created, still empty as
+of 2026-07-03). Then, **one program at a time, end-to-end**, Claude analyzes each file
+(column-by-column, into `fhsis_template_analysis.md`) → seeds indicators → writes JSON parser
+config(s) → validates → dry-runs → hands to Joseph to upload/test. Recipe: `adding_templates.md`.
+Cadence: **propose → Joseph reviews → approves → build.** One program fully before the next.
 
-## Done This Session (2026-07-01)
-- **Engineering-practices uplift finished** (all owner-approved steps that don't need his
-  decision): E+G thresholds→config + first tests, I CI gate (pytest+ruff+eslint), F pin Python
-  deps, backend+frontend lint cleanup. ADR-012 → ADR-016.
-- **Fixed a real bug:** Home scorecard compared ratio values vs percent-scale thresholds →
-  always "Below Target", showed "0.77%" not "77%". Fixed + regression-tested.
-- **Scaffolded 10 data-intake folders** under `backend/data/` (one per program code) with
-  `_PUT_FILES_HERE.txt` notes. Raw `.xlsx` gitignored; folder markers tracked.
-- **Pushed tip `8e09a4e`** (4 feature/docs commits + this shutdown commit). CI's first real run
-  is on GitHub now — verify the Actions tab is green.
+## Done This Session (2026-07-03, office) — git sync only
+- Startup found office 7 commits behind `origin/main` **plus** uncommitted local WIP (an
+  "Overview Card" admin-management feature — DB migration, new analytics/API endpoints, a
+  Management admin tab, a new Overview data-quality panel — never logged in memory-bank, from
+  before the last shutdown). Stashed it, fast-forwarded to `origin/main` (`19d6871`), popped the
+  stash, resolved one merge conflict in `Overview.jsx` (kept both the upstream ESLint fix and the
+  WIP's new `dqIssues` state).
+- Walked Joseph through a full diff of the WIP vs. the repo. Per his call ("sync both and follow
+  the repo, start working from there"), **re-stashed** the WIP (`stash@{0}`) so the working tree
+  now matches `origin/main` exactly. **No code committed or pushed this session** — tip is still
+  `19d6871`.
+- Full stack verified healthy throughout (db/backend/frontend all up, `:8000/docs` and `:5173`
+  both responding).
 
 ## Next Session — first moves
 1. `run startup protocols` (loads memory, checks git, brings up stack).
-2. `ls backend/data/*/` — which program folders have `.xlsx` files?
-3. Start the first ready program: list files, read its `_PUT_FILES_HERE.txt`, confirm with
+2. **Decide the stashed Overview Card feature's fate first** (office machine only — see Gotchas
+   below): `git stash list` / `git stash show -p stash@{0}` to review, then finish+test+commit or
+   drop it. Don't let it go stale a second time.
+3. `ls backend/data/*/` — which program folders have `.xlsx` files?
+4. Start the first ready program: list files, read its `_PUT_FILES_HERE.txt`, confirm with
    Joseph, then begin analysis. **One program at a time — do not batch all 10.**
-4. If no files dropped yet, Joseph adds them first.
+5. If no files dropped yet, Joseph adds them first.
 
 ## Notes / Gotchas
+- **⚠️ `stash@{0}` on the office machine holds the uncommitted Overview Card feature.** Git
+  stashes are local-only — this will **not** show up on the laptop. If the next session is on the
+  laptop, this item is invisible there; check `project_state.md` → Git for full contents before
+  assuming it's gone. There's also a second, older `stash@{1}` ("indicator-reports-area-filter")
+  of unknown origin — ask Joseph before touching it.
 - **Only CHILD_CARE has indicators (247).** The other 10 programs = 0 indicators; that's the
   whole point of this next phase. Their Overview cards show "no data" until seeded.
 - **pytest/ruff aren't in the dev image** — install per-container:

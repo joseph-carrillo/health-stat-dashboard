@@ -4,7 +4,19 @@
 **Build out the other 10 programs** (everything except CHILD_CARE, which is done). Joseph drops
 real FHSIS Excel files into `backend/data/<PROGRAM_CODE>/`; Claude then, **one program at a time,
 end-to-end**, analyzes → seeds indicators → writes parser configs → validates → dry-runs → hands
-to Joseph to upload and test. Recipe: `memory-bank/adding_templates.md`.
+to Joseph to upload and test. Recipe: `memory-bank/adding_templates.md`. Still blocked as of
+2026-07-03 — no `.xlsx` files dropped into any program folder yet.
+
+## 2026-07-03 session (office) — git sync only, no product work
+Office had drifted: 7 unpulled remote commits **plus** uncommitted local WIP (an "Overview Card"
+admin-management feature, never logged in memory-bank) sitting dirty since before the last
+shutdown. Resolved: stashed the WIP → fast-forwarded to `origin/main` (`19d6871`) → popped stash
+→ one merge conflict in `Overview.jsx` (kept both the upstream ESLint fix and the WIP's new
+`dqIssues` state). Per Joseph's call ("sync both and follow the repo, start working from there"),
+**re-stashed** the WIP so the tree matches `origin/main` exactly — nothing committed or pushed.
+**The stash (`stash@{0}`) is local to the office machine only** — git stashes don't sync; it will
+not appear on the laptop. Full contents + recovery command in `project_state.md` → Git. Needs a
+decision next: finish + test that feature, or abandon it.
 
 ## How the owner wants to work (read this)
 Joseph is a **data analyst, not a coder**. Write code he can read; explain every non-obvious

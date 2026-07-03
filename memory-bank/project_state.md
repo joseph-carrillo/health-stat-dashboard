@@ -19,10 +19,11 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   `docker compose exec backend python -m pytest backend/tests/ -q`.
 - **Clean slate for testing:** type `reset db protocols` (truncates data, keeps indicators).
 
-## Current focus (as of 2026-07-01)
+## Current focus (as of 2026-07-01; 2026-07-03 was git-sync only, no focus change)
 **PIVOT — building out the other 10 programs.** The engineering-practices uplift is essentially
-done this session (see below); the next big thread is **seeding indicators + writing parser
-configs for the 10 non-Child-Care programs**, so their Overview cards stop showing "no data".
+done (see below); the next big thread is **seeding indicators + writing parser configs for the
+10 non-Child-Care programs**, so their Overview cards stop showing "no data". Still blocked as of
+2026-07-03: no `.xlsx` files have been dropped into any `backend/data/<PROGRAM>/` folder yet.
 
 **The plan Joseph approved:** he drops the real FHSIS Excel files into per-program folders under
 `backend/data/<PROGRAM_CODE>/` (already scaffolded this session — see below); then, **one program
@@ -77,6 +78,9 @@ Adapted from a sibling production project, one reversible step at a time. Shippe
    (currently CHILD_CARE-only by design).
 3. Investigate **missing Feb FIC** (only Jan FIC landed; Feb File 8 sheet blank or unapproved?).
 4. Remaining Immunization files 5–8 for CHILD_CARE — when real data arrives.
+5. **Decide the stashed "Overview Card" admin feature's fate** (BLOCKED on office machine only —
+   see Git section above): finish it (run the migration, test in-browser, commit) or abandon it.
+   Not on the laptop; only recoverable from `stash@{0}` on the office machine.
 
 **Engineering-practices uplift — remaining (both BLOCKED on Joseph's decision, not code):**
 - **F. Privacy — small-cell suppression.** Needs Joseph's cut-off count (common: <5 or <10) for
@@ -98,9 +102,30 @@ Other 10 programs: no indicators, no data.
 
 ## Git
 - Work goes **directly on `main`** (sole developer — no feature branches). Push when done.
-- **2026-07-01 session** pushed tip **`8e09a4e`**. New commits this session:
+- **2026-07-01 session** pushed tip **`8e09a4e`**. New commits then:
   `7f0f547` (thresholds+Home fix), `0196e82` (CI+deps+lint), `c62f4b5` (docs),
-  `8e09a4e` (data-folder scaffold), plus the shutdown docs/memory commit.
+  `8e09a4e` (data-folder scaffold), plus that shutdown docs/memory commit.
+- **2026-07-03 session (office) — git sync only, no product code shipped.** Office had drifted:
+  7 unpulled remote commits (through `19d6871`, the 2026-07-01 shutdown) *plus* uncommitted local
+  work-in-progress (an "Overview Card" admin feature — see below) that predated the last shutdown
+  and was never logged in memory-bank. Resolved by: stash WIP → fast-forward to `origin/main`
+  (`19d6871`, clean, no diverging local commits) → pop stash → one real conflict in `Overview.jsx`
+  (upstream's ESLint fix vs. the WIP's new `dqIssues` state) resolved by keeping both. Per
+  Joseph's call ("sync both and follow the repo, start working from there"), **re-stashed the WIP**
+  so the working tree matches `origin/main` exactly. Current tip is still `19d6871` — nothing new
+  pushed this session.
+- **⚠️ Uncommitted WIP exists only as a local git stash on the office machine** —
+  `stash@{0}`, message `wip: overview card admin management feature (set aside to follow repo
+  baseline, 2026-07-03)`. Stashes are **not git-synced** (unlike commits) — it will **not** appear
+  on the laptop. Recover with `git stash list` / `git stash show -p stash@{0}` / `git stash pop`.
+  Contents: DB migration (`backend/app/core/migrate_overview_card.sql` — new `indicators` columns
+  `overview_subarea`/`show_on_overview`/`overview_sort`), 3 new analytics functions + 4 new API
+  endpoints, a Management → "Overview Card" admin editor tab, and a new program-wide "values over
+  100%" data-quality panel on Overview. Feature-complete-looking but **untested** (no browser
+  verification, migration never run). Needs a decision: finish + test it, or abandon it — see
+  Open work below.
+- There is also an older, unrelated `stash@{1}` ("indicator-reports-area-filter") already in the
+  stash list before this session — left untouched, provenance unknown, worth asking Joseph about.
 - **CI runs for the first time on GitHub now** — check the repo **Actions** tab; both jobs
   (backend pytest+ruff, frontend eslint) verified green locally in clean containers, but confirm
   the first real run passed.
