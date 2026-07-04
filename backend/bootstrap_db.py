@@ -16,7 +16,7 @@ from passlib.context import CryptContext
 BASE = Path(__file__).parent
 sys.path.append(str(BASE))
 
-from app.core.db import DB_CONFIG  # noqa: E402
+from app.core.db import get_db_config  # noqa: E402
 
 CORE = BASE / "app" / "core"
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -101,8 +101,9 @@ def create_admin(conn):
 
 
 def main():
-    print(f"Connecting to {DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']} ...")
-    conn = psycopg2.connect(**DB_CONFIG)
+    cfg = get_db_config()
+    print(f"Connecting to {cfg['host']}:{cfg['port']}/{cfg['database']} ...")
+    conn = psycopg2.connect(**cfg)
     print("Applying schema and seeds:")
     for f in SQL_FILES:
         run_sql_file(conn, f)

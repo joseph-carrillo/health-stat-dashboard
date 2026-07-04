@@ -8,9 +8,12 @@ import sys
 from pathlib import Path
 from datetime import timedelta
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, Body
+from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, Body, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 # Make the app package importable when run via `uvicorn backend.main:app`
 sys.path.append(str(Path(__file__).parent))
@@ -46,9 +49,16 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# Comma-separated list of allowed origins; defaults to "*" for local dev.
-# Set CORS_ORIGINS in production to lock this down (e.g. "https://dashboard.example").
-_cors_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "*").split(",") if o.strip()]
+# Comma-separated list of allowed origins. Defaults cover local dev (Vite on
+# :5173, prod-parity nginx on :80). In production set CORS_ORIGINS to the real
+# site origin (e.g. "https://dashboard.example") — never "*".
+_cors_origins = [
+    o.strip()
+    for o in os.getenv(
+        "CORS_ORIGINS", "http://localhost:5173,http://localhost"
+    ).split(",")
+    if o.strip()
+]
 
 app.add_middleware(
     CORSMiddleware,
@@ -57,6 +67,27 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def _client_ip(request: Request) -> str:
+    """Rate-limit key: real client IP.
+
+    In production the backend sits behind nginx, so request.client.host is
+    always the proxy's IP — every user would share one rate-limit bucket.
+    nginx sets X-Forwarded-For (first hop = client); the backend port is not
+    published outside the compose network, so the header is trustworthy.
+    """
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return get_remote_address(request)
+
+
+# In-memory store, per worker: with 3 gunicorn workers the worst-case
+# effective limit is 3x the declared rate — still plenty tight for humans.
+limiter = Limiter(key_func=_client_ip)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 UPLOAD_DIR = Path(__file__).parent / "data" / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -137,7 +168,8 @@ def health_check():
 # AUTH
 # =====================================================
 @app.post("/api/login")
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+@limiter.limit("10/minute")
+async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
     """Login with username and password. Returns a JWT valid for 8 hours."""
     user = authenticate_user(form_data.username, form_data.password)
     if not user:

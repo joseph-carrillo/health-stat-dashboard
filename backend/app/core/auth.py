@@ -2,21 +2,21 @@
 # Authentication and RBAC for DOH-NIR Dashboard
 # Uses JWT tokens for secure authentication
 
-import os
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.core.db import get_db_connection
+from app.core.env import require_env
 
 # =====================================================
 # SECURITY SETTINGS
 # =====================================================
-SECRET_KEY = os.getenv(
-    "JWT_SECRET_KEY",
-    "doh-nir-dashboard-secret-key-2026-change-in-production",
-)
+# No fallback: a known default signing key means anyone can forge admin
+# tokens. Generate one with:
+#   python -c "import secrets; print(secrets.token_urlsafe(48))"
+SECRET_KEY = require_env("JWT_SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours (one work day)
 

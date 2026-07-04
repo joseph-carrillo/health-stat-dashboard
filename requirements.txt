@@ -14,3 +14,5 @@ passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
 python-multipart==0.0.32
 gunicorn==26.0.0
+# Login rate limiting (in-memory, per worker).
+slowapi==0.1.9

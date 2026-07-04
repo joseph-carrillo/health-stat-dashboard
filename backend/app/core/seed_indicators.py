@@ -3,22 +3,19 @@
 # Run this script once to populate the indicators table
 # Safe to run multiple times -- skips existing indicators
 
-import os
+import sys
+from pathlib import Path
 
 import psycopg2
 
-# =====================================================
-# DATABASE CONNECTION
-# Reads from environment (mirrors app/core/db.py) so the same script runs on
-# the host and inside the Docker container (where DB_HOST=db).
-# =====================================================
-DB_CONFIG = {
-    "host": os.getenv("DB_HOST", "localhost"),
-    "port": int(os.getenv("DB_PORT", "5432")),
-    "database": os.getenv("DB_NAME", "doh_nir_dashboard"),
-    "user": os.getenv("DB_USER", "doh_admin"),
-    "password": os.getenv("DB_PASSWORD", "doh_password_2026"),
-}
+# Allow running this file directly (python backend/app/core/seed_indicators.py)
+# as well as importing it via bootstrap_db.py — backend/ must be on sys.path
+# for the `app.` package imports below.
+sys.path.append(str(Path(__file__).resolve().parents[2]))
+
+# Single source of truth for connection settings (no duplicated password
+# fallback here — see app/core/db.py and app/core/env.py).
+from app.core.db import get_db_config  # noqa: E402
 
 # =====================================================
 # INDICATOR DEFINITIONS
@@ -775,7 +772,7 @@ INDICATORS = {
 # =====================================================
 
 def seed_indicators():
-    conn = psycopg2.connect(**DB_CONFIG)
+    conn = psycopg2.connect(**get_db_config())
     cur = conn.cursor()
 
     total_inserted = 0

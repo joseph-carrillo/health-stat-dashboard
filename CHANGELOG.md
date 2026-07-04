@@ -15,7 +15,24 @@ always agree (a future CI check will enforce it).
 
 ## [Unreleased]
 
+### Security
+- **Fail-fast secrets** — removed the hardcoded fallback values for
+  `JWT_SECRET_KEY` and `DB_PASSWORD`; the app now refuses to start without real
+  values from the environment (new `backend/app/core/env.py` + tests).
+  `seed_indicators.py`'s duplicated connection config (with its own password
+  fallback) now uses the shared `get_db_config()`.
+- **Login rate limiting** — `/api/login` capped at 10 attempts/minute per
+  client IP (`slowapi`; X-Forwarded-For-aware behind the nginx proxy), closing
+  the brute-force gap.
+- **CORS locked down** — default origins are now the explicit local-dev pair
+  instead of `*`; production must set `CORS_ORIGINS` to the real site origin.
+- **Security headers** — production nginx now sends `X-Content-Type-Options`,
+  `X-Frame-Options`, `Referrer-Policy`, and `Permissions-Policy` (HSTS deferred
+  to the TLS-terminating proxy).
+
 ### Added
+- **Container healthchecks** for backend and frontend in
+  `docker-compose.prod.yml`; frontend now waits for a *healthy* backend.
 - This changelog and a real version number (`0.9.0`), replacing the placeholder
   `0.0.0`. First step of an engineering-practices uplift (versioning + changelog).
 - Coverage/alert thresholds moved into one config module
