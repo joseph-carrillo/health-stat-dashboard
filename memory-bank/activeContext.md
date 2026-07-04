@@ -13,7 +13,25 @@ Two parallel tracks, in whichever order inputs arrive:
    folders empty as of 2026-07-04. **Program content is what the health-professional
    higher-ups will judge; deployment is just the delivery vehicle.**
 
-## 2026-07-04 session (HOME machine) — deployment infrastructure built
+## 2026-07-04 session 2 (HOME machine) — CI check, Feb FIC, foundation docs audit
+Three quick tasks, no code changes (docs-only commit `ca754a1`, pushed):
+1. CI confirmed green for all three morning pushes via GitHub API (no `gh` CLI needed —
+   reusable method: `git credential fill` for the token, then the REST API directly).
+2. Missing Feb FIC investigated end-to-end (health_data, staging, full audit_log) — no bug,
+   February was simply never uploaded for any file. Corrected a stale memory line that wrongly
+   said this machine had "CPAB Jan+Feb" data.
+3. Foundation docs audit — all 12 root docs checked against code. Found and fixed real
+   inaccuracies (not just staleness): wrong region name (Region VII → NIR), wrong SBI glossary
+   definition, CONTRIBUTING telling people to branch instead of the locked direct-to-main
+   workflow, several docs still describing bcrypt/no-fail-fast/no-CI/dev-bypass that were
+   closed this morning. Full list in `project_state.md` session log.
+
+Also: Joseph asked about converting the workflow to a more agentic goal→build→validate→loop
+pattern. Discussed but not built — proposed piloting it on the next program build-out with a
+machine-checkable "definition of done." See `project_state.md` for the fuller note. Worth
+revisiting `adding_templates.md` when he's ready to try it.
+
+## 2026-07-04 session 1 (HOME machine) — deployment infrastructure built
 Steps 1+2 of the go-live checklist shipped and verified in one session (commits `da851f9`,
 `0edef57`, `f1a0dc6`, all pushed): fail-fast secrets, login rate limiting, CORS lockdown,
 security headers, healthchecks, Caddy auto-TLS, nightly DB backup sidecar, GHCR release
@@ -35,11 +53,10 @@ before the next. Never dump many files at once. Flag any new dependency and ask 
 See `working-agreement.md` (burnout → "manage, don't grind").
 
 ## First moves next session (after `startup protocols`)
-1. Check GitHub Actions: CI green for `da851f9`/`0edef57`/`f1a0dc6`? (Home machine has no
-   `gh` CLI — use the browser.)
-2. Ask Joseph: domain + server credentials in hand? → go-live Step 3.
-3. `ls backend/data/*/` — files dropped? → start that program, one at a time.
-4. Parked, needing Joseph when ready: stash@{0} fate (HOME machine), small-cell suppression
+1. Ask Joseph: domain + server credentials in hand? → go-live Step 3.
+2. `ls backend/data/*/` — files dropped? → start that program, one at a time. Consider piloting
+   the agentic build-loop approach here (see session 2 note above) if Joseph wants to try it.
+3. Parked, needing Joseph when ready: stash@{0} fate (HOME machine), small-cell suppression
    cutoff, data-dictionary draft greenlight.
 
 ## Watch out for

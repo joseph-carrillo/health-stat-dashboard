@@ -20,6 +20,35 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   `docker compose exec backend python -m pytest backend/tests/ -q` (29 tests).
 - **Clean slate for testing:** type `reset db protocols` (truncates data, keeps indicators).
 
+## Session 2 (2026-07-04, HOME) — CI check, Feb FIC investigation, foundation docs audit
+- **CI confirmed green** for all three morning pushes (`da851f9`, `0edef57`, `f1a0dc6`) plus
+  the shutdown commit — checked via GitHub REST API using the stored git credential (no `gh`
+  CLI needed; a repeatable no-`gh` method for this machine going forward).
+- **Missing Feb FIC investigated — not a bug.** `health_data`, `staging_health_data`, and the
+  full `audit_log` (114 events, survives resets) all confirm: no February upload was ever
+  attempted for FIC or any other file, on any template. Only Jan (monthly) / Q1 (quarterly) /
+  Annual periods exist. **Corrects a memory error**: earlier notes below said this machine's
+  DB holds "CPAB (Jan + Feb)" — wrong, there is zero Feb data here. If Joseph has a Feb sheet,
+  drop it in and upload; otherwise this is expected (program has only issued Jan so far).
+- **Foundation docs audit** (`ca754a1`, pushed): scanned all 12 root docs against actual code/
+  DB. Fixed real errors, not just staleness: README/GLOSSARY said the dashboard serves
+  **"Region VII / Central Visayas"** — wrong, it's **Negros Island Region (NIR)**; GLOSSARY
+  defined **SBI as "Sick/Birth indicator set"** — wrong, it's School-Based Immunization (the
+  Td/MR/HPV files already live); CONTRIBUTING told contributors to **branch and never commit
+  to main** — the opposite of the locked direct-to-main workflow; CONTRIBUTING/CLAUDE.md/
+  README still described **bcrypt, no fail-fast secrets, no CI, `dev`/`dev` login bypass** —
+  all closed/removed as of the July 4 morning session. Also fixed stale counts (indicators
+  ~43→247, routes ~30→39, `backend/tests/` "empty"→4 modules/29 tests) and prod topology
+  (missing Caddy + db-backup sidecar). SECURITY.md/RUNBOOK.md/CHANGELOG.md/ROADMAP.md/
+  DECISIONS_LOG.md were already accurate — no changes needed there.
+- **Agentic build-loop discussed** (no code/decision yet): Joseph asked whether the workflow
+  can shift toward goal→build→validate→loop instead of step-by-step approval. Proposed pilot:
+  next program build-out, framed as a goal with a machine-checkable "definition of done"
+  (indicator seed count, DQC-clean parse, row count matches sheet, N spot-checked cell values,
+  pytest green) — approve the goal once, loop internally until green, surface only the
+  finished result for his UI check. Not yet built; would need `adding_templates.md` updated
+  with a "definition of done" template when he's ready to try it. See [[working-agreement]].
+
 ## Current focus (as of 2026-07-04)
 Two parallel tracks:
 1. **Go-live (v1.0.0).** `memory-bank/deployment-checklist.md` is the working checklist.
@@ -67,18 +96,25 @@ Two parallel tracks:
 ## Open work (priority order)
 1. **Go-live Step 3** (blocked on Joseph/IT): buy domain → DNS → SSH → RUNBOOK deploy →
    smoke test → rotate admin password → tag v1.0.0 (bump package.json, cut changelog).
-2. **Per-program build loop** (blocked on Joseph dropping `.xlsx` files).
-3. **Check CI on GitHub Actions** for `da851f9`/`0edef57`/`f1a0dc6` (home machine has no gh CLI).
-4. **Parked decisions** (Joseph, when ready): stash@{0} Overview Card — finish or drop (HOME
+2. **Per-program build loop** (blocked on Joseph dropping `.xlsx` files). Candidate pilot for
+   the agentic goal→build→validate→loop workflow discussed this session — see session log.
+3. **Parked decisions** (Joseph, when ready): stash@{0} Overview Card — finish or drop (HOME
    machine only); small-cell suppression cutoff (<5 or <10); data-dictionary draft greenlight.
-5. Investigate missing Feb FIC (Jan landed, Feb didn't — sheet blank or unapproved?).
-6. Remaining CHILD_CARE Immunization files 5–8 when real data arrives.
-7. Deferred refactors: split `backend/main.py` (~1300 lines) + oversized frontend pages;
+4. Remaining CHILD_CARE Immunization files 5–8 when real data arrives.
+5. Deferred refactors: split `backend/main.py` (~1200 lines) + oversized frontend pages;
    9 cosmetic ESLint warnings.
 
+## Done this session, closed out
+- ✅ CI checked green (3 pushes + shutdown commit).
+- ✅ Missing Feb FIC — resolved as expected (no upload ever attempted), not a bug.
+- ✅ Foundation docs audit shipped (`ca754a1`) — see session log for what was fixed.
+
 ## Data currently in DB (this = HOME machine)
-CPAB (Jan + Feb), FIC (Jan only), Mgt of Sick File 2 (Q1, ~4 LGUs). CHILD_CARE test data only.
-NOTE: admin's password hash is now argon2 (upgraded live during testing).
+Jan 2026 monthly (CPAB/BCG/HepaB, DPT-HiB-HepB, OPV, IPV, PCV, MMR, FIC — 6,072 rows across
+92 indicators), Q1 2026 quarterly (Nutrition, Sick — 295 rows/74 indicators), Annual 2026
+(Nutrition MAM/SAM, SBI Td/MR/HPV — 396 rows/27 indicators). **No February data of any kind**
+(confirmed 2026-07-04 — see session log above; corrects the earlier wrong "CPAB Jan+Feb" note).
+CHILD_CARE test data only. NOTE: admin's password hash is now argon2 (upgraded live during testing).
 
 ## Git
 - Work goes **directly on `main`** (sole developer). Push when done.

@@ -1,7 +1,8 @@
 # session-handoff.md
 
 ## Last Updated
-2026-07-04 (HOME machine — big build session: deployment Steps 1+2 + argon2, all pushed)
+2026-07-04, session 2 (HOME machine — CI check, Feb FIC investigation, foundation docs audit
+`ca754a1`, all pushed; no code changes this session)
 
 ## Current Objective
 Two parallel tracks:
@@ -13,7 +14,25 @@ Two parallel tracks:
    folders are all empty as of end of session. When files land: one program at a time,
    analyze → seed → config → dry-run → Joseph tests. Recipe: `adding_templates.md`.
 
-## Done This Session (2026-07-04, HOME machine)
+## Done This Session — Session 2 (2026-07-04, HOME machine)
+- **CI checked green** for `da851f9`/`0edef57`/`f1a0dc6` + shutdown commit, via GitHub REST
+  API (token from `git credential fill` — no `gh` CLI needed; reusable next time).
+- **Missing Feb FIC resolved as expected, not a bug** — audit_log (114 events, full history)
+  shows no February upload was ever attempted for any template. Corrected a wrong memory line
+  that said this DB had "CPAB Jan+Feb" — it doesn't; Feb data is absent entirely.
+- **Foundation docs audit** (`ca754a1`, pushed) — all 12 root docs checked against code/DB.
+  Fixed real errors: wrong region name (said Region VII/Central Visayas, should be NIR — Negros
+  Island Region), wrong SBI definition in GLOSSARY (said Sick/Birth, it's School-Based
+  Immunization), CONTRIBUTING told people to branch instead of the locked direct-to-main flow,
+  and several docs still described bcrypt/no-CI/no-fail-fast/dev-bypass that were closed this
+  morning. Stale counts fixed too (indicators, routes, test files). SECURITY/RUNBOOK/CHANGELOG/
+  ROADMAP/DECISIONS_LOG were already accurate.
+- **Discussed (not built): agentic goal→build→validate→loop workflow.** Joseph asked if the
+  build process can shift toward defining a goal and letting the loop run to a validated done
+  state. Proposed piloting on the next program build-out with a machine-checkable "definition
+  of done." No commitment yet — flag this if Joseph brings it up again.
+
+## Done Session 1 (2026-07-04, HOME machine)
 - **Deployment checklist created** (`memory-bank/deployment-checklist.md`) after Joseph locked
   the deploy context with IT: self-managed server (SSH, public internet, backups on us),
   purchase a `.com`. ADR-017.
@@ -40,15 +59,15 @@ Two parallel tracks:
 
 ## Next Session — first moves
 1. `startup protocols` (git sync FIRST, then memory; check machine-local state).
-2. Check GitHub **Actions tab**: three pushes this session (`da851f9`, `0edef57`, `f1a0dc6`)
-   — confirm CI green (couldn't check from home: no `gh` CLI here).
-3. Ask Joseph: domain bought? server credentials from IT? → if yes, Step 3 go-live per RUNBOOK.
-4. `ls backend/data/*/` — any `.xlsx` dropped? → if yes, start that program's analysis.
-5. Parked decisions when Joseph's ready: stash@{0} fate (HOME machine), small-cell cutoff
+2. Ask Joseph: domain bought? server credentials from IT? → if yes, Step 3 go-live per RUNBOOK.
+3. `ls backend/data/*/` — any `.xlsx` dropped? → if yes, start that program's analysis. Consider
+   the agentic build-loop pilot here if Joseph wants to try it (see Done This Session above).
+4. Parked decisions when Joseph's ready: stash@{0} fate (HOME machine), small-cell cutoff
    (<5 or <10), data-dictionary greenlight.
 
 ## Machine-local state (things GitHub does NOT sync — required section per shutdown protocol)
-As of shutdown 2026-07-04 (HOME machine):
+As of shutdown 2026-07-04, session 2 (HOME machine) — **unchanged from session 1**, verified
+again at this shutdown:
 - **HOME machine (this one): `stash@{0}`** = untested Overview Card feature (parked by Joseph
   2026-07-04, decision pending); **`stash@{1}`** = older "indicator-reports-area-filter",
   provenance unknown. **Earlier notes said these were on the office machine — WRONG, corrected
