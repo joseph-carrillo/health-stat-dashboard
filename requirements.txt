@@ -9,9 +9,11 @@ openpyxl==3.1.5
 python-jose[cryptography]==3.5.0
 passlib[bcrypt]==1.7.4
 # Pin bcrypt to the 4.0.x line: passlib 1.7.4's backend detection breaks on
-# bcrypt >=4.1 ("password cannot be longer than 72 bytes"). Revisit if/when we
-# migrate hashing to argon2.
+# bcrypt >=4.1 ("password cannot be longer than 72 bytes"). bcrypt is kept
+# (verify-only) so legacy hashes still log in; new hashes are argon2 and each
+# legacy hash upgrades on first successful login.
 bcrypt==4.0.1
+argon2-cffi==25.1.0
 python-multipart==0.0.32
 gunicorn==26.0.0
 # Login rate limiting (in-memory, per worker).

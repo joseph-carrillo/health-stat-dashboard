@@ -8,6 +8,8 @@ import sys
 from pathlib import Path
 from datetime import timedelta
 
+import psycopg2
+
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, Body, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -171,7 +173,15 @@ def health_check():
 @limiter.limit("10/minute")
 async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
     """Login with username and password. Returns a JWT valid for 8 hours."""
-    user = authenticate_user(form_data.username, form_data.password)
+    try:
+        user = authenticate_user(form_data.username, form_data.password)
+    except psycopg2.Error:
+        # DB down/unreachable is an outage, not a bad request — say so
+        # instead of leaking a raw 500.
+        raise HTTPException(
+            status_code=503,
+            detail="Service temporarily unavailable. Please try again shortly.",
+        )
     if not user:
         raise HTTPException(
             status_code=401, detail="Incorrect username or password"

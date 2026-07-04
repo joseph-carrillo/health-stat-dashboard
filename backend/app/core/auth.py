@@ -20,8 +20,10 @@ SECRET_KEY = require_env("JWT_SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours (one work day)
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Password hashing: argon2 for all new hashes; bcrypt stays verifiable so
+# existing users can still log in, and their hash is transparently upgraded
+# to argon2 on first successful login (see authenticate_user).
+pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated=["bcrypt"])
 
 
 # =====================================================
@@ -147,9 +149,26 @@ def get_user(username: str) -> dict:
     }
 
 
+def _upgrade_password_hash(user_id: int, new_hash: str) -> None:
+    """Persist a re-hashed password (bcrypt -> argon2 migration)."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "UPDATE users SET hashed_password = %s WHERE id = %s",
+        (new_hash, user_id),
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
 def authenticate_user(username: str,
                       password: str) -> dict:
-    """Verify username and password. Returns user if valid."""
+    """Verify username and password. Returns user if valid.
+
+    Legacy bcrypt hashes are upgraded to argon2 on successful login — the
+    only moment the plaintext is available to re-hash.
+    """
     user = get_user(username)
     if not user:
         return None
@@ -157,6 +176,8 @@ def authenticate_user(username: str,
         return None
     if not verify_password(password, user["hashed_password"]):
         return None
+    if pwd_context.needs_update(user["hashed_password"]):
+        _upgrade_password_hash(user["id"], hash_password(password))
     return user
 
 

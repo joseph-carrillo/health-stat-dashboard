@@ -11,15 +11,14 @@ import sys
 from pathlib import Path
 
 import psycopg2
-from passlib.context import CryptContext
 
 BASE = Path(__file__).parent
 sys.path.append(str(BASE))
 
 from app.core.db import get_db_config  # noqa: E402
+from app.core.auth import hash_password  # noqa: E402  (argon2 — same as the app)
 
 CORE = BASE / "app" / "core"
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Run in order. Schema first, then reference seeds.
 SQL_FILES = [
@@ -84,7 +83,7 @@ def seed_indicators(conn):
 
 
 def create_admin(conn):
-    hashed = pwd_context.hash(ADMIN["password"])
+    hashed = hash_password(ADMIN["password"])
     with conn.cursor() as cur:
         cur.execute(
             """INSERT INTO users (

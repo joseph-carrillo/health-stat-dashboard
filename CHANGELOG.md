@@ -16,6 +16,10 @@ always agree (a future CI check will enforce it).
 ## [Unreleased]
 
 ### Security
+- **Password hashing migrated to argon2** — new hashes are argon2id; existing
+  bcrypt hashes still verify and upgrade to argon2 transparently on the user's
+  next successful login. Bootstrap now creates argon2 admin hashes. Closes the
+  long-standing "bcrypt → argon2" gap from SECURITY.md.
 - **Fail-fast secrets** — removed the hardcoded fallback values for
   `JWT_SECRET_KEY` and `DB_PASSWORD`; the app now refuses to start without real
   values from the environment (new `backend/app/core/env.py` + tests).
@@ -46,6 +50,11 @@ always agree (a future CI check will enforce it).
   release/rollback procedure, backup off-server copy, restore drill.
 
 ### Fixed
+- **Login now returns 503 with a friendly message when the database is
+  unreachable** (was a raw 500).
+- **SECURITY.md corrected to match the code** — sensitive indicators are fully
+  excluded for unauthorized roles (not "aggregated totals only"); auth section
+  updated for argon2/fail-fast/rate-limit; known-gaps table pruned of closed items.
 - **Production image build was broken** — `NavBar.jsx` renamed to `Navbar.jsx`
   to match all 11 imports. Windows dev (case-insensitive) masked it; the Linux
   Docker build failed on it. First time the prod frontend image was built since
