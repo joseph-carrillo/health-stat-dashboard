@@ -1,6 +1,22 @@
 # progress.md
 
-## Status: Track 1 — Overview at-a-glance 11-program grid (June 17)
+## Status: Go-live Steps 1+2 done; Step 3 waits on domain + server; 10 programs wait on files (July 4)
+
+## Latest Session (July 4 — HOME) — Deployment infrastructure (checklist Steps 1+2) + argon2
+- Deployment plan locked with IT (self-managed server, SSH, public, `.com` domain) →
+  `memory-bank/deployment-checklist.md` created; ADR-017
+- Step 1 hardening (`da851f9`): fail-fast secrets, login rate limit (10/min/IP), CORS lock,
+  nginx security headers, prod healthchecks; `test_env.py`
+- Step 2 infra (`0edef57`): Caddy auto-TLS, nightly pg_dump sidecar → `./backups`,
+  CI publishes GHCR images on `v*` tags, RUNBOOK server-deployment guide;
+  verified end-to-end in isolated compose project
+- Fixed silently-broken prod image build: `NavBar.jsx` → `Navbar.jsx` (Windows case-insensitive
+  masked it); nginx IPv6 listener + 127.0.0.1 healthcheck
+- argon2 migration with upgrade-on-login (`f1a0dc6`, ADR-018); login 503 when DB down;
+  SECURITY.md corrected (sensitive = full exclusion); 29 tests, ruff clean
+- Session protocols hardened (git-sync-before-memory, machine-local state tracking);
+  machine labels corrected — both stashes live on the HOME machine, not office
+- Permissions allowlist added (`.claude/settings.json`, tracked)
 
 ## Latest Session (June 17) — Overview at-a-glance (all programs)
 - New `analytics.overview_programs(year)` + `GET /api/overview/programs?year=`

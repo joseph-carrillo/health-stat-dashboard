@@ -7,6 +7,7 @@
 - [`progress.md`](progress.md) — detailed session-by-session log
 - [`activeContext.md`](activeContext.md) — current session goal + immediate next steps
 - [`session-handoff.md`](session-handoff.md) — shortest "start cold" summary + first command
+- [`deployment-checklist.md`](deployment-checklist.md) — v1.0.0 go-live checklist (hardening → infra → deploy); check items off as they ship
 
 ## Standing context
 - [`working-agreement.md`](working-agreement.md) — how Joseph wants to work (solo non-coder PM, burnt out): carry the grind, he decides, keep building together but lighter

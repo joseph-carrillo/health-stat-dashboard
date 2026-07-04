@@ -58,7 +58,8 @@ Recipe: `memory-bank/adding_templates.md`.
 
 ### Remaining
 - [ ] GeoJSON choropleth maps (`frontend/public/geojson/`)
-- [ ] ICTU deployment
+- [ ] Deployment to IT's server (self-managed: SSH, public-facing, .com domain) — full plan in
+      `memory-bank/deployment-checklist.md` (hardening → infra → go-live = v1.0.0)
 
 ## Phase 2 — Web form input (future)
 - [ ] Web form mirroring the FHSIS template → PostgreSQL (replaces Excel upload)
@@ -93,13 +94,14 @@ Owner-approved plan, one reversible step at a time (propose → review → appro
 - [x] **F. Pin Python deps** — `requirements.txt` now uses exact `==` versions (was `>=`),
   matching what's actually installed and running. Rebuilt the backend image and re-verified
   clean. _Done 2026-07-01._
-- [ ] **F. Privacy** — small-cell suppression (needs owner decision: cut-off count); fix
-  `SECURITY.md` (it claims sensitive = "aggregated totals only"; code does full exclusion).
+- [ ] **F. Privacy** — small-cell suppression (needs owner decision: cut-off count).
+  ~~fix `SECURITY.md`~~ — doc side done 2026-07-04 (now correctly says full exclusion).
 - [ ] **F. Data dictionary + provenance** — per-indicator numerator/denominator/bands; lock it.
 
 ## Deferred best-practices (next foundation pass)
-- [ ] Fail-fast on missing secrets (remove `os.getenv` fallbacks)
-- [ ] bcrypt → argon2 migration
+- [x] Fail-fast on missing secrets (removed `os.getenv` fallbacks; `app/core/env.py`) —
+  _done 2026-07-04, go-live checklist Step 1_
+- [x] bcrypt → argon2 migration (upgrade-on-login; bootstrap creates argon2) — _done 2026-07-04_
 - [ ] Split `backend/main.py` (~1300 lines) and oversized frontend pages (>800 lines)
 - [ ] Roadmap milestones: add explicit exit criteria per phase
 

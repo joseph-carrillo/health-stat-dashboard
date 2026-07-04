@@ -4,135 +4,96 @@
 
 ## Phase
 **Phase 1 — FHSIS Excel upload → PostgreSQL.** Track 1 (province dashboard) active.
+**Go-live track added 2026-07-04:** deployment Steps 1+2 done; Step 3 waits on domain + server.
 Phase 2 (web form input) and Track 2 (LGU/barangay) are future.
 
 ## ⚠️ STARTUP REMINDER — per-machine DB state (DBs are NOT git-synced)
 Each machine has its own Docker DB. After cloning/pulling on a machine:
 - **`.env` is gitignored** — if missing, `docker compose` fails ("DB_PASSWORD missing").
   Copy it: `Copy-Item .env.example .env` (template has working local-dev values).
+  NOTE (2026-07-04): secrets are now **fail-fast** — the backend refuses to boot without
+  `DB_PASSWORD` and `JWT_SECRET_KEY` in the environment. `.env.example` carries dev values.
 - **Indicators may be stale.** Fix is idempotent:
   `docker compose exec backend python backend/bootstrap_db.py` → backfills all.
-  (office DB at 247 indicators — all CHILD_CARE — done 2026-06-18).
-- **pytest/ruff install per-container.** The dev image doesn't bundle them; CI installs
-  from `requirements-dev.txt`. To run tests locally after the stack is up:
-  `docker compose exec backend pip install -r requirements-dev.txt` then
-  `docker compose exec backend python -m pytest backend/tests/ -q`.
+- **pytest/ruff install per-container**: `docker compose exec backend pip install
+  pytest==9.1.1 ruff==0.15.20` (requirements-dev.txt is NOT mounted into the container), then
+  `docker compose exec backend python -m pytest backend/tests/ -q` (29 tests).
 - **Clean slate for testing:** type `reset db protocols` (truncates data, keeps indicators).
 
-## Current focus (as of 2026-07-01; 2026-07-03 was git-sync only, no focus change)
-**PIVOT — building out the other 10 programs.** The engineering-practices uplift is essentially
-done (see below); the next big thread is **seeding indicators + writing parser configs for the
-10 non-Child-Care programs**, so their Overview cards stop showing "no data". Still blocked as of
-2026-07-03: no `.xlsx` files have been dropped into any `backend/data/<PROGRAM>/` folder yet.
+## Current focus (as of 2026-07-04)
+Two parallel tracks:
+1. **Go-live (v1.0.0).** `memory-bank/deployment-checklist.md` is the working checklist.
+   Steps 1 (hardening) + 2 (deploy infra) DONE and verified end-to-end. Step 3 blocked on:
+   Joseph buys the `.com` domain; IT hands over server IP + SSH; confirm ports 80/443.
+   Then follow `RUNBOOK.md → Production — server deployment` and tag `v1.0.0`.
+2. **Building out the other 10 programs.** Still blocked — no `.xlsx` in any
+   `backend/data/<PROGRAM>/` folder. When files land: **one program end-to-end at a time**
+   (analyze → seed → configs → validate → dry-run → Joseph tests). Recipe:
+   `memory-bank/adding_templates.md`. This is the demo content for the health-professional
+   higher-ups; deployment is only the delivery vehicle.
 
-**The plan Joseph approved:** he drops the real FHSIS Excel files into per-program folders under
-`backend/data/<PROGRAM_CODE>/` (already scaffolded this session — see below); then, **one program
-at a time, end-to-end**, Claude: analyzes each file column-by-column (into
-`fhsis_template_analysis.md`, same rigor as Child Care) → seeds indicators
-(`backend/app/core/seed_indicators.py`) → writes JSON config(s)
-(`backend/app/services/configs/`) → validates → dry-run parses → hands to Joseph to upload/test.
-Recipe: `memory-bank/adding_templates.md`. **Do NOT analyze all 10 at once** — one program fully,
-reviewed, before the next. Order: "whichever program's files are ready first."
-
-**Next session first move:** check which `backend/data/<PROGRAM>/` folders now contain `.xlsx`
-files (`ls backend/data/*/`), list what's there, confirm the read with Joseph, then start that
-program's analysis. If no files dropped yet, Joseph needs to add them first.
-
-## Engineering-practices uplift — DONE this session (2026-07-01)
-Adapted from a sibling production project, one reversible step at a time. Shipped:
-- **E+G. Thresholds → config + first real tests** (`7f0f547`). New `backend/app/core/thresholds.py`
-  (ratio-scale `ON_TARGET_RATIO=0.95`, `NEAR_TARGET_RATIO=0.80`, `OVER_REPORT_RATIO=1.0`), merged
-  the two duplicate band-classifier fns into one `status_for`, added `backend/tests/test_thresholds.py`.
-  **Fixed a real bug found while consolidating:** Home scorecard compared ratio values against
-  percent-scale thresholds → every program showed "Below Target" and Home.jsx rendered "0.77%"
-  instead of "77%". Now matches the `value*100` display used by every other page. ADR-012.
-- **I. CI gate** (`0196e82`). `.github/workflows/ci.yml`: backend job = pytest + ruff, frontend
-  job = eslint. Runs on push/PR to main. ADR-013/015/016.
-- **F. Pin Python deps** (`0196e82`). `requirements.txt` now exact `==` (pinned from the running
-  container; note this locks `pandas==3.0.3`, already proven). `requirements-dev.txt` adds
-  `ruff==0.15.20`, pins `pytest==9.1.1`. ADR-014.
-- **Lint cleanup** (`0196e82`). Backend: removed 2 unused imports. Frontend: fixed vite.config.js
-  Node-env gap, removed dead imports/vars across ~8 files, disabled 2 React-Compiler-only ESLint
-  rules that don't apply (app doesn't use React Compiler). Both lint clean now. ADR-015.
-- **Data-folder scaffold** (`8e09a4e`). 10 `backend/data/<PROGRAM_CODE>/` folders + a
-  `_PUT_FILES_HERE.txt` note in each (raw `.xlsx` stay gitignored; the `.txt` markers carry the
-  folder structure across machines).
+## Shipped 2026-07-04 (HOME machine) — deployment infrastructure
+- **Step 1 hardening** (`da851f9`): fail-fast secrets (`app/core/env.py`; also killed a third
+  fallback hiding in `seed_indicators.py`), login rate limit 10/min/IP (slowapi,
+  X-Forwarded-For-aware), CORS locked (no `*`), nginx security headers, prod healthchecks,
+  `test_env.py`. ADR in checklist context.
+- **Step 2 deploy infra** (`0edef57`): Caddy auto-TLS (Caddyfile; `SITE_ADDRESS` in .env),
+  `db-backup` sidecar (nightly gzipped pg_dump → `./backups`, 30-day retention), CI
+  `release-images` job (v* tag → tests → GHCR images), prod compose `image:` + `IMAGE_TAG`
+  pull-based deploys, RUNBOOK server guide. **Fixed silently-broken prod image build**
+  (`NavBar.jsx`→`Navbar.jsx` case bug) + nginx IPv6/healthcheck gotcha. Verified end-to-end in
+  isolated compose project (all healthy, headers via Caddy, logins via port 80). ADR-017.
+- **argon2 + fixes** (`f1a0dc6`): argon2id hashing with transparent upgrade-on-login (verified
+  live), bootstrap creates argon2, login 503 (not 500) when DB down, SECURITY.md corrected
+  (sensitive = full exclusion). `test_password_hashing.py`. ADR-018.
+- **Session protocols hardened** (root CLAUDE.md): startup = git sync BEFORE memory reads +
+  surface machine-local state; shutdown = machine + verified push + "Machine-local state"
+  section mandatory in session-handoff. memory-bank/CLAUDE.md now defers to root.
+- **Permissions allowlist** (`.claude/settings.json`, tracked): fewer prompts, Joseph-approved.
 
 ## Done (foundation — unchanged, still true)
-- Full stack (React 19 + FastAPI + PostgreSQL 15 + Docker) on both machines; prod compose.
+- Full stack (React 19 + FastAPI + PostgreSQL 15 + Docker) on both machines; prod compose
+  now: Caddy → nginx → gunicorn → db (+ db-backup sidecar).
 - Reference data: 128 NIR locations, 11 programs, 34 periods. **Indicators: only CHILD_CARE
-  seeded (247).** Other 10 programs have 0 indicators (this is the current focus to fix).
+  seeded (247).** Other 10 programs have 0 indicators (current focus to fix).
 - Upload pipeline: validate-first → staging (deltas) → conflict review → approve → commit.
-- CHILD_CARE templates live: Immunization File 1 + File 4, Nutrition 1–6, Sick 1–3, SBI annual
-  (Td/MR/HPV). 16 configs in `backend/app/services/configs/`.
+- CHILD_CARE templates live: Immunization File 1 + 4, Nutrition 1–6, Sick 1–3, SBI annual.
+  16 configs in `backend/app/services/configs/`.
 - Analytics: Home scorecard, Overview (11-program grid + Child Care all-KPI card + Needs
   Attention), Coverage, Rankings, Trends, Indicator Reports, Data Availability, Targets.
-- Auth: JWT login, RBAC, user/role management, audit logging.
-- Foundation docs (root suite + memory-bank), session protocols, versioning/changelog (v0.9.0).
+- Auth: JWT login (argon2 passwords), RBAC, user/role management, audit logging, rate-limited
+  login. CI: pytest (29) + ruff + eslint on every push; GHCR images on version tags.
 
 ## Open work (priority order)
-**Product — building the 10 programs (active, top priority):**
-1. **Per-program build loop** (see Current focus). Start with whichever program's `.xlsx` files
-   Joseph has dropped into `backend/data/<PROGRAM>/`. One program end-to-end at a time.
-2. Extend the Overview all-indicators card pattern to each program once its indicators are seeded
-   (currently CHILD_CARE-only by design).
-3. Investigate **missing Feb FIC** (only Jan FIC landed; Feb File 8 sheet blank or unapproved?).
-4. Remaining Immunization files 5–8 for CHILD_CARE — when real data arrives.
-5. **Decide the stashed "Overview Card" admin feature's fate** (BLOCKED on office machine only —
-   see Git section above): finish it (run the migration, test in-browser, commit) or abandon it.
-   Not on the laptop; only recoverable from `stash@{0}` on the office machine.
+1. **Go-live Step 3** (blocked on Joseph/IT): buy domain → DNS → SSH → RUNBOOK deploy →
+   smoke test → rotate admin password → tag v1.0.0 (bump package.json, cut changelog).
+2. **Per-program build loop** (blocked on Joseph dropping `.xlsx` files).
+3. **Check CI on GitHub Actions** for `da851f9`/`0edef57`/`f1a0dc6` (home machine has no gh CLI).
+4. **Parked decisions** (Joseph, when ready): stash@{0} Overview Card — finish or drop (HOME
+   machine only); small-cell suppression cutoff (<5 or <10); data-dictionary draft greenlight.
+5. Investigate missing Feb FIC (Jan landed, Feb didn't — sheet blank or unapproved?).
+6. Remaining CHILD_CARE Immunization files 5–8 when real data arrives.
+7. Deferred refactors: split `backend/main.py` (~1300 lines) + oversized frontend pages;
+   9 cosmetic ESLint warnings.
 
-**Engineering-practices uplift — remaining (both BLOCKED on Joseph's decision, not code):**
-- **F. Privacy — small-cell suppression.** Needs Joseph's cut-off count (common: <5 or <10) for
-  hiding small counts on sensitive indicators (HIV/syphilis reactive). Also fix `SECURITY.md`
-  (claims sensitive = "aggregated totals only"; code does full exclusion — code wins).
-- **F. Data dictionary + provenance.** Per-indicator numerator/denominator/target; Claude can
-  draft from configs but Joseph must review/lock the domain definitions.
-- **I2 follow-up (optional):** 9 non-blocking ESLint warnings remain (missing hook deps); not
-  errors, CI passes. Clean up someday.
-
-**Deferred best-practices (lower priority):**
-- Fail-fast on missing secrets (remove `os.getenv` fallbacks in `db.py`/`auth.py`).
-- bcrypt → argon2 migration.
-- Split `backend/main.py` (~1259 lines) and oversized frontend pages (>800 lines).
-
-## Data currently in DB (office, last known)
-CPAB (Jan + Feb), FIC (Jan only), Mgt of Sick File 2 (Q1, ~4 LGUs). Mostly CHILD_CARE test data.
-Other 10 programs: no indicators, no data.
+## Data currently in DB (this = HOME machine)
+CPAB (Jan + Feb), FIC (Jan only), Mgt of Sick File 2 (Q1, ~4 LGUs). CHILD_CARE test data only.
+NOTE: admin's password hash is now argon2 (upgraded live during testing).
 
 ## Git
-- Work goes **directly on `main`** (sole developer — no feature branches). Push when done.
-- **2026-07-01 session** pushed tip **`8e09a4e`**. New commits then:
-  `7f0f547` (thresholds+Home fix), `0196e82` (CI+deps+lint), `c62f4b5` (docs),
-  `8e09a4e` (data-folder scaffold), plus that shutdown docs/memory commit.
-- **2026-07-03 session (office) — git sync only, no product code shipped.** Office had drifted:
-  7 unpulled remote commits (through `19d6871`, the 2026-07-01 shutdown) *plus* uncommitted local
-  work-in-progress (an "Overview Card" admin feature — see below) that predated the last shutdown
-  and was never logged in memory-bank. Resolved by: stash WIP → fast-forward to `origin/main`
-  (`19d6871`, clean, no diverging local commits) → pop stash → one real conflict in `Overview.jsx`
-  (upstream's ESLint fix vs. the WIP's new `dqIssues` state) resolved by keeping both. Per
-  Joseph's call ("sync both and follow the repo, start working from there"), **re-stashed the WIP**
-  so the working tree matches `origin/main` exactly. Current tip is still `19d6871` — nothing new
-  pushed this session.
-- **⚠️ Uncommitted WIP exists only as a local git stash on the office machine** —
-  `stash@{0}`, message `wip: overview card admin management feature (set aside to follow repo
-  baseline, 2026-07-03)`. Stashes are **not git-synced** (unlike commits) — it will **not** appear
-  on the laptop. Recover with `git stash list` / `git stash show -p stash@{0}` / `git stash pop`.
-  Contents: DB migration (`backend/app/core/migrate_overview_card.sql` — new `indicators` columns
-  `overview_subarea`/`show_on_overview`/`overview_sort`), 3 new analytics functions + 4 new API
-  endpoints, a Management → "Overview Card" admin editor tab, and a new program-wide "values over
-  100%" data-quality panel on Overview. Feature-complete-looking but **untested** (no browser
-  verification, migration never run). Needs a decision: finish + test it, or abandon it — see
-  Open work below.
-- There is also an older, unrelated `stash@{1}` ("indicator-reports-area-filter") already in the
-  stash list before this session — left untouched, provenance unknown, worth asking Joseph about.
-- **CI runs for the first time on GitHub now** — check the repo **Actions** tab; both jobs
-  (backend pytest+ruff, frontend eslint) verified green locally in clean containers, but confirm
-  the first real run passed.
-- `.claude/settings.local.json` is gitignored (per-machine). Raw `.xlsx` in `backend/data/` is
-  gitignored; only the `_PUT_FILES_HERE.txt` markers are tracked.
+- Work goes **directly on `main`** (sole developer). Push when done.
+- **2026-07-04 session (HOME) pushed:** `da851f9` (hardening), `0edef57` (deploy infra),
+  `f1a0dc6` (argon2+fixes), plus this shutdown commit. All verified pushed.
+- **⚠️ Both stashes live on the HOME machine** (label corrected 2026-07-04 — earlier notes
+  wrongly said office): `stash@{0}` Overview Card WIP (parked, decision pending),
+  `stash@{1}` "indicator-reports-area-filter" (unknown provenance, ask Joseph).
+  Office machine should be clean at `19d6871` and fast-forwards on next pull.
+- `.claude/settings.local.json` gitignored (per-machine); `.claude/settings.json` is tracked.
+  Raw `.xlsx` under `backend/data/` gitignored; `./backups/` gitignored.
 
 ## Local dev
 - Stack: `docker compose up -d` → frontend `:5173`, backend `:8000/docs`, db `:5432`
 - DB: `doh_nir_dashboard` · `doh_admin` / `doh_password_2026`
-- Admin login: `admin` / `Admin@2026!`
+- Admin login: `admin` / `Admin@2026!` (**rotate on production deploy** — it's public in repo)
+- Prod parity test: `docker compose -p healthstat-prod -f docker-compose.prod.yml up -d --build`
+  (always use `-p` — without it the project name collides with dev).

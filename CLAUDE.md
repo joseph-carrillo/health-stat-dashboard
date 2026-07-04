@@ -30,39 +30,57 @@ backend reads the same `.env`.
 **Test credentials:**
 - `admin` / `Admin@2026!` — full admin access
 - `jsmith` / `Test@2026!` — program_manager, CHILD_CARE program
-- `dev` / `dev` — offline dev bypass (no DB needed)
 
 ## Session Protocols
 
 Short commands Joseph uses to drive a session. When he types one, follow it exactly.
 
 ### `startup protocols`
-1. **Load memory** — read `memory-bank/MEMORY.md` (the index), then each linked file
+1. **Sync git FIRST** — `git fetch origin --quiet`, `git status -sb`, `git log --oneline -10`,
+   `git stash list`. Joseph works from an office desktop *and* a laptop; if behind origin,
+   `git pull --rebase` **before reading any memory-bank file** — memory files are git-synced,
+   so reading them pre-pull briefs you from the other machine's past. If the tree is dirty or
+   the pull conflicts, stop and show Joseph the state — never improvise a merge.
+2. **Surface machine-local state** — everything GitHub does NOT carry between machines:
+   uncommitted changes, stash entries, `.xlsx` files present/absent in `backend/data/*/`
+   (gitignored), missing `.env`. Compare against the "Machine-local state" section of
+   `session-handoff.md`; call out anything this machine has that memory doesn't know about,
+   or vice versa.
+3. **Load memory** — read `memory-bank/MEMORY.md` (the index), then each linked file
    (`project_state.md`, `activeContext.md`, `progress.md`, `session-handoff.md`).
-2. **Check git** — `git fetch origin --quiet`, `git status -sb`, `git log --oneline -10`.
-   Joseph works from an office desktop *and* a laptop, so if behind origin, `git pull --rebase`
-   before any new work.
-3. **Bring up the stack** — `docker compose up -d`; wait for `db` healthy
+4. **Bring up the stack** — `docker compose up -d`; wait for `db` healthy
    (`docker compose ps`), then confirm `http://localhost:8000/docs` and `:5173` respond.
-4. **Self-diagnose** — read `ROADMAP.md` and `memory-bank/project_state.md`; cross-reference
+   If reference data looks stale (fresh clone, indicator counts off), run
+   `docker compose exec backend python backend/bootstrap_db.py` — it's idempotent.
+5. **Self-diagnose** — read `ROADMAP.md` and `memory-bank/project_state.md`; cross-reference
    against the git log and the actual file tree. Flag anything marked done that isn't in code.
-5. **Brief Joseph** — current phase + status, what was last built (from git log, not memory),
-   open items in priority order with the recommended next one highlighted, any blockers. Then
-   ask: "What do you want to tackle?" **This is a briefing, not a build trigger — do not build
-   until he responds.**
+6. **Brief Joseph** — which machine this is, current phase + status, what was last built (from
+   git log, not memory), machine-local state from step 2, open items in priority order with the
+   recommended next one highlighted, any blockers. Then ask: "What do you want to tackle?"
+   **This is a briefing, not a build trigger — do not build until he responds.**
 
 ### `run shutdown protocols`
-1. **Sync docs** — update `ROADMAP.md` (mark done milestones, fix stale text) and append a new
-   ADR to `DECISIONS_LOG.md` if a locked decision changed this session (never edit old ADRs).
+1. **Sync docs** — update `ROADMAP.md` (mark done milestones, fix stale text); append a new
+   ADR to `DECISIONS_LOG.md` if a locked decision changed this session (never edit old ADRs);
+   verify every code change shipped this session has a line under `[Unreleased]` in
+   `CHANGELOG.md`.
 2. **Sync memory** — update `memory-bank/project_state.md` (done / open in priority order /
    branch + push status / anything needed to start cold), plus `activeContext.md` and
    `session-handoff.md`. Add a pointer in `MEMORY.md` for any new memory file.
+   `session-handoff.md` must always record: **which machine** (office/laptop), the **pushed
+   commit hash**, and a **"Machine-local state" section** listing everything GitHub won't
+   sync — uncommitted changes, `git stash list` output, new `.xlsx` files in `backend/data/`,
+   `.env` edits. If there is none, write "none". **Nothing machine-local goes unlogged** (the
+   2026-07-03 Overview-Card stash went stale precisely because it wasn't logged).
 3. **Commit** — shutdown commits are **docs + memory only**. If there are pending *code*
-   changes, halt and ask Joseph how to handle them. Otherwise commit with
-   `docs(shutdown): sync docs and memory — <date>`.
-4. **Push** — `git pull --rebase origin <branch>` then push. Halt and ask on rebase conflicts.
+   changes, log them in session-handoff first (step 2), then halt and ask Joseph how to handle
+   them. Otherwise commit with `docs(shutdown): sync docs and memory — <date>`.
+4. **Push and verify** — `git pull --rebase origin <branch>`, push, then confirm with
+   `git status -sb` that local and origin match (no "ahead"). An unpushed shutdown strands the
+   session on this machine. Halt and ask on rebase conflicts.
 5. **Stop the stack** — `docker compose down`.
-6. **Report** — what shipped, commit hash, push status, services stopped, top 1–2 next items.
+6. **Report** — what shipped, commit hash, push **verified**, machine-local leftovers (if any),
+   services stopped, top 1–2 next items.
 
 ### `reset db protocols`
 Wipes uploaded data for a clean testing slate — use when verifying values/bugs from a
@@ -80,14 +98,9 @@ known-empty state. **Truncates only `health_data` + `staging_health_data`**; ref
 - `audit this` — adversarial review; find the flaws, don't praise.
 - `go` — the previous proposal is approved; proceed with the build.
 
-**Test credentials:**
-- `admin` / `Admin@2026!` — full admin access
-- `jsmith` / `Test@2026!` — program_manager, CHILD_CARE program
-- `dev` / `dev` — offline dev bypass (no DB needed)
-
 ## Architecture Overview
 
-This is a **React + FastAPI + PostgreSQL** dashboard for DOH Region VII health statistics. The frontend proxies all `/api/*` requests to `localhost:8000` via Vite config — no environment variable needed in dev.
+This is a **React + FastAPI + PostgreSQL** dashboard for DOH Negros Island Region (NIR) CHD health statistics. The frontend proxies all `/api/*` requests to `localhost:8000` via Vite config — no environment variable needed in dev.
 
 ```
 health-stat-dashboard/
@@ -117,13 +130,11 @@ dev fallbacks. Compose injects them from `.env`; inside the network the host is 
 **Schema pattern:** Narrow/tall — one row per (indicator, location, period, value). Key tables:
 - `health_data` — production values; unique on `(indicator_id, location_id, period_id)`
 - `staging_health_data` — pre-approval staging with conflict tracking
-- `locations` (128 rows), `indicators` (43 rows), `report_periods` (34 rows) — all seeded via SQL in `backend/app/core/`
+- `locations` (128 rows), `indicators` (247 rows — CHILD_CARE only; the other 10 programs are pending), `report_periods` (34 rows)
 
-To reset/seed the DB from scratch:
+To reset/seed the DB from scratch (idempotent — safe to re-run):
 ```bash
-psql -U doh_admin -d doh_nir_dashboard -f backend/app/core/schema.slq
-psql -U doh_admin -d doh_nir_dashboard -f backend/app/core/seed_locations.sql
-psql -U doh_admin -d doh_nir_dashboard -f backend/app/core/seed_indicators_immunization.sql
+docker compose exec backend python backend/bootstrap_db.py
 ```
 
 ## Data Upload Pipeline
@@ -138,7 +149,7 @@ Adding support for a new Excel template = add a new JSON config file; no parser 
 
 ## Auth & RBAC
 
-JWT tokens (8-hour expiry, secret hardcoded in `backend/app/core/auth.py`). Token stored in `localStorage`, decoded client-side in pages via `atob(token.split('.')[1])` for role checks. Server enforces roles via FastAPI dependency injection.
+JWT tokens (8-hour expiry; secret from `JWT_SECRET_KEY` env var, with an insecure dev fallback in `backend/app/core/auth.py` — see Known Gaps). Token stored in `localStorage`, decoded client-side in pages via `atob(token.split('.')[1])` for role checks. Server enforces roles via FastAPI dependency injection.
 
 Roles: `admin`, `data_encoder`, `program_manager`, `mancom`, `execom`. Admin-only routes in the frontend are guarded in `App.jsx`; API routes check via the `require_permission` dependency.
 
@@ -146,13 +157,14 @@ Roles: `admin`, `data_encoder`, `program_manager`, `mancom`, `execom`. Admin-onl
 
 - **Styles**: inline JS objects (`const styles = { ... }` at bottom of each file). No CSS modules or Tailwind utility classes in JSX — Tailwind is imported globally but pages use inline styles.
 - **Location order**: `LOCATION_ORDER` array in `IndicatorReport.jsx` defines the fixed display order matching the Excel file. Province headers have `isHeader: true`; child LGUs follow immediately. Filters and subtotals derive from this structure at render time.
-- **No test suite** — backend `tests/` directory exists but is empty.
+- **Tests/CI**: backend has a small pytest suite (`backend/tests/`); CI (`.github/workflows/ci.yml`) runs pytest + ruff + eslint on every push/PR to main.
 
 ## Known Gaps
 
 - Secrets are env-driven (`.env`) but `db.py`/`auth.py` still keep insecure dev *fallbacks*;
   production should fail-fast on missing env (tracked as a follow-up, not yet done).
 - Password hashing is bcrypt; Sentinel-FMS uses argon2 — not yet migrated.
-- No automated tests — backend `tests/` directory exists but is empty; no CI yet.
-- `backend/main.py` (1100+ lines) and a few frontend pages exceed the 800-line cap and
+- Test coverage is thin — CI runs pytest + ruff + eslint, but only the thresholds module has
+  real tests so far.
+- `backend/main.py` (~1300 lines) and a few frontend pages exceed the 800-line cap and
   should be split.

@@ -35,11 +35,9 @@ Repo: health-stat-dashboard (private)
 ## Current Status
 See progress.md
 
-## Session Start Protocol
-Run `git pull --ff-only` before reading memory files.
-Always read activeContext.md first before doing anything.
-This tells you what was last completed and what to do next.
-Also read session-handoff.md for the shortest current summary.
-
-## Session Shutdown Protocol
-After updating memory files, commit and push those updates to GitHub.
+## Session Protocols
+**Single source of truth: root `CLAUDE.md` → "Session Protocols".** Follow those steps exactly;
+this file intentionally does not duplicate them (duplicated copies drifted apart once already).
+The one rule worth repeating because it protects the two-machine workflow: **sync git BEFORE
+reading memory files** — memory is git-synced, so reading pre-pull loads the other machine's
+stale snapshot.

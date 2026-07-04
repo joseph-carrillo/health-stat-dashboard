@@ -197,3 +197,33 @@ default choice for new Python projects (decided earlier in ADR-013, installed no
 `pytest` + `ruff check` both pass in a clean `python:3.12-slim` container against the pinned
 `requirements.txt`, matching what CI will run. Closes out the "I. CI gate" item of the
 engineering-practices uplift (I, I2, I3 all done).
+
+## ADR-017 — Deployment architecture: self-managed single VM, compose, Caddy, GHCR (2026-07-04)
+
+**Context.** IT provides server space but we manage it ourselves (SSH, public internet,
+self-managed backups). IT asked us to purchase a `.com` domain — the `.gov.ph` process is too
+slow right now. The site is internal-use at launch but publicly reachable, front-facing later.
+
+**Decision.** Single VM + docker compose; **no Kubernetes/Terraform** (wrong scale for one VM,
+one maintainer). Entry point is **Caddy** (80/443, automatic Let's Encrypt when
+`SITE_ADDRESS=<domain>`) → nginx SPA → gunicorn → PostgreSQL. Nightly gzipped `pg_dump` via a
+`db-backup` sidecar into `./backups` (30-day retention) + weekly manual off-server copy.
+Releases: push a `v*` tag → CI tests, builds production images, publishes to **GHCR** → server
+runs `IMAGE_TAG=vX.Y.Z docker compose pull && up -d`; rollback is the same command with the
+previous tag. Because the URL is public from day one, the Step-1 hardening (fail-fast secrets,
+login rate limit, CORS, security headers) was made a launch blocker, not a follow-up.
+Full checklist: `memory-bank/deployment-checklist.md`.
+
+**Verified** end-to-end 2026-07-04 in an isolated compose project (all services healthy,
+headers via Caddy, bootstrap in prod image, logins through port 80, dump file produced).
+
+## ADR-018 — argon2 password hashing via upgrade-on-login (2026-07-04)
+
+**Context.** Passwords were bcrypt; Sentinel-FMS standard is argon2. A hard cutover would
+invalidate existing users or force resets.
+
+**Decision.** passlib `CryptContext(schemes=["argon2","bcrypt"], deprecated=["bcrypt"])`:
+new hashes are argon2id, legacy bcrypt hashes keep verifying, and each is re-hashed to argon2
+on that user's next successful login — the only moment the plaintext is available. bcrypt stays
+pinned 4.0.x (verify-only). Bootstrap creates argon2 hashes from day one. No migration script,
+no user impact; stragglers upgrade whenever they next log in.
