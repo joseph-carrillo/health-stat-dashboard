@@ -1,11 +1,14 @@
 name: CI
 
 # Backend tests + lint, and frontend lint. Runs on every push to main and
-# every pull request.
+# every pull request. Pushing a version tag (v*) additionally builds the
+# production Docker images and publishes them to GHCR — the server then
+# deploys with `IMAGE_TAG=vX.Y.Z docker compose pull && up -d`.
 
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
     branches: [main]
 
@@ -46,3 +49,42 @@ jobs:
       - name: Run ESLint
         working-directory: frontend
         run: npm run lint
+
+  # Only on version tags, and only after tests + lint pass.
+  release-images:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [backend-tests, frontend-lint]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          target: production
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}-backend:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}-backend:latest
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          target: production
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}-frontend:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}-frontend:latest

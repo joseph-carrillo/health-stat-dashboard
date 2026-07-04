@@ -1,0 +1,19 @@
+# Caddy — TLS termination for the production stack (docker-compose.prod.yml).
+#
+# SITE_ADDRESS comes from .env:
+#   SITE_ADDRESS=:80                     -> plain HTTP (local prod-parity testing)
+#   SITE_ADDRESS=dashboard.example.com   -> automatic HTTPS via Let's Encrypt
+#                                           (needs DNS pointing here + ports 80/443 open)
+#
+# Certificates and renewal are fully automatic; they persist in the caddy_data volume.
+
+{$SITE_ADDRESS::80} {
+	encode gzip
+
+	# HSTS — browsers only honor it over HTTPS, so it's harmless in HTTP mode.
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+	# Everything (SPA + /api) goes to the frontend nginx, which serves the
+	# static bundle and proxies /api to the backend.
+	reverse_proxy frontend:80
+}

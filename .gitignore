@@ -17,6 +17,7 @@ build/
 
 # Docker / Database
 postgres_data/
+backups/
 *.log
 
 # OS files

@@ -33,6 +33,23 @@ always agree (a future CI check will enforce it).
 ### Added
 - **Container healthchecks** for backend and frontend in
   `docker-compose.prod.yml`; frontend now waits for a *healthy* backend.
+- **Caddy TLS termination** — new `caddy` service (ports 80/443) in the prod
+  stack with automatic Let's Encrypt certificates when `SITE_ADDRESS` is a real
+  domain (`:80` = plain-HTTP parity testing). Sends HSTS. Frontend nginx is no
+  longer published to the host — Caddy is the only entry point.
+- **Nightly DB backups** — `db-backup` sidecar dumps to `./backups/` (gzipped,
+  30-day retention). Off-server copy + restore procedure documented in RUNBOOK.
+- **Release images to GHCR** — pushing a `v*` tag makes CI build the production
+  backend/frontend images and publish them to GHCR (after tests pass); the
+  server deploys with `IMAGE_TAG=vX.Y.Z docker compose pull && up -d`.
+- **RUNBOOK server-deployment section** — one-time server prep, first deploy,
+  release/rollback procedure, backup off-server copy, restore drill.
+
+### Fixed
+- **Production image build was broken** — `NavBar.jsx` renamed to `Navbar.jsx`
+  to match all 11 imports. Windows dev (case-insensitive) masked it; the Linux
+  Docker build failed on it. First time the prod frontend image was built since
+  the analytics pages landed.
 - This changelog and a real version number (`0.9.0`), replacing the placeholder
   `0.0.0`. First step of an engineering-practices uplift (versioning + changelog).
 - Coverage/alert thresholds moved into one config module

@@ -53,14 +53,80 @@ docker compose exec -T db pg_dump -U doh_admin doh_nir_dashboard > backup_$(date
 docker compose exec -T db psql -U doh_admin -d doh_nir_dashboard < backup_2026-06-17.sql
 ```
 
-## Production
+## Production — local parity test
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-SPA on port 80 (nginx), `/api` proxied to the backend (gunicorn). Set strong `DB_PASSWORD`,
-`JWT_SECRET_KEY`, and a real `CORS_ORIGINS` in `.env` first.
+Caddy serves on port 80 (`SITE_ADDRESS=:80` default) → nginx SPA → gunicorn backend.
+Nightly DB dumps land in `./backups/`.
+
+## Production — server deployment
+
+The stack: **Caddy** (80/443, automatic Let's Encrypt HTTPS) → **nginx** (SPA + `/api` proxy)
+→ **gunicorn** (FastAPI) → **PostgreSQL**, plus a **db-backup** sidecar (nightly `pg_dump`,
+30-day retention). We manage the server ourselves (SSH, self-managed backups).
+
+### One-time server prep
+
+1. Install Docker Engine + compose plugin (Ubuntu: `curl -fsSL https://get.docker.com | sh`).
+2. Confirm inbound ports **80 and 443** are open (firewall / IT).
+3. Point the domain's **DNS A record** at the server IP (at the registrar, or Cloudflare if
+   proxying through it).
+4. Clone the repo and create the production `.env`:
+   ```bash
+   git clone https://github.com/joseph-carrillo/health-stat-dashboard.git && cd health-stat-dashboard
+   cp .env.example .env
+   ```
+5. Edit `.env` with **production values** — every one of these matters:
+   - `DB_PASSWORD` — long random value: `python3 -c "import secrets; print(secrets.token_urlsafe(24))"`
+   - `JWT_SECRET_KEY` — `python3 -c "import secrets; print(secrets.token_urlsafe(48))"`
+   - `CORS_ORIGINS=https://<the-domain>` (exactly one origin, no `*`)
+   - `SITE_ADDRESS=<the-domain>` (no scheme — this switches Caddy to automatic HTTPS)
+   - `IMAGE_TAG=<release>` e.g. `v1.0.0`
+
+### First deploy
+
+```bash
+IMAGE_TAG=v1.0.0 docker compose -f docker-compose.prod.yml pull   # from GHCR (or: up -d --build to build on-server)
+docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml exec backend python backend/bootstrap_db.py
+```
+
+Then **immediately rotate the admin password** (the bootstrap default is public in the repo):
+log in as `admin`, go to Management → Users, change it. Verify: site loads over `https://`,
+login works, an upload round-trips.
+
+### Releasing a new version
+
+```bash
+# On the dev machine: tag and push — CI tests, builds, and publishes the images.
+git tag v1.1.0 && git push origin v1.1.0
+# On the server:
+IMAGE_TAG=v1.1.0 docker compose -f docker-compose.prod.yml pull
+IMAGE_TAG=v1.1.0 docker compose -f docker-compose.prod.yml up -d
+```
+
+Rollback = the same two server commands with the previous tag. (Set `IMAGE_TAG` in `.env`
+instead of inline to make it sticky.)
+
+### Backups
+
+The `db-backup` service dumps nightly to `./backups/doh_nir_<date>.sql.gz` (30-day retention,
+runs automatically). **Weekly, copy the newest dump off the server** — a backup on the same
+disk as the database only protects against mistakes, not disk loss:
+
+```bash
+scp user@server:~/health-stat-dashboard/backups/doh_nir_$(date +%F).sql.gz .
+```
+
+Restore (into a running, empty DB):
+```bash
+gunzip -c backups/doh_nir_<date>.sql.gz | docker compose -f docker-compose.prod.yml exec -T db psql -U doh_admin -d doh_nir_dashboard
+```
+
+Do a restore drill once before go-live so the first real restore isn't the emergency one.
 
 ## Troubleshooting
 
