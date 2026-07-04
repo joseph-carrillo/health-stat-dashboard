@@ -1,8 +1,8 @@
-# Health Statistics Dashboard (DOH-NIR CHD, Region VII)
+# Health Statistics Dashboard (DOH NIR CHD)
 
 A web dashboard for ingesting, validating, and reporting Field Health Services Information
-System (FHSIS) health statistics for the Department of Health — National Immunization Registry,
-Center for Health Development Region VII (Central Visayas), Philippines.
+System (FHSIS) health statistics for the Department of Health — Center for Health Development
+Negros Island Region (NIR), Philippines.
 
 - **Frontend:** React 19 + Vite + Tailwind CSS 4
 - **Backend:** FastAPI (Python 3.12)
@@ -27,16 +27,16 @@ Stop with `docker compose down`. Tail logs with `docker compose logs -f backend`
 |---|---|---|
 | `admin` | `Admin@2026!` | full admin |
 | `jsmith` | `Test@2026!` | program_manager (CHILD_CARE) |
-| `dev` | `dev` | offline dev bypass (no DB) |
 
 ## Production parity
 
 ```bash
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose -p healthstat-prod -f docker-compose.prod.yml up -d --build
 ```
 
-Runs gunicorn behind nginx — the built SPA is served on port 80 and `/api` is proxied to the
-backend container.
+Runs the production stack: Caddy (TLS entry point) → nginx (built SPA + `/api` proxy) →
+gunicorn backend, plus a nightly `db-backup` sidecar. Always pass `-p <name>` so the project
+doesn't collide with the dev stack.
 
 ## How it works (at a glance)
 
@@ -48,6 +48,7 @@ Adding a new Excel template means adding one JSON config — no parser code chan
 | Doc | What's in it |
 |---|---|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | System layout, request flow, upload pipeline, auth/RBAC |
+| [CHANGELOG.md](CHANGELOG.md) | Release history (Keep a Changelog format; SemVer) |
 | [DATA_MODEL.md](DATA_MODEL.md) | Database schema (narrow/tall), key tables, uniqueness rules |
 | [DECISIONS_LOG.md](DECISIONS_LOG.md) | Architecture Decision Records (append-only) |
 | [SECURITY.md](SECURITY.md) | Roles, JWT, audit, Data Privacy Act, sensitive indicators, known gaps |

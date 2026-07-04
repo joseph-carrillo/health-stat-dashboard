@@ -1,7 +1,7 @@
 # Data Model
 
 PostgreSQL 15. Schema source of truth: `backend/app/core/schema.slq`. Seed data:
-`backend/app/core/seed_*.sql` / `seed_indicators.py`.
+`backend/app/core/seed_*.sql` / `seed_*.slq` / `seed_indicators.py`.
 
 ## Design: narrow / tall
 
@@ -19,7 +19,7 @@ Geographic units keyed by PSGC code. Self-referential hierarchy via `parent_psgc
 ### `programs` (~11 rows)
 Health program categories (Child Care, Maternal Care, …). `code` is the stable key.
 
-### `indicators` (~43 rows)
+### `indicators` (247 rows — CHILD_CARE only so far; the other 10 programs are pending)
 Every measurable data point across all templates. Key columns:
 - `code` (unique), `program_id`, `name`, `unit`
 - `frequency_type ∈ {monthly, quarterly, annual}`
@@ -53,7 +53,7 @@ Only **new or changed** rows are staged; rows matching live data are skipped.
 ## Auth / audit tables
 
 ### `users`
-`username`, `hashed_password` (bcrypt), `full_name`, `email`,
+`username`, `hashed_password` (argon2; legacy bcrypt upgraded on login), `full_name`, `email`,
 `role ∈ {admin, data_encoder, program_manager, mancom, execom}` (nullable),
 `program_code`, `is_active`, `status ∈ {pending, active, inactive}`, `last_login`.
 

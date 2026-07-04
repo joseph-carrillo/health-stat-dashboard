@@ -111,7 +111,7 @@ health-stat-dashboard/
 │       ├── pages/            # One file per page; analytics/ is a sub-folder
 │       └── components/       # Navbar (role-aware sidebar), management tabs
 ├── backend/
-│   ├── main.py               # All FastAPI routes (~13 endpoints), DB config, CORS
+│   ├── main.py               # All FastAPI routes (~40 endpoints), DB config, CORS
 │   └── app/
 │       ├── core/             # auth.py (JWT + RBAC), DB seed scripts, schema.sql
 │       └── services/
@@ -149,7 +149,7 @@ Adding support for a new Excel template = add a new JSON config file; no parser 
 
 ## Auth & RBAC
 
-JWT tokens (8-hour expiry; secret from `JWT_SECRET_KEY` env var, with an insecure dev fallback in `backend/app/core/auth.py` — see Known Gaps). Token stored in `localStorage`, decoded client-side in pages via `atob(token.split('.')[1])` for role checks. Server enforces roles via FastAPI dependency injection.
+JWT tokens (8-hour expiry; secret from `JWT_SECRET_KEY` env var — fail-fast, no fallback: the app refuses to boot without it, see `backend/app/core/env.py`). Passwords are argon2 (legacy bcrypt upgrades on login); `/api/login` is rate-limited 10/min/IP. Token stored in `localStorage`, decoded client-side in pages via `atob(token.split('.')[1])` for role checks. Server enforces roles via FastAPI dependency injection.
 
 Roles: `admin`, `data_encoder`, `program_manager`, `mancom`, `execom`. Admin-only routes in the frontend are guarded in `App.jsx`; API routes check via the `require_permission` dependency.
 
@@ -161,10 +161,9 @@ Roles: `admin`, `data_encoder`, `program_manager`, `mancom`, `execom`. Admin-onl
 
 ## Known Gaps
 
-- Secrets are env-driven (`.env`) but `db.py`/`auth.py` still keep insecure dev *fallbacks*;
-  production should fail-fast on missing env (tracked as a follow-up, not yet done).
-- Password hashing is bcrypt; Sentinel-FMS uses argon2 — not yet migrated.
-- Test coverage is thin — CI runs pytest + ruff + eslint, but only the thresholds module has
-  real tests so far.
-- `backend/main.py` (~1300 lines) and a few frontend pages exceed the 800-line cap and
+- Test coverage is thin — CI runs pytest + ruff + eslint, but only env, thresholds,
+  pct-ratio, and password hashing have real tests so far.
+- `backend/main.py` (~1200 lines) and a few frontend pages exceed the 800-line cap and
   should be split.
+- (Closed 2026-07-04: fail-fast secrets via `app/core/env.py`; bcrypt→argon2 with
+  upgrade-on-login. See CHANGELOG.)

@@ -6,10 +6,11 @@ Internal project. Conventions for keeping the codebase consistent across Joseph'
 
 **Always: Plan → Review → Build.** Agree the approach before writing code.
 
-1. Branch off `main` (`git switch -c feat/...` or `chore/...`). Don't commit straight to `main`.
-2. Make the change; keep it focused.
-3. Verify locally (see below).
-4. Commit with a conventional message; push; open a PR if collaborating.
+1. Work lands **directly on `main`** (sole developer, two machines). Push when done so the
+   other machine can fast-forward. Branch only for experiments you might discard.
+2. Make the change; keep it focused — one reversible change at a time.
+3. Verify locally (see below); CI must stay green on push.
+4. Commit with a conventional message; push.
 
 ## Commit messages
 
@@ -54,6 +55,12 @@ docker compose up -d --build
 docker compose ps                                   # db healthy, backend + frontend up
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8000/docs   # expect 200
 # log in at http://localhost:5173 with admin / Admin@2026! and exercise the changed flow
+
+# tests + linters (same checks CI runs)
+docker compose exec backend pip install pytest==9.1.1 ruff==0.15.20   # once per container
+docker compose exec backend python -m pytest backend/tests/ -q
+docker compose exec backend ruff check backend
+cd frontend && npm run lint
 ```
 
 ## Session discipline
@@ -63,7 +70,9 @@ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8000/docs   # expect 2
 - Record any locked decision change as a new ADR in [DECISIONS_LOG.md](DECISIONS_LOG.md)
   (append-only). Keep [ROADMAP.md](ROADMAP.md) and `memory-bank/project_state.md` current.
 
-## Not yet in place (don't be surprised)
+## CI
 
-No automated test suite, linter config, or CI yet — these are on the [ROADMAP.md](ROADMAP.md).
-Until then, verify manually as above.
+`.github/workflows/ci.yml` runs on every push/PR to `main`: backend pytest + ruff, frontend
+eslint. Pushing a `v*` tag additionally builds and publishes production images to GHCR.
+Test coverage is still thin (env, thresholds, pct-ratio, password hashing) — grow the suite
+alongside new features.

@@ -11,6 +11,7 @@ health-stat-dashboard/
 │   ├── ARCHITECTURE.md
 │   ├── DATA_MODEL.md
 │   ├── DECISIONS_LOG.md       ← ADRs (append-only)
+│   ├── CHANGELOG.md           ← release history (Keep a Changelog)
 │   ├── SECURITY.md
 │   ├── RUNBOOK.md
 │   ├── ROADMAP.md
@@ -20,13 +21,16 @@ health-stat-dashboard/
 │
 ├── Container & config
 │   ├── docker-compose.yml         ← dev stack: db + backend + frontend
-│   ├── docker-compose.prod.yml    ← prod stack: gunicorn + nginx
+│   ├── docker-compose.prod.yml    ← prod stack: Caddy TLS → nginx → gunicorn (+ db-backup)
+│   ├── Caddyfile                  ← prod TLS entry point (SITE_ADDRESS from .env)
 │   ├── backend/Dockerfile         ← multi-stage (development / production)
 │   ├── frontend/Dockerfile        ← multi-stage (development / build / production)
-│   ├── frontend/nginx.conf        ← prod SPA serving + /api proxy
+│   ├── frontend/nginx.conf        ← prod SPA serving + /api proxy + security headers
+│   ├── .github/workflows/ci.yml   ← CI: pytest + ruff + eslint; GHCR images on v* tags
 │   ├── .env.example               ← committed template (.env is gitignored)
 │   ├── .dockerignore / frontend/.dockerignore
-│   ├── requirements.txt           ← backend Python deps
+│   ├── requirements.txt           ← backend Python deps (pinned ==)
+│   ├── requirements-dev.txt       ← dev/CI-only deps (pytest, ruff)
 │   └── .gitignore
 │
 ├── memory/ → memory-bank/     ← session memory (load MEMORY.md first)
@@ -35,6 +39,8 @@ health-stat-dashboard/
 │   ├── activeContext.md       ← current goal
 │   ├── progress.md            ← session log
 │   ├── session-handoff.md     ← shortest summary
+│   ├── deployment-checklist.md ← v1.0.0 go-live checklist
+│   ├── working-agreement.md   ← how Joseph wants to work
 │   ├── CLAUDE.md              ← builder profile + non-negotiables
 │   ├── architecture.md
 │   ├── adding_templates.md    ← recipe for a new Excel template
@@ -48,7 +54,8 @@ health-stat-dashboard/
 │
 ├── scripts/                   ← PowerShell convenience wrappers
 │   ├── start.ps1 / stop.ps1 / health-check.ps1
-│   └── sync.ps1
+│   ├── reset-db.ps1           ← data-only wipe (keeps reference data; see reset db protocols)
+│   └── sync.ps1 / track1-verify.ps1
 │
 ├── frontend/                  ← React 19 + Vite + Tailwind
 │   └── src/
@@ -57,7 +64,7 @@ health-stat-dashboard/
 │       ├── services/                ← api.js (axios), auth.js, constants.js
 │       ├── pages/                   ← one file per page
 │       │   └── analytics/           ← Overview, Coverage, Rankings, Trends, IndicatorReport(s)
-│       ├── components/              ← NavBar, charts, management/ tabs
+│       ├── components/              ← Navbar, charts, management/ tabs
 │       ├── config/                  ← display templates
 │       └── utils/
 │
@@ -65,11 +72,13 @@ health-stat-dashboard/
     ├── main.py                ← all routes, app setup, CORS  (TODO: split, >800 lines)
     ├── bootstrap_db.py        ← one-command schema + seed + admin
     ├── app/
-    │   ├── core/              ← auth.py, db.py, audit.py, schema.slq, seed_*
+    │   ├── core/              ← auth.py, db.py, env.py, thresholds.py, audit.py,
+    │   │                        schema.slq, seed_*
     │   └── services/          ← parser.py, commit.py, analytics.py, upload_catalog.py
-    │       └── configs/       ← one JSON per Excel template
+    │       └── configs/       ← one JSON per Excel template (16 so far)
+    ├── data/                  ← per-program .xlsx intake folders (files gitignored)
     ├── scripts/              ← inspect_excel.py (debug helper)
-    └── tests/                ← empty (no suite yet)
+    └── tests/                ← pytest suite (env, thresholds, pct-ratio, password hashing)
 ```
 
 ## Conventions

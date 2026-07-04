@@ -5,8 +5,8 @@ Domain and project terms used across the codebase and docs.
 ## Organization
 - **DOH** — Department of Health (Philippines).
 - **CHD** — Center for Health Development (DOH regional office).
-- **Region VII / Central Visayas / NIR** — the region this dashboard serves. NIR =
-  Negros Island Region context in some seeds; locations are PSGC-coded.
+- **NIR / Negros Island Region** — the region this dashboard serves (Negros Occidental,
+  Negros Oriental, Siquijor). All locations are PSGC-coded.
 - **LGU** — Local Government Unit (province, city, or municipality).
 - **HUC** — Highly Urbanized City; reported separately from its parent province.
 - **ICTU** — Information and Communications Technology Unit (handles deployment).
@@ -36,7 +36,11 @@ Domain and project terms used across the codebase and docs.
 - **DPT-HiB-HepB** — combined diphtheria / pertussis / tetanus / Haemophilus influenzae b /
   Hepatitis B (pentavalent) vaccine; doses 1–3.
 - **MAM / SAM** — Moderate / Severe Acute Malnutrition (nutritional status reporting).
-- **SBI** — (annual) Sick/Birth indicator set referenced in the template backlog.
+- **SBI / CBI** — School-Based / Community-Based Immunization (annual reporting: Td, MR, HPV
+  for Grades 1 & 7).
+- **FIC / CIC** — Fully / Completely Immunized Child.
+- **MMR** — Measles–Mumps–Rubella vaccine (doses 1–2) in immunization files; in mortality
+  templates MMR instead means Maternal Mortality Ratio.
 - **ANC / 8ANC** — Antenatal Care (8-contact schedule).
 - **ABR / RABR** — Animal Bite Rate / Rabies-related metrics.
 
