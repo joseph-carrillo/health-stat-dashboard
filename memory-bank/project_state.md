@@ -20,6 +20,52 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   `docker compose exec backend python -m pytest backend/tests/ -q` (29 tests).
 - **Clean slate for testing:** type `reset db protocols` (truncates data, keeps indicators).
 
+## Session 3 (2026-07-05, HOME) — All 10 programs' files dropped; 12/18 file-groups analyzed
+- **Joseph dropped Excel files for all 10 remaining programs at once.** Real scope is far bigger
+  than the empty-folder check at session start suggested: **46 files across 18 natural
+  sub-groups**, not 7. Three programs (`MATERNAL_CARE`, `INFECTIOUS_DISEASE`, `VITAL_STATS`)
+  looked empty at `ls -maxdepth 1` because their files are nested one level deeper in
+  sub-category folders (`MATERNAL_CARE/Prenatal|Post Partum|Intra Partum`,
+  `INFECTIOUS_DISEASE/Schistosomiasis|Filariasis|HIV-Syphilis-HepaB|Rabies|STH|Leprosy`,
+  `VITAL_STATS/Mortality|Natality`) — always `find`/full-tree, not a shallow `ls`, when checking
+  these folders again.
+- **Analysis phase (read-only, no DB/code changes) 12/18 sub-groups done**, one parallel batch
+  then switched to sequential: MATERNAL_CARE/Prenatal (8 files), INFECTIOUS_DISEASE/
+  Schistosomiasis (7), Filariasis (3), HIV-Syphilis-HepaB (3, sensitive), Rabies (2), STH (2),
+  Leprosy (1), WASH (2), DEMOGRAPHICS (1), ORAL_HEALTH (1), VITAL_STATS/Mortality (1),
+  VITAL_STATS/Natality (1). **Remaining 6:** MATERNAL_CARE/Post Partum (3), Intra Partum (2),
+  NCD (5), GERIATRIC (2), FAMILY_PLANNING (1), MORBIDITY (1).
+- **All 12 write-ups saved to `memory-bank/template_analysis/*.md`** (one file per sub-group,
+  same format as `fhsis_template_analysis.md`'s Immunization section) — git-tracked, safe across
+  sessions. ⚠️ They were originally written to the session's temp scratchpad directory (not
+  git-tracked) by design (Explore sub-agents are read-only, no Write tool) — copied into the repo
+  at shutdown. **Next session: confirm this copy-out step already happened (it should have, this
+  commit) before trusting `template_analysis/` is complete.**
+- **Real bugs/flags found, not just documentation** (full detail in each file): confirmed root
+  cause of the pre-flagged `pre_gd_screening_nir.xlsx` denominator bug (positivity % secretly
+  divides by *screened count*, not population — label never updated, unlike the sibling Anemia
+  file which got the same fix logged); confirmed the pre-flagged `morta_mmr_imr_nir.xlsx` col-33
+  mislabel (formula is correct, header text says "d4" instead of "g4") plus two more stale-label
+  siblings; confirmed the pre-flagged `nata_lb_abr_rabr_nir.xlsx` Q2 missing-column issue actually
+  produces a live `#REF!`→silently-zeroed bug in the Annual rollup, worse than the progress.md
+  note implied; Schistosomiasis has the messiest bugs found yet (new Annual-rollup bug skipping
+  Q3/double-counting Q4, wrong-numerator bug in 4 files, MDA file has 3 of 4 sub-regions with zero
+  data rows); Rabies exposed an architecture gap (parser's `extra_sheets` can't model
+  period-varying sub-templates; no DQC rule type for "sum of parts = whole" reconciliation
+  checks — both need a parser change, not just config, before those templates can be built).
+- **Session/rate-limit lesson learned:** running all 18 analysis sub-agents in parallel burned
+  through the session's rate limit — 11 of 18 died mid-run with **no resumability** (a killed
+  agent has no checkpoint; retry means starting that sub-group over from scratch). Switched to
+  **one file-group at a time, sequential, with Joseph reporting his usage % before each launch**
+  (no tool exists to check quota directly) — much safer, no further failures. **Keep this cadence
+  next session** until all 18 are done, then merge into a Joseph-facing summary (task #19 in this
+  session's — session-scoped — task list, not persisted; recreate the todo/priority list from
+  this note and `template_analysis/` file names on resume, don't expect the task list to survive).
+- **Still to do before any DB/code changes:** finish the remaining 6 analyses, merge all 18 into
+  one cross-program summary for Joseph's review (flagged issues, sensitive-indicator list,
+  build-priority order), *then* start Step 1 of `adding_templates.md` (seed indicators) — one
+  program at a time, per the existing recipe, only after Joseph reviews the analysis.
+
 ## Session 2 (2026-07-04, HOME) — CI check, Feb FIC investigation, foundation docs audit
 - **CI confirmed green** for all three morning pushes (`da851f9`, `0edef57`, `f1a0dc6`) plus
   the shutdown commit — checked via GitHub REST API using the stored git credential (no `gh`
@@ -49,15 +95,19 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   finished result for his UI check. Not yet built; would need `adding_templates.md` updated
   with a "definition of done" template when he's ready to try it. See [[working-agreement]].
 
-## Current focus (as of 2026-07-04)
+## Current focus (as of 2026-07-05)
 Two parallel tracks:
 1. **Go-live (v1.0.0).** `memory-bank/deployment-checklist.md` is the working checklist.
    Steps 1 (hardening) + 2 (deploy infra) DONE and verified end-to-end. Step 3 blocked on:
    Joseph buys the `.com` domain; IT hands over server IP + SSH; confirm ports 80/443.
    Then follow `RUNBOOK.md → Production — server deployment` and tag `v1.0.0`.
-2. **Building out the other 10 programs.** Still blocked — no `.xlsx` in any
-   `backend/data/<PROGRAM>/` folder. When files land: **one program end-to-end at a time**
-   (analyze → seed → configs → validate → dry-run → Joseph tests). Recipe:
+2. **Building out the other 10 programs.** Files landed 2026-07-05 (46 files, 18 sub-groups —
+   see Session 3 log above). **Analysis phase in progress: 12/18 sub-groups done**, 6 remaining
+   (Post Partum, Intra Partum, NCD, Geriatric, Family Planning, Morbidity). Write-ups live in
+   `memory-bank/template_analysis/`. Do NOT start seeding indicators/configs until all 18 are
+   analyzed and Joseph has reviewed the consolidated summary — several files raised schema
+   questions needing his call first (new `formula_type="rate"`, a parser change for
+   period-varying `extra_sheets`, a missing "sum of parts" DQC rule type). Recipe once resumed:
    `memory-bank/adding_templates.md`. This is the demo content for the health-professional
    higher-ups; deployment is only the delivery vehicle.
 
@@ -94,20 +144,30 @@ Two parallel tracks:
   login. CI: pytest (29) + ruff + eslint on every push; GHCR images on version tags.
 
 ## Open work (priority order)
-1. **Go-live Step 3** (blocked on Joseph/IT): buy domain → DNS → SSH → RUNBOOK deploy →
+1. **Finish analyzing the last 6 file-groups** (Post Partum 3, Intra Partum 2, NCD 5, Geriatric
+   2, Family Planning 1, Morbidity 1 — 14 files total), one at a time, checking Joseph's usage %
+   before each launch (no direct quota-check tool exists). Then merge all 18 into one
+   Joseph-facing summary (flagged issues, sensitive-indicator list, build priority order) before
+   any indicator seeding starts.
+2. **Go-live Step 3** (blocked on Joseph/IT): buy domain → DNS → SSH → RUNBOOK deploy →
    smoke test → rotate admin password → tag v1.0.0 (bump package.json, cut changelog).
-2. **Per-program build loop** (blocked on Joseph dropping `.xlsx` files). Candidate pilot for
-   the agentic goal→build→validate→loop workflow discussed this session — see session log.
-3. **Parked decisions** (Joseph, when ready): stash@{0} Overview Card — finish or drop (HOME
+3. **Per-program build (seed→config→validate→dry-run), one program at a time** — blocked on
+   item 1 above (analysis + Joseph's review) plus a few schema decisions the analysis surfaced:
+   new `formula_type="rate"` (Leprosy/Rabies/Vital Stats all need non-percentage rate multipliers
+   ×1000/×10,000/×100,000), a parser change so `extra_sheets` can support period-varying
+   sub-sheets (Rabies groups a/b/d), and a new DQC rule type for "sum of parts = whole"
+   reconciliation checks (Rabies groups b/d) — none of these are decided yet.
+4. **Parked decisions** (Joseph, when ready): stash@{0} Overview Card — finish or drop (HOME
    machine only); small-cell suppression cutoff (<5 or <10); data-dictionary draft greenlight.
-4. Remaining CHILD_CARE Immunization files 5–8 when real data arrives.
-5. Deferred refactors: split `backend/main.py` (~1200 lines) + oversized frontend pages;
+5. Remaining CHILD_CARE Immunization files 5–8 when real data arrives.
+6. Deferred refactors: split `backend/main.py` (~1200 lines) + oversized frontend pages;
    9 cosmetic ESLint warnings.
 
 ## Done this session, closed out
-- ✅ CI checked green (3 pushes + shutdown commit).
-- ✅ Missing Feb FIC — resolved as expected (no upload ever attempted), not a bug.
-- ✅ Foundation docs audit shipped (`ca754a1`) — see session log for what was fixed.
+- ✅ 12 of 18 new-program file-groups analyzed and documented in `memory-bank/template_analysis/`
+  (see Session 3 log). No DB/code changes — analysis only.
+- ✅ Corrected the "10 programs still empty" assumption — files exist, nested one level deeper
+  than the initial shallow `ls` checked.
 
 ## Data currently in DB (this = HOME machine)
 Jan 2026 monthly (CPAB/BCG/HepaB, DPT-HiB-HepB, OPV, IPV, PCV, MMR, FIC — 6,072 rows across

@@ -1,6 +1,23 @@
 # progress.md
 
-## Status: Go-live Steps 1+2 done; Step 3 waits on domain + server; 10 programs wait on files (July 4)
+## Status: Go-live Steps 1+2 done; Step 3 waits on domain + server; 10-program analysis 12/18 done (July 5)
+
+## Latest Session (July 5 — HOME) — All 10 programs' files landed; 12/18 file-groups analyzed
+- Joseph dropped `.xlsx` files for all 10 remaining programs at once — real scope is 46 files
+  across 18 natural sub-groups (3 programs' files were nested one folder deeper than the
+  startup `ls` checked, so they looked empty at first)
+- Analysis phase (read-only, no DB/code changes): 12/18 sub-groups documented in
+  `memory-bank/template_analysis/` — see `project_state.md` Session 3 log for the full list and
+  `activeContext.md`/`session-handoff.md` for what's next
+- Confirmed root causes for all previously-flagged template errors reached so far: `pre_gd_screening`
+  denominator bug, `morta_mmr_imr_nir.xlsx` col-33 mislabel, `nata_lb_abr_rabr_nir.xlsx` missing-
+  column bug (worse than expected — live `#REF!` in the Annual rollup)
+- Found new bugs beyond what was previously known, especially in Schistosomiasis (messiest file
+  group yet) and Rabies (exposed two parser architecture gaps: no period-varying `extra_sheets`,
+  no "sum of parts" DQC rule type)
+- Learned: running 18 analysis sub-agents in parallel burns the session rate limit fast, and a
+  killed background agent has no resume — switched to one file-group at a time, checking usage
+  % before each launch
 
 ## Latest Session (July 4 — HOME) — Deployment infrastructure (checklist Steps 1+2) + argon2
 - Deployment plan locked with IT (self-managed server, SSH, public, `.com` domain) →

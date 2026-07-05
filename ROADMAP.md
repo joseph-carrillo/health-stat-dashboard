@@ -45,16 +45,34 @@ loop (analyze → seed indicators → write configs → validate → dry-run →
 program end-to-end at a time**. Files land in `backend/data/<PROGRAM_CODE>/` (folders scaffolded).
 Recipe: `memory-bank/adding_templates.md`.
 - [x] Scaffold `backend/data/<PROGRAM_CODE>/` intake folders (10 programs)
-- [ ] Maternal Care and Services
-- [ ] Family Planning Services
-- [ ] Vital Statistics
-- [ ] Morbidity
-- [ ] Infectious Disease Prevention and Control
-- [ ] Non-Communicable Disease Prevention and Control
-- [ ] Oral Health Care and Services
-- [ ] Geriatric Health
-- [ ] Demographics
-- [ ] Water, Sanitation, and Hygiene (WASH)
+- [x] All 10 programs' `.xlsx` files dropped 2026-07-05 (46 files, 18 natural sub-groups)
+- [ ] **Analysis phase (in progress): 12/18 sub-groups documented** in
+      `memory-bank/template_analysis/` — Infectious Disease (Schisto, Filariasis,
+      HIV-Syphilis-HepaB, Rabies, STH, Leprosy), WASH, Demographics, Oral Health, Vital Stats
+      (Mortality, Natality), Maternal Care Prenatal. Remaining: Maternal Care Post Partum +
+      Intra Partum, NCD, Geriatric, Family Planning, Morbidity.
+- [ ] Maternal Care and Services (Prenatal analyzed; Post Partum + Intra Partum pending)
+- [ ] Family Planning Services (file dropped, analysis pending)
+- [ ] Vital Statistics (Mortality + Natality analyzed; indicators/config not yet built)
+- [ ] Morbidity (file dropped, analysis pending)
+- [ ] Infectious Disease Prevention and Control (all 6 sub-diseases analyzed; indicators/config
+      not yet built — Rabies needs a parser change first, see below)
+- [ ] Non-Communicable Disease Prevention and Control (files dropped, analysis pending)
+- [ ] Oral Health Care and Services (analyzed — needs a parser change first, see below)
+- [ ] Geriatric Health (files dropped, analysis pending)
+- [ ] Demographics (analyzed; needs a new `formula_type="ratio"` — not a coverage %)
+- [ ] Water, Sanitation, and Hygiene (WASH) (analyzed — `envi_sanitation_zod_nir.xlsx` Q3/Q4
+      structure fix still needed from DOH before this template can be built)
+
+**Schema/parser decisions surfaced by the analysis, needed before seeding starts:**
+- New `formula_type` for non-percentage rate multipliers (×1,000 / ×10,000 / ×100,000) — needed
+  by Leprosy, Rabies, and both Vital Stats files; Demographics needs a `formula_type="ratio"`
+  (population-per-resource, unbounded, not a coverage %).
+- Parser change: `extra_sheets` currently assumes a fixed sheet name reused every period: it
+  cannot express Rabies's period-varying sub-templates (`Qtr1a`/`Qtr2a`/… vs a static tab) or
+  Oral Health's row-stacked age-group/quarter dimensions.
+- New DQC rule type for "sum of parts = / ≤ whole" reconciliation checks (Rabies groups b/d) —
+  `run_dqc_rules()` only supports `over_threshold` and `sequence` today.
 
 ### Remaining
 - [ ] GeoJSON choropleth maps (`frontend/public/geojson/`)

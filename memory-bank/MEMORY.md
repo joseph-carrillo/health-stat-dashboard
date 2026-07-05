@@ -14,7 +14,8 @@
 - [`CLAUDE.md`](CLAUDE.md) — builder profile, non-negotiable rules, data source strategy, sensitive indicators
 - [`architecture.md`](architecture.md) — system architecture notes
 - [`adding_templates.md`](adding_templates.md) — recipe for adding a new Excel template (JSON config)
-- [`fhsis_template_analysis.md`](fhsis_template_analysis.md) — FHSIS template structure analysis
+- [`fhsis_template_analysis.md`](fhsis_template_analysis.md) — FHSIS template structure analysis (Child Care / Immunization)
+- [`template_analysis/`](template_analysis/) — per-program structure analyses for the 10 non-Child-Care programs (in progress, 12/18 file-groups done as of 2026-07-05)
 
 ## Foundation docs (repo root)
 For durable architecture/decisions, see `ROADMAP.md`, `ARCHITECTURE.md`, `DATA_MODEL.md`,
