@@ -6,14 +6,33 @@ Two parallel tracks, in whichever order inputs arrive:
    `deployment-checklist.md`). Step 3 needs: the purchased `.com` domain + server IP/SSH from
    IT + ports 80/443 confirmed. Then: `RUNBOOK.md → Production — server deployment`, tag
    `v1.0.0`, bump package.json, cut the changelog.
-2. **Finish analyzing the last 6 file-groups**, then merge all 18 into a Joseph-facing summary.
-   Files landed 2026-07-05 for all 10 programs (46 files, 18 sub-groups); 12/18 analyzed so far,
-   write-ups in `memory-bank/template_analysis/`. Remaining: Post Partum (3 files), Intra Partum
-   (2), NCD (5), Geriatric (2), Family Planning (1), Morbidity (1). **Do one file-group at a
-   time**, checking Joseph's usage % before each launch (running all 18 in parallel burned the
-   session's rate limit last time — see session log below). After the merge, several schema
-   questions need Joseph's decision before any seeding starts (see `project_state.md` → Open
-   work #3).
+2. **Build the consolidated Joseph-facing summary.** Analysis phase is now COMPLETE — all 18/18
+   sub-groups documented in `memory-bank/template_analysis/` (Session 3: 12, Session 4: the
+   remaining 6 — NCD, Post Partum, Intra Partum, Family Planning, Morbidity, Geriatric). Joseph
+   explicitly asked to defer the merge-into-one-summary step to next session rather than do it
+   now. Next session: read all 18 files, merge into one report (flagged issues,
+   sensitive-indicator list, build-priority order). After Joseph reviews it, several schema
+   questions need his decision before any seeding starts (see `project_state.md` → Open work #3
+   and `ROADMAP.md` → "Schema/parser decisions surfaced" for the full list).
+
+## 2026-07-05 session 4 (HOME machine) — Remaining 6 file-groups analyzed; 18/18 done
+Finished what Session 3 started. Analyzed NCD (5 files), Post Partum (3), Intra Partum (2),
+Family Planning (1), Morbidity (1), Geriatric (2) — 14 files, biggest-first per Joseph's
+instruction, checking his usage % before each launch (stayed low/moderate all session, no
+rate-limit failures this time — contrast with Session 3's parallel-launch failure). All Maternal
+Care sub-groups (Prenatal, Post Partum, Intra Partum) are now complete. Confirmed several serious
+new bugs (full detail in each `template_analysis/*.md` file, cross-referenced in
+`project_state.md`'s Session 4 log): a wrong-region `#ERROR!` block and a cumulative-vs-flow
+mismatch in NCD's `ncd_meds_nir.xlsx`; a cross-age-bracket formula shift in Post Partum's
+`post_4pnc_nir.xlsx`; a self-referential/circular denominator in Intra Partum's `intra_bw_nir.xlsx`;
+a quarters-stacked-in-one-tab layout plus a wrong-quarter Annual reference and a structurally-dead
+KPI in Family Planning's `fp_nir.xlsx`; a disease-as-row matrix (not location-as-row) plus a
+hardcoded-wrong-region column and a non-functional Rate column in `NIR_Morbidity.xlsx`; and a
+live, real-data demonstration of the recurring off-by-one DQC-anchor bug in Geriatric's
+`ncd_geriatric_nir.xlsx`. Also identified two new open sensitive-indicator questions (NCD Mental
+Health, Morbidity's HIV/syphilis case rows) beyond the already-open Leprosy one. **Not done this
+session, by Joseph's explicit choice:** the consolidated summary merge — saved for next session.
+No DB/code changes — analysis + docs sync only.
 
 ## 2026-07-05 session 3 (HOME machine) — All 10 programs' files landed; 12/18 analyzed
 Full detail in `project_state.md` Session 3 log and `memory-bank/template_analysis/*.md`. Short
@@ -67,13 +86,13 @@ See `working-agreement.md` (burnout → "manage, don't grind").
 
 ## First moves next session (after `startup protocols`)
 1. Ask Joseph: domain + server credentials in hand? → go-live Step 3.
-2. Ask Joseph his current usage %, then launch the next single file-group analysis (Post
-   Partum, Intra Partum, NCD, Geriatric, Family Planning, or Morbidity — smallest first).
-   Persist each Explore-agent result into `memory-bank/template_analysis/` yourself (they have
-   no Write tool). Once all 18 are done, merge into one summary for Joseph before seeding
-   anything.
+2. **Build the consolidated summary** — all 18/18 `template_analysis/*.md` files are done; read
+   them all and merge into one Joseph-facing report (flagged issues, sensitive-indicator list,
+   build-priority order). Do this before any indicator seeding starts.
 3. Parked, needing Joseph when ready: stash@{0} fate (HOME machine), small-cell suppression
-   cutoff, data-dictionary draft greenlight.
+   cutoff, data-dictionary draft greenlight, and whether to expand CLAUDE.md's
+   sensitive-indicator list (NCD Mental Health, Morbidity HIV/syphilis rows, Leprosy — three
+   open asks now, see `project_state.md` Open work #4).
 
 ## Watch out for
 - **`backend/data/<PROGRAM>/` folders can look empty at a shallow `ls` even when full of

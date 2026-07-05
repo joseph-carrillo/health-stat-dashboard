@@ -1,8 +1,8 @@
 # session-handoff.md
 
 ## Last Updated
-2026-07-05, session 3 (HOME machine — all 10 programs' files landed, 12/18 file-groups
-analyzed and documented; no DB/code changes this session, docs-only)
+2026-07-05, session 4 (HOME machine — remaining 6 file-groups analyzed, 18/18 total complete;
+no DB/code changes this session, docs-only)
 
 ## Current Objective
 Two parallel tracks:
@@ -11,14 +11,37 @@ Two parallel tracks:
    server IP + SSH** (+ confirm ports 80/443 open). When those arrive, follow
    `RUNBOOK.md → Production — server deployment`, then tag `v1.0.0`.
 2. **Build out the 10 non-Child-Care programs** — files landed 2026-07-05: **46 files across 18
-   natural sub-groups**, not empty as previously thought (3 programs' files were nested one
-   folder deeper than the initial shallow `ls` checked). **12/18 sub-groups analyzed**, write-ups
-   in `memory-bank/template_analysis/`. Remaining 6: MATERNAL_CARE/Post Partum (3 files),
-   Intra Partum (2), NCD (5), GERIATRIC (2), FAMILY_PLANNING (1), MORBIDITY (1) — 14 files total.
-   **Do NOT start seeding indicators/configs** until all 18 are analyzed and merged into one
-   summary for Joseph's review.
+   natural sub-groups**. **Analysis phase now COMPLETE: 18/18 sub-groups analyzed**, write-ups
+   in `memory-bank/template_analysis/`. **Next session: merge all 18 into one Joseph-facing
+   summary** (flagged issues, sensitive-indicator list, build-priority order) — Joseph explicitly
+   asked to do this next session rather than now. **Do NOT start seeding indicators/configs**
+   until that summary is built and Joseph has reviewed it.
 
-## Done This Session — Session 3 (2026-07-05, HOME machine)
+## Done This Session — Session 4 (2026-07-05, HOME machine)
+- **Analyzed the remaining 6 file-groups** (NCD 5 files, Post Partum 3, Intra Partum 2, Family
+  Planning 1, Morbidity 1, Geriatric 2 — 14 files), biggest-first per Joseph's instruction,
+  checking his usage % before each launch — no rate-limit failures this session (contrast with
+  Session 3's parallel-launch failure). **All 18/18 sub-groups now documented** in
+  `memory-bank/template_analysis/`. All Maternal Care sub-groups (Prenatal, Post Partum, Intra
+  Partum) are now complete.
+- **Serious new bugs confirmed** (full detail in each file, summarized in `project_state.md`
+  Session 4 log and `ROADMAP.md`'s "Schema/parser decisions surfaced"): a wrong-region
+  `#ERROR!` block + cumulative-vs-flow mismatch in NCD's `ncd_meds_nir.xlsx`; a cross-age-bracket
+  formula shift in Post Partum's `post_4pnc_nir.xlsx`; a self-referential/circular denominator in
+  Intra Partum's `intra_bw_nir.xlsx`; a quarters-stacked-in-one-tab layout + wrong-quarter Annual
+  reference + a structurally-dead KPI in Family Planning's `fp_nir.xlsx`; a disease-as-row matrix
+  + hardcoded-wrong-region column + non-functional Rate column in Morbidity's
+  `NIR_Morbidity.xlsx`; and a live, real-data demonstration of the recurring off-by-one
+  DQC-anchor bug in Geriatric's `ncd_geriatric_nir.xlsx`. Two new sensitive-indicator questions
+  raised (NCD Mental Health mhGAP screening, Morbidity's HIV/syphilis case rows) beyond the
+  already-open Leprosy question.
+- **Docs synced this shutdown:** `ROADMAP.md` (marked analysis phase complete, added the new
+  schema/parser decisions to the existing list), `project_state.md`, `activeContext.md` (this
+  file). No CHANGELOG/DECISIONS_LOG changes needed — no code shipped, no locked decision changed.
+- **Not done, by Joseph's explicit choice:** the consolidated summary merge — deferred to next
+  session.
+
+## Done Session 3 (2026-07-05, HOME machine)
 - **Joseph dropped Excel files for all 10 remaining programs at once** ("let's build this
   smartly"). Real scope: 46 files, 18 natural sub-groups (matches how DOH already segregates
   them into sub-category folders) — much bigger than the "7 programs with files" first read
@@ -81,29 +104,30 @@ Two parallel tracks:
 ## Next Session — first moves
 1. `startup protocols` (git sync FIRST, then memory; check machine-local state).
 2. Ask Joseph: domain bought? server credentials from IT? → if yes, Step 3 go-live per RUNBOOK.
-3. Ask Joseph his current usage %, then resume the analysis phase one file-group at a time
-   (Post Partum, Intra Partum, NCD, Geriatric, Family Planning, Morbidity — smallest first).
-   Persist each result straight into `memory-bank/template_analysis/`, not the scratchpad.
-4. Once all 18 done: merge into one Joseph-facing summary (flagged issues, sensitive-indicator
-   list, build priority order) before any indicator seeding starts. Several schema questions
-   need his decision first (`formula_type="rate"`, period-varying `extra_sheets`, "sum of parts"
-   DQC rule type — see `project_state.md` Open work #3).
-5. Parked decisions when Joseph's ready: stash@{0} fate (HOME machine), small-cell cutoff
-   (<5 or <10), data-dictionary greenlight.
+3. **Build the consolidated summary** — analysis phase is done (18/18). Read all 18 files in
+   `memory-bank/template_analysis/` and merge into one Joseph-facing report (flagged issues,
+   sensitive-indicator list, build-priority order) before any indicator seeding starts. Several
+   schema questions need his decision after that (`formula_type="rate"`/`"ratio"`,
+   period-varying `extra_sheets`, "sum of parts" DQC rule type, per-column rollup override,
+   Family Planning's stacked-quarters `sheet_map` shape, Morbidity's disease-as-row schema — see
+   `project_state.md` Open work #3 and `ROADMAP.md`'s "Schema/parser decisions surfaced").
+4. Parked decisions when Joseph's ready: stash@{0} fate (HOME machine), small-cell cutoff
+   (<5 or <10), data-dictionary greenlight, and whether to expand the sensitive-indicator list
+   (NCD Mental Health, Morbidity HIV/syphilis rows, Leprosy).
 
 ## Machine-local state (things GitHub does NOT sync — required section per shutdown protocol)
-As of shutdown 2026-07-05, session 3 (HOME machine):
+As of shutdown 2026-07-05, session 4 (HOME machine):
 - **HOME machine (this one): `stash@{0}`** = untested Overview Card feature (parked by Joseph,
   decision pending); **`stash@{1}`** = older "indicator-reports-area-filter", provenance
   unknown. Unchanged from prior sessions — do not exist on the office desktop.
 - **Office machine**: should be clean at `19d6871` (or later once this session's commit is
   pushed); will fast-forward on next pull. No known local state.
-- `backend/data/<PROGRAM>/` subfolders: **now full of real `.xlsx` files on this machine** (46
-  files across all 10 programs, dropped this session by Joseph). These raw Excel files are
-  gitignored per `CLAUDE.md` (`Raw .xlsx under backend/data/ gitignored`) — they exist only on
-  this machine, will NOT sync via git. If work resumes on a different machine, the files need
-  to be re-copied there manually, or all further analysis/testing should stay on this machine
-  until the per-program build is complete.
+- `backend/data/<PROGRAM>/` subfolders: **full of real `.xlsx` files on this machine** (46 files
+  across all 10 programs, dropped 2026-07-05 session 3 by Joseph — unchanged this session).
+  These raw Excel files are gitignored per `CLAUDE.md` (`Raw .xlsx under backend/data/
+  gitignored`) — they exist only on this machine, will NOT sync via git. If work resumes on a
+  different machine, the files need to be re-copied there manually, or all further
+  analysis/testing should stay on this machine until the per-program build is complete.
 - HOME machine has **no `gh` CLI** — check CI via the browser Actions tab here.
 - `.env` (per-machine): unchanged from last session (`CORS_ORIGINS=http://localhost:5173,http://localhost`).
 

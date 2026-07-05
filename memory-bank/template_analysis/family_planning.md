@@ -1,0 +1,132 @@
+# Family Planning Program — Template Analysis
+## Program: Family Planning Services > Current Users / Method Mix
+
+**File analyzed:** `backend/data/FAMILY_PLANNING/fp_nir.xlsx`
+
+**Method:** Read all 13 sheets with `openpyxl` in both `data_only=False` (formula strings) and `data_only=True` (cached values) modes; traced every cross-sheet formula chain (`CUB_Qtr → CUE_Qtr → Population → Demand Satisfied`, and `_Qtr → _A`) cell-by-cell rather than trusting header text, per `adding_templates.md`; cross-checked the file's own `change_log` tab against the formulas found to establish which anomalies are recent, documented edits vs. long-standing structure.
+
+**Program code:** `FAMILY_PLANNING` — new program, no existing seed indicators/config.
+
+**Naming convention:** Proposing an `FP_` prefix, sub-tagged by flow-stage to match the sheet-group letters actually used in the file: `FP_CUB_*` (Current User **B**eginning, stock), `FP_NA_*` (**N**ew **A**cceptor, flow), `FP_OA_*` (**O**ther **A**cceptor, flow), `FP_DO_*` (**D**rop-**O**ut, flow), `FP_CUE_*` (Current User **E**nding, stock — derived), plus `FP_DS_*` (Demand Satisfied) and `FP_POP_*` (Population/denominator sheet). This mirrors the `INTRA_SHP_*`/`INTRA_FBD_*` sub-tagging convention used for Intra Partum's multi-group-in-one-workbook file.
+
+**RBAC / Sensitive Indicators check:** No HIV or Syphilis reactive-case data anywhere in this file (checked every header across all 13 sheets) — this is pure contraceptive-method-mix data. No `is_sensitive = TRUE` flags needed.
+
+---
+
+## 1. Sheet Structure
+
+| Sheet | Type | Rows (real) | Cols (real) | Notes |
+|---|---|---|---|---|
+| `CUB_Qtr` | Quarterly, stock | 268 data (Q1–Q4 × 67 stacked) + header = 269 | 69 (A:BQ) | "Current User Beginning" |
+| `CUB_A` | Annual rollup | 67 + header = 68 | 69 | See FLAG FP-1 (critical) |
+| `NA_Qtr` | Quarterly, flow | 269 | 69 | "New Acceptor" |
+| `NA_A` | Annual rollup | 68 | 69 | Correctly sums all 4 quarters |
+| `OA_Qtr ` (**trailing space in sheet name — verified literal**) | Quarterly, flow | 269 | 71 (A:BS, 2 extra bloat cols) | "Other Acceptor" |
+| `OA_A` | Annual rollup | 68 | 69 | Correctly sums all 4 quarters |
+| `DO_Qtr` | Quarterly, flow | 269 real data; `max_row=6977` reported by openpyxl is pure formatting bloat (rows 270–6977 confirmed `None` cell-by-cell) | 70 (A:BR, 1 extra bloat col) | "Drop Out" |
+| `DO_A` | Annual rollup | 68 | 69 | Correctly sums all 4 quarters, label reads "Drop-out" (hyphenated, inconsistent with `DO_Qtr`'s "Drop Out") |
+| `CUE_Qtr` | Quarterly, stock (derived) | 269 | 72 (A:BT, 3 extra helper cols) | "Current User Ending" — every cell is `=SUM(CUB_Qtr!x,NA_Qtr!x,OA_Qtr!x)-SUM(DO_Qtr!x)`, same row/quarter — a pure flow-balance calculation, never independently entered |
+| `CUE_A` | Annual rollup | 68 | 72 | Correctly derives Q4 flow balance as annual ending (see below — this one is correct) |
+| `Demand Satisfied` | Quarterly, computed indicator | 269 | 8 (A:H) | "Demand Satisfied" % — **structurally dead, see FLAG FP-2 (critical)** |
+| `Population` | Reference/denominator | 68 (67 + header) | 6 (A:F) | WRA population + "Total Demand Factor" — **empty input column, root cause of FLAG FP-2** |
+| `change_log` | Admin — not imported | 8 entries | 6 | Directly documents the edits that introduced FLAG FP-1 and FLAG FP-2 (see below) |
+
+**Frequency:** Quarterly + Annual for all 5 flow/stock sheet-pairs, plus `Demand Satisfied`/`Population` (quarterly/reference respectively, no separate Annual tab of their own — they piggyback off `CUE_Qtr`).
+
+**Sheet-name gotcha (FLAG FP-3):** The `Other Acceptor` quarterly sheet's literal name is `'OA_Qtr '` — **with a trailing space** — confirmed via `wb.sheetnames`. A `sheet_map` entry written as `"OA_Qtr"` (no trailing space) will fail to resolve. Every formula elsewhere in the workbook that references this sheet also carries the trailing space (`'OA_Qtr '!F4`), confirming it's not an accidental read artifact — it's genuinely part of the sheet name.
+
+---
+
+## 2. Age/Sex Disaggregation
+
+**Age brackets only: 10-14 / 15-19 / 20-49 / Total** — identical 3-bracket scheme used across every Maternal Care file previously analyzed. **No general male/female client-sex column.** The closest thing to a sex split is that two of the 15 method categories are inherently sex-specific by clinical definition (`FSTR_BTL` = Female Sterilization/Bilateral Tubal Ligation; `MSTR_NSV` = Male Sterilization/No-Scalpel Vasectomy) — this is a method-type distinction, not a demographic disaggregation axis, and every other method column (Condom, IUD, Pills, Injectables, Implants, natural methods) is not further split by client sex. No civil-status column anywhere.
+
+---
+
+## 3. Geographic Levels Present
+
+Region (NIR) → 3 provinces (Negros Occidental, Negros Oriental, Siquijor) → 62 city/municipality rows → City of Bacolod (HUC) as **one single aggregate row**, same pattern as WASH and Maternal Care Intra Partum. **67 location rows per period** (1 region + 3 provinces + 31 Negros Occidental LGUs + 25 Negros Oriental LGUs + 6 Siquijor LGUs + 1 Bacolod HUC = 67). No barangay-level rows anywhere. Region and province rows are same-sheet `SUM` rollups of their child rows (e.g., `=SUM(F4:F34)` for Negros Occidental); the region row is itself `=SUM(F3,F35,F61,F68)` (sum of the 3 province rows + the Bacolod HUC row) — verified consistent in every sheet, no cross-bracket shift.
+
+The four quarters are **stacked vertically within the same sheet** rather than in separate tabs (rows 2–68 = Q1, 69–135 = Q2, 136–202 = Q3, 203–269 = Q4, each block reproducing the identical 67-row PSGC/location sequence, distinguished only by a `Quarter` text column). This is a structurally different layout from every sibling program analyzed so far (which use one tab per quarter) and has direct consequences for `adding_templates.md`'s `sheet_map` model — see FLAG FP-4.
+
+---
+
+## 4. Column Inventory (canonical sheet: `CUB_Qtr`, 69 real columns)
+
+All 5 flow/stock sheets (`CUB_Qtr`, `NA_Qtr`, `OA_Qtr `, `DO_Qtr`, `CUE_Qtr`) share the **identical 69-column layout** for columns 0–68 (only the trailing helper columns beyond col 68 differ — see §6). Column labels are literally identical across all 5 sheets (including the "TOTAL_CUE_*" label at cols 65–68, which is **not renamed per sheet** — e.g., `CUB_Qtr` col 68 is labeled "TOTAL_CUE_TOTAL" even though it actually totals "Current User **Beginning**", not "Current User Ending" — a copy-paste leftover; formula wiring is correct, the header text is just stale in 4 of the 5 sheets).
+
+| Col (0-based) | Label (raw) | Proposed `indicator_code` (per sheet-group `X` ∈ {CUB, NA, OA, DO, CUE}) | Type | Formula | Unit |
+|---|---|---|---|---|---|
+| 0 | PSGC10 | — | META (`psgc_column`) | — | 10-digit PSGC |
+| 1 | Areas (Regions) — constant "NIR" | — | META (unused) | — | text |
+| 2 | Region, Province/City, Municipality | — | META (`location_column`) | — | text |
+| 3 | Indicator — constant per sheet ("Current User Beginning" / "New Acceptor" / "Other Acceptor" / "Drop Out" / "Current User Ending") | — | META (row-type tag, unused by parser) | — | text |
+| 4 | Quarter — "Q1"/"Q2"/"Q3"/"Q4" (`Demand Satisfied` instead uses "1st Quarter"/"2nd Quarter"/etc. — see FLAG FP-5) | — | META (period discriminator within the stacked block) | — | text |
+| 5,6,7 | `FSTR_BTL_1014/1519/2049` (Female Sterilization/BTL) | `FP_X_FSTR_BTL_1014/1519/2049` | RAW (leaf rows); region/province = SUM rollup | — | count |
+| 8 | `FSTR_BTL_TOTAL` | `FP_X_FSTR_BTL_TOTAL` | COMPUTED | col5+col6+col7 | count |
+| 9,10,11 | `MSTR_NSV_1014/1519/2049` (Male Sterilization/No-Scalpel Vasectomy) | `FP_X_MSTR_NSV_1014/1519/2049` | RAW/rollup | — | count |
+| 12 | `MSTR_NSV_TOTAL` | `FP_X_MSTR_NSV_TOTAL` | COMPUTED | col9+col10+col11 | count |
+| 13,14,15 | `Condom_1014/1519/2049` | `FP_X_CONDOM_1014/1519/2049` | RAW/rollup | — | count |
+| 16 | `Condom_TOTAL` | `FP_X_CONDOM_TOTAL` | COMPUTED | col13+col14+col15 | count |
+| 17,18,19 | `IUD_Int_1014/1519/2049` (Interval IUD) | `FP_X_IUD_INT_1014/1519/2049` | RAW/rollup | — | count |
+| 20 | `IUD_Int_TOTAL` | `FP_X_IUD_INT_TOTAL` | COMPUTED | col17+col18+col19 | count |
+| 21,22,23 | `IUD_PP_1014/1519/2049` (Postpartum IUD) | `FP_X_IUD_PP_1014/1519/2049` | RAW/rollup | — | count |
+| 24 | `IUD_PP_TOTAL` | `FP_X_IUD_PP_TOTAL` | COMPUTED | col21+col22+col23 | count |
+| 25,26,27 | `Pills_POP_1014/1519/2049` (Progestin-Only Pill) | `FP_X_PILLS_POP_1014/1519/2049` | RAW/rollup | — | count |
+| 28 | `Pills_POP_TOTAL` | `FP_X_PILLS_POP_TOTAL` | COMPUTED | col25+col26+col27 | count |
+| 29,30,31 | `Pills_COC_1014/1519/2049` (Combined Oral Contraceptive) | `FP_X_PILLS_COC_1014/1519/2049` | RAW/rollup | — | count |
+| 32 | `Pills_COC_TOTAL` | `FP_X_PILLS_COC_TOTAL` | COMPUTED | col29+col30+col31 | count |
+| 33,34,35 | `Injectables_1014/1519/2049` | `FP_X_INJECTABLES_1014/1519/2049` | RAW/rollup | — | count |
+| 36 | `Injectables_TOTAL` | `FP_X_INJECTABLES_TOTAL` | COMPUTED | col33+col34+col35 | count |
+| 37,38,39 | `Implants_Int_1014/1519/2049` (Interval Implant) | `FP_X_IMPLANTS_INT_1014/1519/2049` | RAW/rollup | — | count |
+| 40 | `Implants_Int_TOTAL` | `FP_X_IMPLANTS_INT_TOTAL` | COMPUTED | col37+col38+col39 | count |
+| 41,42,43 | `Implants_PP_1014/1519/2049` (Postpartum Implant) | `FP_X_IMPLANTS_PP_1014/1519/2049` | RAW/rollup | — | count |
+| 44 | `Implants_PP_TOTAL` | `FP_X_IMPLANTS_PP_TOTAL` | COMPUTED | col41+col42+col43 | count |
+| 45,46,47 | `NM_CCM_1014/1519/2049` (Natural Method — Cervical Mucus) | `FP_X_NM_CCM_1014/1519/2049` | RAW/rollup | — | count |
+| 48 | `NM_CCM_TOTAL` | `FP_X_NM_CCM_TOTAL` | COMPUTED | col45+col46+col47 | count |
+| 49,50,51 | `NM_BBT_1014/1519/2049` (Basal Body Temperature) | `FP_X_NM_BBT_1014/1519/2049` | RAW/rollup | — | count |
+| 52 | `NM_BBT_TOTAL` | `FP_X_NM_BBT_TOTAL` | COMPUTED | col49+col50+col51 | count |
+| 53,54,55 | `NM_STM_1014/1519/2049` (Symptothermal Method) | `FP_X_NM_STM_1014/1519/2049` | RAW/rollup | — | count |
+| 56 | `NM_STM_TOTAL` | `FP_X_NM_STM_TOTAL` | COMPUTED | col53+col54+col55 | count |
+| 57,58,59 | `NM_SDM_1014/1519/2049` (Standard Days Method) | `FP_X_NM_SDM_1014/1519/2049` | RAW/rollup | — | count |
+| 60 | `NM_SDM_TOTAL` | `FP_X_NM_SDM_TOTAL` | COMPUTED | col57+col58+col59 | count |
+| 61,62,63 | `NM_LAM_1014/1519/2049` (Lactational Amenorrhea Method) | `FP_X_NM_LAM_1014/1519/2049` | RAW/rollup | — | count |
+| 64 | `NM_LAM_TOTAL` | `FP_X_NM_LAM_TOTAL` | COMPUTED | col61+col62+col63 | count |
+| 65,66,67 | `TOTAL_CUE_1014/1519/2049` (grand total across all 15 methods, per age bracket — mislabeled "CUE" in every sheet, see above) | `FP_X_TOTAL_1014/1519/2049` | COMPUTED | sum of the corresponding bracket column across all 15 method groups (e.g. col67 = col7+col11+col15+col19+...+col63) | count |
+| 68 | `TOTAL_CUE_TOTAL` | `FP_X_TOTAL_ALL` | COMPUTED | sum of the 15 `*_TOTAL` columns (col8+col12+col16+...+col64); at region/province level, verified equivalently as `SUM(col65:col67)` same row | count |
+
+15 method groups × 4 cols = 60 cols (5–64) + 5 meta (0–4) + 4 grand-total cols (65–68) = 69, matching every `_Qtr`/`_A` sheet's real column count.
+
+---
+
+## 5. DQC Rules Visible in the Sheet
+
+- **Completeness ("blank") checks:** present in `CUB_Qtr`/`CUB_A` (fine-grained, per-method-group ranges that deliberately skip the computed `_TOTAL` columns) and in `NA_Qtr`/`OA_Qtr `/`DO_Qtr`/`CUE_Qtr` (single contiguous `F2:BN269`-style range, broader — includes the `_TOTAL` columns too). **`NA_A`, `OA_A`, and `DO_A` have *no* blank-completeness rule at all** (only the cosmetic PSGC "0"-search rule) — an inconsistency across the five parallel Annual sheets; `CUB_A` and `CUE_A` do have it.
+- **PSGC "0"-search rule** (`containsText`, searches for digit "0" in the PSGC/location column) on every sheet including `Population` — cosmetic leftover, not a meaningful DQC, consistent with the pattern already documented in Maternal Care/WASH.
+- **No cross-column logical-consistency ("IF") DQC formulas anywhere in the workbook** — confirmed by scanning every cell in every sheet for `IF(` formulas: zero hits outside `IFERROR(...)` wrappers (which exist purely to suppress `#DIV/0!`/`#REF!` errors, not to flag data-quality problems). This is a materially weaker DQC design than Maternal Care Intra Partum or WASH, both of which have explicit equality/inequality checks (e.g. "Delivery Type = Deliveries", "SHP ≤ Deliveries"). This file has **no equivalent check that New Acceptor + Other Acceptor + Beginning − Drop Out reconciles with Ending** at the raw-input level (the reconciliation is instead baked directly into `CUE_Qtr`'s own formula, making it tautologically true by construction rather than a verifiable check against an independently-reported figure).
+- **No percentage-threshold conditional formatting anywhere** (no `>1` / `>100` rule of any kind) — the file's only percentage column (`Demand Satisfied!H`, "%") has **zero** conditional formatting applied to it at all.
+
+**Recurring bug class (a) — CF anchor off-by-one:** **Checked every `conditional_formatting` range in all 13 sheets. Not present.** Every `sqref` range's row bound exactly matches the real data extent (`...269` for the stacked-quarter sheets, `...68` for Annual sheets) — including `DO_Qtr`, whose `max_row=6977` (openpyxl-reported) is pure formatting bloat that the actual CF ranges correctly ignore (they stay bound to row 269, not stretched to 6977, and not falling short either).
+
+**Recurring bug class (b) — "Over 100%" DQC scale mismatch:** **Does not recur in the form previously seen** (no percentage column is compared to a literal `100` against a mis-scaled 0–1 ratio) — but only because **this file's one percentage column has no threshold check of any kind**, not because the design is safer. See FLAG FP-6.
+
+---
+
+## 6. Flags / Open Questions
+
+- **FLAG FP-1 (critical, confirmed via cached-value arithmetic — `CUB_A`'s "Beginning" figure is silently Q4's, not Q1's):** Every leaf-level cell in `CUB_A` (Annual "Current User Beginning") is a direct cross-sheet reference into `CUB_Qtr`'s **Q4 block** (rows 203–269), e.g. row 4 (City of Bago) `= CUB_Qtr!F205` / `G205` / `H205` — row 205 sits inside the Q4 stack, not Q1's (rows 2–68). Verified this is uniform across all 67 rows (row 5 → `F206`, row 6 → `F207`, … row 67 → `F268`, a constant +201 offset). **Proof this is wrong, not just suspicious:** for City of Bago, 20-49 bracket — Q1's raw beginning stock = **1,112**; Q4's beginning stock (what `CUB_A` actually reports) = **1,098**. Using the file's own flow-balance logic (Beginning + New Acceptors + Other Acceptors − Drop-Outs = Ending, and `CUE_A`'s Q4-based Ending = **1,098** is independently confirmed correct): `1,098 (CUB_A, wrong) + 1 (NA_A) + 12 (OA_A) − 27 (DO_A) = 1,084 ≠ 1,098 (CUE_A)` — **the annual flow equation does not balance**. Substituting Q1's true beginning value instead: `1,112 + 1 + 12 − 27 = 1,098 = CUE_A` — **balances exactly**. This proves `CUB_A` must reference `CUB_Qtr`'s Q1 rows (4, 71→should be equivalent Q1 row, etc. — i.e. the row-4-based block), not the Q4 block, to represent "beginning of the year." The `change_log`'s last entry (`03/03/2026, "CUB_A", "Link formula from CUB_QTR"`) directly documents the recent edit that introduced this — this is a real, dated encoder error, not an intentional design choice. **Config authors must not implement `FP_CUB_*_TOTAL` (annual) as a straight pass-through of the shipped `CUB_A` formula; it should instead source Q1's raw `CUB_Qtr` block, or the parser's own annual rollup must special-case "stock at Q1 open" the same way it already gets "stock at Q4 close" right for `CUE_A`.**
+- **FLAG FP-2 (critical, confirmed — "Demand Satisfied" is completely dead-on-arrival, and even filling in the missing input would not fully fix it):** `Population!E` ("Total Demand Factor") is **blank in all 67 rows** (verified: zero non-`None` cells in the entire column) — confirmed as a recently-added, never-populated field via the `change_log` (`02/04/2026`, "Population… Additional rows for WRA and Td factor"). Consequently `Population!F` ("WRA x Total Demand Factor" = `D*E`) evaluates to **0 in every single row** (verified across all 67 rows), which is exactly the denominator `Demand Satisfied!F` pulls via `=Population!F<n>`. Since `Demand Satisfied!H` ("%") = `IFERROR((G/F)*100, 0)`, dividing by the always-zero `F` trips the `IFERROR` fallback, so **`Demand Satisfied!H` silently evaluates to `0` for every row, every quarter, with no visible error** — the headline Family Planning KPI in this template is structurally guaranteed to report 0% regardless of the real data. **A second, independent problem sits underneath this:** `Population!D` ("WRA 15-49 years old" — meant to be an independent demographic population estimate) is itself defined as `=CUE_Qtr!BT<n>` — i.e., **the same "Current User Ending 15-49" figure that is also the Demand Satisfied numerator**. Even after someone fills in a real Total Demand Factor value (call it `k`), the resulting "%" would still compute as `CUE / (CUE × k) = 1/k` — a **constant** that never varies with the actual current-user count, entirely defeating the purpose of the indicator. **Both defects must be fixed at the source template before this indicator is usable:** (a) populate `Total Demand Factor` with a real, independently-sourced demographic ratio, and (b) replace `Population!D`'s formula with an actual WRA population projection (analogous to the "Projected Population (Under 1)" pattern used in Maternal Care/Prenatal), not a self-reference to the same current-user count being validated.
+- **FLAG FP-3 (sheet-name gotcha):** The "Other Acceptor" quarterly sheet is literally named `'OA_Qtr '` with a trailing space (confirmed via `wb.sheetnames` and via every cross-sheet formula that references it, e.g. `'OA_Qtr '!F4`). A `sheet_map` entry omitting the trailing space will fail to resolve the tab.
+- **FLAG FP-4 (structural — quarters are stacked rows in one tab, not one tab per quarter):** Unlike every sibling program analyzed so far (Maternal Care, WASH — one tab per `Qtr1`/`Qtr2`/etc.), this file stacks all 4 quarters as 67-row blocks **within the same sheet** (`CUB_Qtr` rows 2–68/69–135/136–202/203–269), discriminated only by the `Quarter` text column (col 4). `adding_templates.md`'s `sheet_map` (month/quarter → sheet/tab name) model maps 1:1 to a *tab*, not a *row-range within one tab* — parsing this file correctly will require either a `data_start_row`/`data_end_row` pair per quarter within a single `sheet_map` entry, or four separate row-range windows into the same tab name repeated four times. This is the single biggest config-schema mismatch found in this file and should be resolved/confirmed before writing the JSON config.
+- **FLAG FP-5 (label inconsistency, cosmetic but real):** The `Demand Satisfied` sheet's `Quarter` column uses `"1st Quarter"/"2nd Quarter"/"3rd Quarter"/"4th Quarter"` text, while every other sheet in the same workbook (`CUB_Qtr`, `NA_Qtr`, `OA_Qtr `, `DO_Qtr`, `CUE_Qtr`) uses `"Q1"/"Q2"/"Q3"/"Q4"`. Harmless for an index-based parser (this column isn't used to key anything programmatically), but a real inconsistency worth noting for anyone hand-verifying rows against period.
+- **FLAG FP-6 (DQC gap, related to but distinct from the known "over 100%" bug class):** `Demand Satisfied!H` ("%") has **no conditional-formatting threshold rule of any kind** — not even a correctly-scaled one. Once FLAG FP-2 is fixed and the percentage starts producing real, varying values, an anomalous >100% (data-quality-flagged) row would go completely unflagged visually in the source template; recommend the parser's own `dqc_rules` add a `greaterThan 1` (0–1 ratio) or `greaterThan 100` (if percentage is stored 0–100, matching this column's own `*100` scaling) check, since the template itself provides none.
+- **FLAG FP-7 (dead/orphaned helper columns, cosmetic):** `OA_Qtr ` has a **duplicated "TOTAL_CUE_TOTAL" column** at col 69 (0-based) whose formula is `=SUM(BP<r>,BQ<r>)` — i.e., it adds the legitimate `TOTAL_CUE_TOTAL` (col 68) to the `TOTAL_CUE_2049` subtotal (col 67) a second time, producing a meaningless, roughly-doubled value (verified: NIR row, col 68 = 14,971; col 67 = 14,137; col 69 = 29,108 = 14,137+14,971). It is not referenced anywhere else in the workbook (confirmed via full-workbook formula scan) — a dead, copy-paste artifact, not a data-integrity risk, but should be explicitly excluded from the parser config (do not seed an indicator for it). `OA_Qtr ` and `DO_Qtr` also each carry a `psgc_qtr` helper column (`=CONCATENATE(A<r>,"_",G<r>)`, concatenating the PSGC code with the raw `FSTR_BTL_1519` drop-out/acceptor count rather than anything period-related) — also unreferenced elsewhere and safe to exclude. By contrast, `CUE_Qtr`'s two trailing helper columns (`PSGC10` duplicate, and `for_demand_satisfied` = `SUM(TOTAL_CUE_1519, TOTAL_CUE_2049)`, i.e. current users aged 15-49 only, deliberately excluding the 10-14 bracket) **are** genuinely consumed downstream by `Population!D` and `Demand Satisfied!G` — these must be preserved/replicated in the parser's computed-column logic, not dropped.
+- **Minor label inconsistencies:** `DO_Qtr`'s `Indicator` column reads "Drop Out" while `DO_A`'s reads "Drop-out" (hyphenation differs) — cosmetic only, not used as a parser key. The grand-total columns (65–68) are labeled "TOTAL_CUE_*" verbatim in `CUB_Qtr`, `NA_Qtr`, `OA_Qtr `, and `DO_Qtr` even though only `CUE_Qtr` actually represents "Current User Ending" — a copy-paste leftover across 4 of the 5 sheet-groups; formula wiring is unaffected (each sheet's col 65-68 formulas correctly total *that sheet's own* 15 method columns), only the header text is stale.
+- **Q2–Q4 raw data is blank in every flow/stock sheet** (verified cell-by-cell: `NA_Qtr`, `OA_Qtr `, `DO_Qtr` all have real, non-zero Q1 test data and `None` cells throughout Q2–Q4's raw entry columns) — the same "Q1-only test/sample data" pattern already documented in every Maternal Care file. Because `CUB_Qtr`'s Q2/Q3/Q4 "Beginning" values are formula-derived rollforwards of the prior quarter (correctly designed, verified: Q2 Beginning `=` Q1's flow-balance formula referencing Q1's own cells), and NA/OA/DO are all zero in Q2–Q4, the shipped sample data shows the stock figure "frozen" at Q1's ending value for the rest of the year — expected given blank inputs, not itself a bug, but confirm this is understood as placeholder/test data before validating configs against it.
+- **`change_log` is unusually informative for this file** (8 dated entries, unlike the often-empty logs seen in Maternal Care/WASH) and directly corroborates two of the flags above: entry `03/03/2026` ("CUB_A… Link formula from CUB_QTR") is very likely the exact edit that introduced FLAG FP-1, and entries `02/04/2026`/`02/11/2026` ("Population… Additional rows for WRA and Td factor" / "DS… Link population sheet (WRA*Td Factor)") directly document the incomplete rollout that produced FLAG FP-2. Recommend flagging both to the DOH region encoder (Chester Febrio, per the log) as unfinished work rather than treating them as design decisions.
+
+---
+
+## Summary
+
+This Family Planning workbook is structurally the most complex single file analyzed so far in this project — 5 parallel method-mix sheet-groups (Beginning stock, New Acceptors, Other Acceptors, Drop-Outs, Ending stock) sharing an identical 69-column, 15-method × 3-age-bracket layout, plus two downstream indicator sheets (`Population`, `Demand Satisfied`) that chain off the flow sheets' derived totals. Both recurring bug classes from sibling programs were explicitly checked and **neither recurs in its known form**: no conditional-formatting anchor is off by one (every `sqref` range, including the ones in the wildly bloated 6,977-row `DO_Qtr` sheet, correctly tracks the true 269/68-row data extent), and no percentage column compares a raw 0–2 ratio against a literal 100 — but only because this file's lone percentage column (`Demand Satisfied!%`) carries **no threshold check of any kind**, a related but distinct gap (FLAG FP-6). In their place, this file introduces two new, more severe problems of its own, both independently confirmed with cached-value arithmetic and both directly corroborated by the file's own `change_log`: **(1)** the Annual "Current User Beginning" sheet (`CUB_A`) silently pulls Q4's beginning-of-quarter stock instead of Q1's beginning-of-year stock for every one of its 67 rows, which breaks the file's own Beginning+New+Other−DropOut=Ending flow-balance identity at the annual level by an amount that varies row-to-row (14 units at City of Bago in the sample data) — traced to a `03/03/2026` formula-linking edit in the change log; and **(2)** the entire "Demand Satisfied" indicator — arguably the single most important Family Planning KPI a dashboard would want to surface — is structurally guaranteed to report 0% for every row, because its denominator's multiplier ("Total Demand Factor") was added to the `Population` sheet on `02/04/2026` but never populated, and even once it is populated, the denominator's population figure (`WRA 15-49`) is itself circularly defined as equal to the very current-user count the indicator is supposed to measure against, which would make the resulting "%" a data-independent constant rather than a real coverage metric. Before building parser configs for this program, the team should: (a) decide how to model the four quarters being stacked as row-blocks within single tabs rather than one-tab-per-quarter (FLAG FP-4, likely the largest config-schema question), (b) fix or explicitly work around `CUB_A`'s wrong-quarter reference (FLAG FP-1) so annual "current users at start of year" isn't silently wrong, and (c) raise FLAG FP-2 with the DOH region team as a template still mid-edit — the "Demand Satisfied" feature was evidently added recently and is not yet functional, and should probably be excluded from Phase 1 ingestion (or explicitly marked "under construction") rather than seeded as a working indicator.

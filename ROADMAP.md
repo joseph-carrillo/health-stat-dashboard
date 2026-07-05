@@ -46,20 +46,25 @@ program end-to-end at a time**. Files land in `backend/data/<PROGRAM_CODE>/` (fo
 Recipe: `memory-bank/adding_templates.md`.
 - [x] Scaffold `backend/data/<PROGRAM_CODE>/` intake folders (10 programs)
 - [x] All 10 programs' `.xlsx` files dropped 2026-07-05 (46 files, 18 natural sub-groups)
-- [ ] **Analysis phase (in progress): 12/18 sub-groups documented** in
+- [x] **Analysis phase complete: 18/18 sub-groups documented** in
       `memory-bank/template_analysis/` — Infectious Disease (Schisto, Filariasis,
       HIV-Syphilis-HepaB, Rabies, STH, Leprosy), WASH, Demographics, Oral Health, Vital Stats
-      (Mortality, Natality), Maternal Care Prenatal. Remaining: Maternal Care Post Partum +
-      Intra Partum, NCD, Geriatric, Family Planning, Morbidity.
-- [ ] Maternal Care and Services (Prenatal analyzed; Post Partum + Intra Partum pending)
-- [ ] Family Planning Services (file dropped, analysis pending)
+      (Mortality, Natality), Maternal Care (Prenatal, Post Partum, Intra Partum), NCD, Geriatric,
+      Family Planning, Morbidity. _Done 2026-07-05, session 4._
+- [ ] **Consolidate all 18 write-ups into one Joseph-facing summary** (flagged issues,
+      sensitive-indicator list, build-priority order) — next session, before any seeding starts.
+- [ ] Maternal Care and Services (all 3 sub-groups analyzed — Prenatal, Post Partum, Intra Partum)
+- [ ] Family Planning Services (analyzed — quarters stacked as row-blocks in one tab, not one tab
+      per quarter; needs a `sheet_map` schema decision before config work)
 - [ ] Vital Statistics (Mortality + Natality analyzed; indicators/config not yet built)
-- [ ] Morbidity (file dropped, analysis pending)
+- [ ] Morbidity (analyzed — disease-as-row matrix, not location-as-row; needs ~10,400
+      auto-generated indicator codes or a `diseases` reference table, see below)
 - [ ] Infectious Disease Prevention and Control (all 6 sub-diseases analyzed; indicators/config
       not yet built — Rabies needs a parser change first, see below)
-- [ ] Non-Communicable Disease Prevention and Control (files dropped, analysis pending)
+- [ ] Non-Communicable Disease Prevention and Control (all 5 files analyzed; indicators/config
+      not yet built — `ncd_meds_nir.xlsx` needs a source-file fix, see below)
 - [ ] Oral Health Care and Services (analyzed — needs a parser change first, see below)
-- [ ] Geriatric Health (files dropped, analysis pending)
+- [ ] Geriatric Health (analyzed — 2 files; seed under existing `GERIATRIC` program code, not NCD)
 - [ ] Demographics (analyzed; needs a new `formula_type="ratio"` — not a coverage %)
 - [ ] Water, Sanitation, and Hygiene (WASH) (analyzed — `envi_sanitation_zod_nir.xlsx` Q3/Q4
       structure fix still needed from DOH before this template can be built)
@@ -73,6 +78,29 @@ Recipe: `memory-bank/adding_templates.md`.
   Oral Health's row-stacked age-group/quarter dimensions.
 - New DQC rule type for "sum of parts = / ≤ whole" reconciliation checks (Rabies groups b/d) —
   `run_dqc_rules()` only supports `over_threshold` and `sequence` today.
+- Per-column rollup override (`rollup: "last"` vs default `"sum"`) — `ncd_meds_nir.xlsx`'s
+  risk-assessment columns are year-to-date cumulative, not monthly flow; summing them for
+  quarterly/annual totals would badly overstate.
+- `sheet_map` currently maps one period to one tab; Family Planning's workbook stacks all 4
+  quarters as row-blocks within a single tab, needing either a `data_start_row`/`data_end_row`
+  pair per quarter or a different sheet_map shape entirely.
+- Morbidity is a disease-as-row matrix (indicators on rows, not columns) — needs either ~10,400
+  auto-generated indicator codes (disease × age-bracket × sex) or a dedicated `diseases`
+  reference table; also has no `psgc_column` at all (location is free-text, needs a name→PSGC
+  lookup instead of a column index).
+- Several sample source files have confirmed real bugs that must NOT be replicated in configs
+  (not template-owner's fault to wait on — these are parser/config-author decisions): NCD's
+  `ncd_meds_nir.xlsx` December sheet has 106 leftover wrong-region `#ERROR!` rows; Post Partum's
+  `post_4pnc_nir.xlsx` has a cross-age-bracket formula shift inflating completion totals;
+  Intra Partum's `intra_bw_nir.xlsx` "Live Births" is self-referential for 3 of 5 rows; Family
+  Planning's "Demand Satisfied" KPI is structurally guaranteed to report 0%; Geriatric's
+  `ncd_scimmunization_nir.xlsx` Influenza% divides by the wrong population column.
+- A recurring "DQC conditional-formatting anchored one row past real data" bug (dead-on-arrival
+  rules) recurs across NCD, Post Partum, and Geriatric files — don't port `sqref` ranges
+  verbatim into `dqc_rules`; re-derive intended logic and anchor to the config's real row extent.
+- Sensitive-indicator list needs Joseph's decision, not just HIV/Syphilis: NCD Mental Health
+  (mhGAP screening) and Morbidity's HIV/syphilis case-count rows raise the same RBAC question
+  already open for Leprosy — CLAUDE.md's "Sensitive Indicators" section may need to expand.
 
 ### Remaining
 - [ ] GeoJSON choropleth maps (`frontend/public/geojson/`)

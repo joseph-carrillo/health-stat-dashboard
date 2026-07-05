@@ -20,6 +20,48 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   `docker compose exec backend python -m pytest backend/tests/ -q` (29 tests).
 - **Clean slate for testing:** type `reset db protocols` (truncates data, keeps indicators).
 
+## Session 4 (2026-07-05, HOME) — Remaining 6 file-groups analyzed; all 18/18 done
+- **Finished the analysis phase started in Session 3.** Analyzed the last 6 sub-groups, biggest
+  first per Joseph's instruction, checking his usage % before each launch (no failures this
+  time — usage stayed low/moderate throughout): NCD (5 files), Maternal Care Post Partum (3),
+  Maternal Care Intra Partum (2), Family Planning (1), Morbidity (1), Geriatric (2) — 14 files,
+  18/18 sub-groups now documented in `memory-bank/template_analysis/`. **All Maternal Care
+  sub-groups (Prenatal, Post Partum, Intra Partum) are now complete.**
+- **Serious new bugs confirmed, not just documentation** (full detail in each file):
+  `ncd_meds_nir.xlsx` December sheet has 106 leftover rows of a different region's data, every
+  cell `#ERROR!`, shifting real NIR data down 106 rows; the same file's "monthly" sheets are
+  year-to-date cumulative (not flow) for risk-assessment columns, verified by hand-tracing
+  formulas month-by-month — summing them for rollups would badly overstate. `post_4pnc_nir.xlsx`
+  has a previously-undocumented cross-age-bracket formula shift inflating "completed 4PNC"
+  totals. `intra_bw_nir.xlsx`'s "Live Births" denominator is self-referential (circular) for 3 of
+  5 rows, making its own DQC check tautologically unable to fail, and inflating the regional
+  total by exactly 153 (traceable to a real City of Bacolod mismatch). Family Planning's
+  workbook stacks all 4 quarters as row-blocks in one tab (not one tab per quarter — a real
+  `sheet_map` schema gap), its Annual "Current User Beginning" silently pulls Q4 data instead of
+  Q1, and its "Demand Satisfied" KPI is structurally guaranteed to report 0% (denominator
+  multiplier never populated, and even fixed would be a circular constant). Morbidity is a
+  disease-as-row matrix (306 diseases × 19 ICD-10 chapters as rows, not the location-as-row
+  pattern every other file uses) — needs ~10,400 auto-generated indicator codes or a dedicated
+  `diseases` table; also confirmed column A hardcoded `'BARMM'` on every row (unrelated region,
+  leftover), and the Rate-per-100,000 column is completely non-functional (empty population
+  table, `IFERROR` masks it — a disease with 5,560 real cases still shows Rate=0). Geriatric's
+  `ncd_geriatric_nir.xlsx` sample data itself violates the exact rule its own dead DQC check was
+  built to catch (an "at least one positive" total of 0 next to real per-domain counts of
+  24-37) — the clearest live proof yet of the recurring off-by-one DQC-anchor bug (also seen in
+  NCD and Post Partum). `ncd_scimmunization_nir.xlsx`'s Influenza% formula divides by the wrong
+  population column (confirmed via formula, though this file has zero real test data to verify
+  against numerically).
+- **New cross-cutting patterns identified:** the off-by-one DQC-anchor bug (rules anchored one
+  row past real data, permanently dead) now confirmed in NCD, Post Partum, and Geriatric files.
+  A "DQC compares raw ratio to literal 100 instead of 1" scale bug confirmed in Post Partum,
+  proven dead on a real >100% row that still reports "No issue." Two more sensitive-indicator
+  questions raised (NCD Mental Health mhGAP screening; Morbidity's HIV/syphilis case rows) beyond
+  the already-open Leprosy question — CLAUDE.md's sensitive-indicator list may need Joseph's
+  expansion, not just HIV/Syphilis reactive tests.
+- **Not done this session:** the consolidated Joseph-facing summary (merge all 18 write-ups into
+  one report — flagged issues, sensitive-indicator list, build-priority order). Joseph asked to
+  do this **next session** instead. No DB/code changes this session — analysis + docs only.
+
 ## Session 3 (2026-07-05, HOME) — All 10 programs' files dropped; 12/18 file-groups analyzed
 - **Joseph dropped Excel files for all 10 remaining programs at once.** Real scope is far bigger
   than the empty-folder check at session start suggested: **46 files across 18 natural
@@ -95,19 +137,24 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   finished result for his UI check. Not yet built; would need `adding_templates.md` updated
   with a "definition of done" template when he's ready to try it. See [[working-agreement]].
 
-## Current focus (as of 2026-07-05)
+## Current focus (as of 2026-07-05, end of session 4)
 Two parallel tracks:
 1. **Go-live (v1.0.0).** `memory-bank/deployment-checklist.md` is the working checklist.
    Steps 1 (hardening) + 2 (deploy infra) DONE and verified end-to-end. Step 3 blocked on:
    Joseph buys the `.com` domain; IT hands over server IP + SSH; confirm ports 80/443.
    Then follow `RUNBOOK.md → Production — server deployment` and tag `v1.0.0`.
-2. **Building out the other 10 programs.** Files landed 2026-07-05 (46 files, 18 sub-groups —
-   see Session 3 log above). **Analysis phase in progress: 12/18 sub-groups done**, 6 remaining
-   (Post Partum, Intra Partum, NCD, Geriatric, Family Planning, Morbidity). Write-ups live in
-   `memory-bank/template_analysis/`. Do NOT start seeding indicators/configs until all 18 are
-   analyzed and Joseph has reviewed the consolidated summary — several files raised schema
+2. **Building out the other 10 programs.** Files landed 2026-07-05 (46 files, 18 sub-groups).
+   **Analysis phase COMPLETE: 18/18 sub-groups done** (Session 3: 12, Session 4: the remaining
+   6 — NCD, Post Partum, Intra Partum, Family Planning, Morbidity, Geriatric). Write-ups live in
+   `memory-bank/template_analysis/`. **Next session: build the consolidated Joseph-facing
+   summary** (merge all 18 write-ups — flagged issues, sensitive-indicator list, build-priority
+   order) — Joseph explicitly deferred this to next session rather than doing it now. Do NOT
+   start seeding indicators/configs until he's reviewed that summary — many files raised schema
    questions needing his call first (new `formula_type="rate"`, a parser change for
-   period-varying `extra_sheets`, a missing "sum of parts" DQC rule type). Recipe once resumed:
+   period-varying `extra_sheets`, a missing "sum of parts" DQC rule type, a per-column rollup
+   override for cumulative-vs-flow columns, a `sheet_map` shape for stacked-quarters-in-one-tab
+   files, and whether Morbidity needs ~10,400 auto-generated codes or a `diseases` table — full
+   list now in `ROADMAP.md`'s "Schema/parser decisions surfaced" section). Recipe once resumed:
    `memory-bank/adding_templates.md`. This is the demo content for the health-professional
    higher-ups; deployment is only the delivery vehicle.
 
@@ -144,30 +191,38 @@ Two parallel tracks:
   login. CI: pytest (29) + ruff + eslint on every push; GHCR images on version tags.
 
 ## Open work (priority order)
-1. **Finish analyzing the last 6 file-groups** (Post Partum 3, Intra Partum 2, NCD 5, Geriatric
-   2, Family Planning 1, Morbidity 1 — 14 files total), one at a time, checking Joseph's usage %
-   before each launch (no direct quota-check tool exists). Then merge all 18 into one
-   Joseph-facing summary (flagged issues, sensitive-indicator list, build priority order) before
-   any indicator seeding starts.
+1. **Build the consolidated Joseph-facing summary** merging all 18 `template_analysis/` write-ups
+   (flagged issues, sensitive-indicator list, build-priority order) — analysis phase is done,
+   this merge is the next concrete step, explicitly deferred to next session by Joseph on
+   2026-07-05. Do this before any indicator seeding starts.
 2. **Go-live Step 3** (blocked on Joseph/IT): buy domain → DNS → SSH → RUNBOOK deploy →
    smoke test → rotate admin password → tag v1.0.0 (bump package.json, cut changelog).
 3. **Per-program build (seed→config→validate→dry-run), one program at a time** — blocked on
-   item 1 above (analysis + Joseph's review) plus a few schema decisions the analysis surfaced:
-   new `formula_type="rate"` (Leprosy/Rabies/Vital Stats all need non-percentage rate multipliers
-   ×1000/×10,000/×100,000), a parser change so `extra_sheets` can support period-varying
-   sub-sheets (Rabies groups a/b/d), and a new DQC rule type for "sum of parts = whole"
-   reconciliation checks (Rabies groups b/d) — none of these are decided yet.
+   item 1 above (Joseph's review of the consolidated summary) plus several schema decisions the
+   analysis surfaced (full list in `ROADMAP.md` → "Schema/parser decisions surfaced"): new
+   `formula_type="rate"` (Leprosy/Rabies/Vital Stats need non-percentage rate multipliers
+   ×1000/×10,000/×100,000) and `formula_type="ratio"` (Demographics); a parser change so
+   `extra_sheets` can support period-varying sub-sheets (Rabies groups a/b/d); a new DQC rule
+   type for "sum of parts = whole" reconciliation checks (Rabies groups b/d); a per-column
+   rollup override (`"last"` vs `"sum"`) for `ncd_meds_nir.xlsx`'s cumulative columns; a
+   `sheet_map` shape that can handle Family Planning's quarters-stacked-in-one-tab layout; and
+   whether Morbidity needs ~10,400 auto-generated indicator codes or a `diseases` reference
+   table. None of these are decided yet.
 4. **Parked decisions** (Joseph, when ready): stash@{0} Overview Card — finish or drop (HOME
-   machine only); small-cell suppression cutoff (<5 or <10); data-dictionary draft greenlight.
+   machine only); small-cell suppression cutoff (<5 or <10); data-dictionary draft greenlight;
+   whether to expand CLAUDE.md's sensitive-indicator list beyond HIV/Syphilis (NCD Mental Health
+   mhGAP screening and Morbidity's HIV/syphilis case rows both raised this, on top of the
+   already-open Leprosy question).
 5. Remaining CHILD_CARE Immunization files 5–8 when real data arrives.
 6. Deferred refactors: split `backend/main.py` (~1200 lines) + oversized frontend pages;
    9 cosmetic ESLint warnings.
 
-## Done this session, closed out
-- ✅ 12 of 18 new-program file-groups analyzed and documented in `memory-bank/template_analysis/`
-  (see Session 3 log). No DB/code changes — analysis only.
+## Done this session (session 4), closed out
+- ✅ **All 18 of 18 new-program file-groups analyzed and documented** in
+  `memory-bank/template_analysis/` (Session 3: 12, Session 4: remaining 6 — see logs above).
+  No DB/code changes — analysis only.
 - ✅ Corrected the "10 programs still empty" assumption — files exist, nested one level deeper
-  than the initial shallow `ls` checked.
+  than the initial shallow `ls` checked (Session 3 finding, carried forward).
 
 ## Data currently in DB (this = HOME machine)
 Jan 2026 monthly (CPAB/BCG/HepaB, DPT-HiB-HepB, OPV, IPV, PCV, MMR, FIC — 6,072 rows across
