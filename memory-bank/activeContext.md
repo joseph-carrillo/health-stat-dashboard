@@ -31,8 +31,9 @@ dashboard's first `formula_type="ratio"` indicators; found along the way that
 an entry, which the original plan had missed; dry-run testing against the real file is blocked
 since it only exists on the HOME machine; (4) Joseph confirmed domain + server SSH access are in
 hand, leaving port confirmation as the sole go-live blocker, with a ~2-week live target — updated
-`deployment-checklist.md`/`ROADMAP.md` accordingly. All Session 5 code/config changes are
-uncommitted at shutdown. Also corrected two stale auto-memory files (wrong region name, an
+`deployment-checklist.md`/`ROADMAP.md` accordingly. Asked Joseph how to handle the pending
+Demographics code at shutdown; he chose to commit it together with docs/memory rather than hold
+it back — pushed as `b07ac1f`. Also corrected two stale auto-memory files (wrong region name, an
 outdated "full autonomy" preference note that now contradicts the locked working agreement).
 
 ## 2026-07-05 session 4 (HOME machine) — Remaining 6 file-groups analyzed; 18/18 done

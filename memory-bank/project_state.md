@@ -268,13 +268,9 @@ CHILD_CARE test data only. NOTE: admin's password hash is now argon2 (upgraded l
 ## Git
 - Work goes **directly on `main`** (sole developer). Push when done.
 - **2026-07-06 session (OFFICE):** pulled clean to `c2cb1e9` at startup (10 commits behind from
-  the 3 HOME sessions on 07-04/07-05). **Uncommitted at end of session** (Joseph said "park
-  this" about the Demographics build but didn't confirm commit/hold — asked explicitly, see
-  session-handoff.md): `backend/app/core/seed_indicators.py`, `backend/app/services/
-  upload_catalog.py`, `frontend/src/services/constants.js` (all modified), plus new files
-  `backend/app/services/configs/demographics_annual.json`, `.claude/skills/` (2 skills),
-  `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md`, and this session's doc/memory
-  sync itself.
+  the 3 HOME sessions on 07-04/07-05). Asked Joseph explicitly how to handle the pending code
+  (Demographics build) vs. docs/memory at shutdown, per the halt-and-ask rule — **he chose to
+  commit everything together**. Pushed as `b07ac1f`, verified (local/origin match, no "ahead").
 - **⚠️ Both stashes live on the HOME machine** (label corrected 2026-07-04): `stash@{0}`
   Overview Card WIP (parked, decision pending), `stash@{1}` "indicator-reports-area-filter"
   (unknown provenance, ask Joseph).

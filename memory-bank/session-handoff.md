@@ -2,9 +2,10 @@
 
 ## Last Updated
 2026-07-06, session 5 (OFFICE machine — consolidated summary built, 2 skills created,
-Demographics built as pilot program, go-live status updated). **Pushed commit: `c2cb1e9`**
-(unchanged this session — nothing new committed or pushed; see "Uncommitted work" below,
-this is a real gap, not an oversight).
+Demographics built as pilot program, go-live status updated). **Pushed commit: `b07ac1f`**
+(verified — local and origin match, no "ahead"). Joseph explicitly chose to commit the
+Demographics code together with docs/memory this shutdown, overriding the protocol's default
+"docs+memory only" — asked first, per the halt-and-ask rule.
 
 ## Current Objective
 Two parallel tracks:
@@ -141,11 +142,11 @@ Two parallel tracks:
 
 ## Next Session — first moves
 1. `startup protocols` (git sync FIRST, then memory; check machine-local state).
-2. **If this is the HOME machine:** finish Demographics first — dry-run parse
-   `demographics_annual` against the real `Demographics_nir.xlsx`, spot-check ≥3 cell values,
-   per `.claude/skills/add-template`'s definition of done. Then ask Joseph: commit the Session 5
-   changes now, or hold longer? Don't assume — he said "park this" but that wasn't a firm
-   commit/hold answer.
+2. **If this is the HOME machine:** the Demographics code is already committed/pushed
+   (`b07ac1f`) — pull it, then run `seed_indicators.py`/`bootstrap_db.py` to get the 50
+   DEMOGRAPHICS rows into this machine's DB too. Finish Demographics' definition of done:
+   dry-run parse `demographics_annual` against the real `Demographics_nir.xlsx`, spot-check ≥3
+   cell values, per `.claude/skills/add-template`.
 3. Ask Joseph: has IT confirmed ports 80/443 yet? If domain name + server IP haven't been shared
    in chat, ask for them so server prep can start (doesn't need ports confirmed first).
 4. Once Demographics is signed off: start the next program per the build-priority order in
@@ -159,18 +160,17 @@ Two parallel tracks:
 
 ## Machine-local state (things GitHub does NOT sync — required section per shutdown protocol)
 As of shutdown 2026-07-06, session 5 (OFFICE machine):
-- **Office machine (this one): uncommitted working-tree changes** — modified
-  `backend/app/core/seed_indicators.py`, `backend/app/services/upload_catalog.py`,
-  `frontend/src/services/constants.js`, `memory-bank/MEMORY.md`; new files
-  `backend/app/services/configs/demographics_annual.json`, `.claude/skills/` (2 skills),
-  `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md`, plus this session's own doc/memory
-  sync (ROADMAP.md, DECISIONS_LOG.md, CHANGELOG.md, deployment-checklist.md, project_state.md,
-  activeContext.md, this file). **None of this is pushed.** Joseph said "park this" about the
-  Demographics build but a firm commit-vs-hold decision wasn't reached before shutdown — ask
-  first thing next session, don't assume either way.
-- Office machine's DB: 247 CHILD_CARE + 50 DEMOGRAPHICS indicators seeded (the 50 are
-  session-local until the seed script change is committed and re-run elsewhere); own test data
-  separate from HOME's (7,538 rows in health_data/staging as of this session's startup check).
+- **Office machine (this one): clean, everything committed and pushed** (`b07ac1f`, verified).
+  Joseph explicitly chose "commit everything together now" when asked, so all of Session 5's
+  docs/memory AND the Demographics code (seed_indicators.py, upload_catalog.py, constants.js,
+  demographics_annual.json, the 2 new skills, the consolidated summary) are in git — will
+  fast-forward on the HOME machine's next pull.
+- Office machine's DB: 247 CHILD_CARE + 50 DEMOGRAPHICS indicators seeded locally — the seed
+  *script* is now committed, but running it is still a per-machine step
+  (`docker compose exec backend python backend/bootstrap_db.py` or re-run
+  `seed_indicators.py` directly) — the HOME machine's DB won't have the 50 DEMOGRAPHICS rows
+  until that's run there too. Office DB's health_data/staging test data (7,538 rows) is
+  separate from HOME's, as before.
 - **HOME machine: `stash@{0}`** = untested Overview Card feature (parked by Joseph, decision
   pending); **`stash@{1}`** = older "indicator-reports-area-filter", provenance unknown.
   Unchanged from prior sessions.
@@ -184,8 +184,9 @@ As of shutdown 2026-07-06, session 5 (OFFICE machine):
   missing `SITE_ADDRESS`/`IMAGE_TAG` (prod-only keys, expected absent in dev).
 
 ## Notes / Gotchas
-- **Uncommitted code this session — see "Machine-local state" above.** Not docs-only, unlike
-  Session 4.
+- **Committed code this session, not docs-only** — unlike Session 4. Joseph explicitly opted
+  in to committing the Demographics build before its real-file dry-run test, since it was
+  config-validated and browser-confirmed already. See `b07ac1f`.
 - **Registering a new template needs two places**: `frontend/src/services/constants.js`
   `TEMPLATES` (Indicator Reports) AND `backend/app/services/upload_catalog.py` `PROGRAMS` (the
   Upload page's actual dropdown source) — found the hard way building Demographics, now
