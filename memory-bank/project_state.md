@@ -4,7 +4,9 @@
 
 ## Phase
 **Phase 1 — FHSIS Excel upload → PostgreSQL.** Track 1 (province dashboard) active.
-**Go-live track added 2026-07-04:** deployment Steps 1+2 done; Step 3 waits on domain + server.
+**Go-live track added 2026-07-04:** deployment Steps 1+2 done. **Updated 2026-07-06:** domain
+purchased + IT has handed over server IP/SSH; the one remaining blocker is IT confirming inbound
+ports 80/443. **Target: live within ~2 weeks of 2026-07-06.**
 Phase 2 (web form input) and Track 2 (LGU/barangay) are future.
 
 ## ⚠️ STARTUP REMINDER — per-machine DB state (DBs are NOT git-synced)
@@ -19,6 +21,43 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   pytest==9.1.1 ruff==0.15.20` (requirements-dev.txt is NOT mounted into the container), then
   `docker compose exec backend python -m pytest backend/tests/ -q` (29 tests).
 - **Clean slate for testing:** type `reset db protocols` (truncates data, keeps indicators).
+
+## Session 5 (2026-07-06, OFFICE) — Consolidated summary, 2 new skills, Demographics pilot built, go-live update
+- **Built the consolidated Joseph-facing summary** (deferred from Session 4):
+  `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` — read all 18 per-group write-ups
+  and merged into decisions D1–D10, a sensitive-indicator ladder (Tier 1 policy / Tier 2
+  recommended / Tier 3 open questions), a DOH-fix list (4 files that block ingestion entirely:
+  `ncd_meds_nir.xlsx` Dec sheet, WASH sanitation Q3/Q4, Natality Q2, Filariasis MDA), and an
+  11-step build-priority order (HIV-Syphilis-HepaB recommended first for the sensitive-RBAC
+  exercise; Morbidity last as its own schema mini-phase).
+- **Created two Claude Code skills** (`.claude/skills/analyze-template`,
+  `.claude/skills/add-template`) formalizing the read-only inspection recipe and the
+  seed→config→validate→dry-run build loop (with a machine-checkable "definition of done" —
+  the goal→build→validate→loop pattern discussed 2026-07-04, now actually implemented).
+- **Built Demographics end-to-end as the pilot** (chosen for being the single simplest
+  remaining program — one file, no time-series, no age brackets): 50 `DEMO_*` indicators
+  seeded, `demographics_annual.json` config written (one combined config via `sheet_map` +
+  `extra_sheets`, not two separate configs — see ADR-019), config-validated clean via
+  `/api/validate-config`, and confirmed live in the browser Upload page (Program → Sub-Program →
+  Template all resolve correctly, "Report Year"-only period picker). **Found and fixed a real
+  gap the plan missed:** `backend/app/services/upload_catalog.py` has its own hardcoded
+  `PROGRAMS` list separate from `frontend/src/services/constants.js` — the Upload page's
+  dropdown reads from the former, Indicator Reports from the latter; both needed an entry.
+  29/29 backend tests still pass, ruff clean. **Not done:** dry-run parse + cell-value
+  spot-check against the real `Demographics_nir.xlsx`, which only exists on the HOME machine —
+  genuinely blocked here, not skipped. **All of today's code/config changes are uncommitted**
+  pending Joseph's call (see Git section below).
+- **Go-live status updated**: domain purchased, IT has handed over server IP + SSH access.
+  Only remaining blocker is IT confirming inbound ports 80/443. Joseph is targeting live within
+  ~2 weeks of 2026-07-06. `deployment-checklist.md` and `ROADMAP.md` updated accordingly. Server
+  prep (RUNBOOK.md "One-time server prep") had not yet started as of this session's end — next
+  session's likely first move once domain/IP details are shared in chat.
+- **Corrected two stale auto-memory files** (`~/.claude/projects/.../memory/`, separate from
+  this git-synced memory-bank): `project_overview.md` said "Region VII" (should be NIR) and
+  underclaimed program status; `user_preferences.md` said "full autonomy, fix everything,"
+  which now contradicts the locked propose→review→approve→build cadence documented in
+  `working-agreement.md`/`activeContext.md`. Both corrected to point at this repo's own
+  git-synced docs as the source of truth rather than duplicating them.
 
 ## Session 4 (2026-07-05, HOME) — Remaining 6 file-groups analyzed; all 18/18 done
 - **Finished the analysis phase started in Session 3.** Analyzed the last 6 sub-groups, biggest
@@ -137,26 +176,25 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   finished result for his UI check. Not yet built; would need `adding_templates.md` updated
   with a "definition of done" template when he's ready to try it. See [[working-agreement]].
 
-## Current focus (as of 2026-07-05, end of session 4)
+## Current focus (as of 2026-07-06, end of session 5)
 Two parallel tracks:
 1. **Go-live (v1.0.0).** `memory-bank/deployment-checklist.md` is the working checklist.
-   Steps 1 (hardening) + 2 (deploy infra) DONE and verified end-to-end. Step 3 blocked on:
-   Joseph buys the `.com` domain; IT hands over server IP + SSH; confirm ports 80/443.
-   Then follow `RUNBOOK.md → Production — server deployment` and tag `v1.0.0`.
-2. **Building out the other 10 programs.** Files landed 2026-07-05 (46 files, 18 sub-groups).
-   **Analysis phase COMPLETE: 18/18 sub-groups done** (Session 3: 12, Session 4: the remaining
-   6 — NCD, Post Partum, Intra Partum, Family Planning, Morbidity, Geriatric). Write-ups live in
-   `memory-bank/template_analysis/`. **Next session: build the consolidated Joseph-facing
-   summary** (merge all 18 write-ups — flagged issues, sensitive-indicator list, build-priority
-   order) — Joseph explicitly deferred this to next session rather than doing it now. Do NOT
-   start seeding indicators/configs until he's reviewed that summary — many files raised schema
-   questions needing his call first (new `formula_type="rate"`, a parser change for
-   period-varying `extra_sheets`, a missing "sum of parts" DQC rule type, a per-column rollup
-   override for cumulative-vs-flow columns, a `sheet_map` shape for stacked-quarters-in-one-tab
-   files, and whether Morbidity needs ~10,400 auto-generated codes or a `diseases` table — full
-   list now in `ROADMAP.md`'s "Schema/parser decisions surfaced" section). Recipe once resumed:
-   `memory-bank/adding_templates.md`. This is the demo content for the health-professional
-   higher-ups; deployment is only the delivery vehicle.
+   Steps 1 (hardening) + 2 (deploy infra) DONE and verified end-to-end. **Domain purchased and
+   IT has handed over server IP + SSH as of 2026-07-06** — the one remaining blocker is IT
+   confirming inbound ports 80/443. Joseph is targeting live within ~2 weeks. Next concrete step:
+   server prep (`RUNBOOK.md → Production — server deployment → One-time server prep`) once
+   domain/IP are shared in chat — doesn't need to wait on the ports confirmation.
+2. **Building out the other 10 programs.** Analysis phase COMPLETE (18/18, Session 3+4) and
+   **consolidated into one summary** (Session 5):
+   `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` — decisions D1–D10, sensitive-
+   indicator ladder, DOH fix list, 11-step build-priority order. **Demographics built as the
+   first program (pilot of the new `add-template` skill)** — indicators + config done,
+   `formula_type="ratio"` now real (was schema-only before). Blocked only on dry-run testing
+   against the real file (HOME machine). Next program per the priority order: HIV-Syphilis-
+   HepaB (recommended — smallest clean group, exercises sensitive-data RBAC end-to-end). Recipe:
+   `.claude/skills/add-template` (formalizes what was `memory-bank/adding_templates.md`). This is
+   the demo content for the health-professional higher-ups; deployment is only the delivery
+   vehicle.
 
 ## Shipped 2026-07-04 (HOME machine) — deployment infrastructure
 - **Step 1 hardening** (`da851f9`): fail-fast secrets (`app/core/env.py`; also killed a third
@@ -180,49 +218,45 @@ Two parallel tracks:
 ## Done (foundation — unchanged, still true)
 - Full stack (React 19 + FastAPI + PostgreSQL 15 + Docker) on both machines; prod compose
   now: Caddy → nginx → gunicorn → db (+ db-backup sidecar).
-- Reference data: 128 NIR locations, 11 programs, 34 periods. **Indicators: only CHILD_CARE
-  seeded (247).** Other 10 programs have 0 indicators (current focus to fix).
+- Reference data: 128 NIR locations, 11 programs, 34 periods. Indicators: CHILD_CARE (247) +
+  DEMOGRAPHICS (50, Session 5, uncommitted on the office machine as of 2026-07-06). Other 9
+  programs still have 0 indicators (current focus to fix, per the build-priority order).
 - Upload pipeline: validate-first → staging (deltas) → conflict review → approve → commit.
 - CHILD_CARE templates live: Immunization File 1 + 4, Nutrition 1–6, Sick 1–3, SBI annual.
-  16 configs in `backend/app/services/configs/`.
+  16 configs in `backend/app/services/configs/`, plus `demographics_annual.json` (uncommitted,
+  config-validated but not yet dry-run tested against a real file).
 - Analytics: Home scorecard, Overview (11-program grid + Child Care all-KPI card + Needs
   Attention), Coverage, Rankings, Trends, Indicator Reports, Data Availability, Targets.
 - Auth: JWT login (argon2 passwords), RBAC, user/role management, audit logging, rate-limited
   login. CI: pytest (29) + ruff + eslint on every push; GHCR images on version tags.
 
 ## Open work (priority order)
-1. **Build the consolidated Joseph-facing summary** merging all 18 `template_analysis/` write-ups
-   (flagged issues, sensitive-indicator list, build-priority order) — analysis phase is done,
-   this merge is the next concrete step, explicitly deferred to next session by Joseph on
-   2026-07-05. Do this before any indicator seeding starts.
-2. **Go-live Step 3** (blocked on Joseph/IT): buy domain → DNS → SSH → RUNBOOK deploy →
-   smoke test → rotate admin password → tag v1.0.0 (bump package.json, cut changelog).
-3. **Per-program build (seed→config→validate→dry-run), one program at a time** — blocked on
-   item 1 above (Joseph's review of the consolidated summary) plus several schema decisions the
-   analysis surfaced (full list in `ROADMAP.md` → "Schema/parser decisions surfaced"): new
-   `formula_type="rate"` (Leprosy/Rabies/Vital Stats need non-percentage rate multipliers
-   ×1000/×10,000/×100,000) and `formula_type="ratio"` (Demographics); a parser change so
-   `extra_sheets` can support period-varying sub-sheets (Rabies groups a/b/d); a new DQC rule
-   type for "sum of parts = whole" reconciliation checks (Rabies groups b/d); a per-column
-   rollup override (`"last"` vs `"sum"`) for `ncd_meds_nir.xlsx`'s cumulative columns; a
-   `sheet_map` shape that can handle Family Planning's quarters-stacked-in-one-tab layout; and
-   whether Morbidity needs ~10,400 auto-generated indicator codes or a `diseases` reference
-   table. None of these are decided yet.
+1. **Finish Demographics** — dry-run parse + spot-check the real `Demographics_nir.xlsx`
+   (HOME machine only), then decide whether to commit the uncommitted seed/config/upload_catalog
+   changes from Session 5 (see Git section).
+2. **Go-live Step 3** — domain + SSH already in hand (2026-07-06); waiting on IT to confirm
+   ports 80/443. Server prep can start in parallel: RUNBOOK "One-time server prep" → DNS A
+   record → deploy → smoke test → rotate admin password → tag v1.0.0. **2-week target.**
+3. **Next program per the consolidated summary's build order**: HIV-Syphilis-HepaB
+   (recommended — smallest clean group, exercises sensitive-RBAC end-to-end), then WASH water
+   file, then Maternal Care. Full 11-step order + per-group blockers/decisions:
+   `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` §5. Remaining schema/parser
+   decisions (D3–D10, since D1/D2 resolved via Demographics): split-configs for multi-sheet
+   workbooks (D3), a new DQC "reconciliation" rule type (D4), per-column rollup override (D5),
+   row-stacked-period parsing (D6), Morbidity's disease-as-row schema (D7/D10), sensitive-
+   indicator ladder confirmation (D9).
 4. **Parked decisions** (Joseph, when ready): stash@{0} Overview Card — finish or drop (HOME
    machine only); small-cell suppression cutoff (<5 or <10); data-dictionary draft greenlight;
-   whether to expand CLAUDE.md's sensitive-indicator list beyond HIV/Syphilis (NCD Mental Health
-   mhGAP screening and Morbidity's HIV/syphilis case rows both raised this, on top of the
-   already-open Leprosy question).
+   sensitive-indicator list expansion (Tier 2/3 in the consolidated summary §3 — Syphilis-
+   treated, Hepatitis B reactive, Morbidity's HIV/syphilis rows, Leprosy, NCD Mental Health).
 5. Remaining CHILD_CARE Immunization files 5–8 when real data arrives.
 6. Deferred refactors: split `backend/main.py` (~1200 lines) + oversized frontend pages;
    9 cosmetic ESLint warnings.
 
-## Done this session (session 4), closed out
-- ✅ **All 18 of 18 new-program file-groups analyzed and documented** in
-  `memory-bank/template_analysis/` (Session 3: 12, Session 4: remaining 6 — see logs above).
-  No DB/code changes — analysis only.
-- ✅ Corrected the "10 programs still empty" assumption — files exist, nested one level deeper
-  than the initial shallow `ls` checked (Session 3 finding, carried forward).
+## Done this session (session 5), closed out
+- ✅ Consolidated summary built, 2 new skills created, Demographics pilot built end-to-end
+  (indicators + config + validation + UI confirmation) — see Session 5 log above for full detail.
+- ✅ Go-live blockers narrowed from 3 to 1 (domain + SSH done; ports pending).
 
 ## Data currently in DB (this = HOME machine)
 Jan 2026 monthly (CPAB/BCG/HepaB, DPT-HiB-HepB, OPV, IPV, PCV, MMR, FIC — 6,072 rows across
@@ -233,12 +267,17 @@ CHILD_CARE test data only. NOTE: admin's password hash is now argon2 (upgraded l
 
 ## Git
 - Work goes **directly on `main`** (sole developer). Push when done.
-- **2026-07-04 session (HOME) pushed:** `da851f9` (hardening), `0edef57` (deploy infra),
-  `f1a0dc6` (argon2+fixes), plus this shutdown commit. All verified pushed.
-- **⚠️ Both stashes live on the HOME machine** (label corrected 2026-07-04 — earlier notes
-  wrongly said office): `stash@{0}` Overview Card WIP (parked, decision pending),
-  `stash@{1}` "indicator-reports-area-filter" (unknown provenance, ask Joseph).
-  Office machine should be clean at `19d6871` and fast-forwards on next pull.
+- **2026-07-06 session (OFFICE):** pulled clean to `c2cb1e9` at startup (10 commits behind from
+  the 3 HOME sessions on 07-04/07-05). **Uncommitted at end of session** (Joseph said "park
+  this" about the Demographics build but didn't confirm commit/hold — asked explicitly, see
+  session-handoff.md): `backend/app/core/seed_indicators.py`, `backend/app/services/
+  upload_catalog.py`, `frontend/src/services/constants.js` (all modified), plus new files
+  `backend/app/services/configs/demographics_annual.json`, `.claude/skills/` (2 skills),
+  `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md`, and this session's doc/memory
+  sync itself.
+- **⚠️ Both stashes live on the HOME machine** (label corrected 2026-07-04): `stash@{0}`
+  Overview Card WIP (parked, decision pending), `stash@{1}` "indicator-reports-area-filter"
+  (unknown provenance, ask Joseph).
 - `.claude/settings.local.json` gitignored (per-machine); `.claude/settings.json` is tracked.
   Raw `.xlsx` under `backend/data/` gitignored; `./backups/` gitignored.
 

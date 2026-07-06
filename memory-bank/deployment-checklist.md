@@ -56,18 +56,24 @@ No Kubernetes, no Terraform — wrong scale for one VM and one maintainer.
       (prod image build was broken on Linux), nginx IPv6 listener + healthcheck 127.0.0.1.
 
 ## Step 3 — Go live (needs domain + server access)
-- [ ] Buy the .com (Cloudflare Registrar or Namecheap, ~$10–15/yr — only cost in the plan).
-      Optional but recommended: Cloudflare free proxy in front (DDoS protection, hides server IP).
-- [ ] Point DNS A record at the server; confirm ports 80/443 open inbound (ask IT).
+**Target: live within ~2 weeks of 2026-07-06.**
+- [x] Buy the .com — **done** (domain purchased as of 2026-07-06).
+- [x] Server IP + SSH credentials — **done**, IT has handed these over as of 2026-07-06.
+- [ ] Confirm inbound ports 80/443 open (ask IT) — **the one open blocker** as of 2026-07-06.
+      Everything else in this step can proceed in parallel (DNS propagation takes time anyway).
+- [ ] Point DNS A record at the server.
+- [ ] One-time server prep (Docker install, clone repo, `.env` secrets) — can start now,
+      doesn't need ports confirmed. See `RUNBOOK.md` → "Production — server deployment" →
+      "One-time server prep".
 - [ ] SSH in, deploy, run `bootstrap_db.py`, **rotate the admin password** (repo default is
       public), set strong `.env` secrets.
 - [ ] Smoke test over HTTPS: login, upload one file, view dashboards.
 - [ ] Tag **v1.0.0**, bump `frontend/package.json`, promote CHANGELOG `[Unreleased]` → 1.0.0.
 
 ## Waiting on Joseph / IT
-- [ ] Domain name choice + purchase
-- [ ] Server IP + SSH credentials from IT
-- [ ] Confirm inbound 80/443 open on the server
+- [x] Domain name choice + purchase — done 2026-07-06.
+- [x] Server IP + SSH credentials from IT — done 2026-07-06.
+- [ ] Confirm inbound 80/443 open on the server — **still pending, the critical-path item.**
 
 ## Parallel track (the actual demo content)
 - [ ] Program build-out, one at a time, as `.xlsx` files land in `backend/data/<PROGRAM_CODE>/`

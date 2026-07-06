@@ -45,6 +45,11 @@ export const TEMPLATES = [
     label: "File 2-3 — Diarrhea & Pneumonia Treatment",
     program_code: "CHILD_CARE",
   },
+  {
+    id: "demographics_annual",
+    label: "Demographics — Facility & Workforce Density (Annual)",
+    program_code: "DEMOGRAPHICS",
+  },
 ];
 
 export const MONTHS = [

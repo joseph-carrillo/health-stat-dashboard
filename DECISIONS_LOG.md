@@ -227,3 +227,39 @@ new hashes are argon2id, legacy bcrypt hashes keep verifying, and each is re-has
 on that user's next successful login — the only moment the plaintext is available. bcrypt stays
 pinned 4.0.x (verify-only). Bootstrap creates argon2 hashes from day one. No migration script,
 no user impact; stragglers upgrade whenever they next log in.
+
+## ADR-019 — Demographics pilot: `formula_type="ratio"` and single-config snapshot templates (2026-07-06)
+
+**Context.** Demographics was chosen as the first of the 10 remaining programs to build
+(simplest: one file, no time-series dimension, no age brackets) — a pilot for the new
+`add-template` skill. Its indicators are population/households-per-resource ratios (e.g. "1
+doctor per 12,450 people") with no 100% ceiling, structurally different from every indicator
+seeded so far (all `formula_type="percentage"` or `"count"`/`"sum"`).
+
+**Decision.** Two small, additive choices, not new machinery:
+1. Use `formula_type="ratio"` for these indicators. The DB `CHECK` constraint already allowed
+   `'ratio'` and `analytics.py`'s `RATE_FORMULAS` tuple already treated it like
+   `percentage`/`rate` for sum-vs-average rollup purposes — this was dead schema until now, not
+   a new column. `denominator_source` is a bare `VARCHAR` with no population-only assumption, so
+   pointing one indicator's denominator at a `Households` raw indicator instead of `Population`
+   needed no code change either.
+2. Model the file as **one config** (`demographics_annual.json`) using the existing
+   `sheet_map` + `extra_sheets` mechanism — the same pattern `nut_mam_sam_annual.json` already
+   uses for its MAM/SAM tab pair — rather than two separate `template_id`s as the raw per-file
+   analysis doc first suggested. The two sheets (`BGY & BHS`, `Health Workers`) are unrelated
+   indicator domains sharing only PSGC/location/population columns, which is exactly the shape
+   `extra_sheets` was built for.
+
+**Not done, deliberately:** Demographics was **not** wired into Coverage.jsx, Rankings.jsx, the
+Overview `PROGRAM_FLAGSHIPS`, or the Home scorecard's percentage-style program list — those all
+assume a 0–100% coverage scale, and `analytics.py`'s `status_for()` would misclassify a raw
+ratio like 12,450 as "on target" if invoked against one. Demographics surfaces through Indicator
+Reports and Data Availability only for now, both of which render raw values without a
+coverage-status classification. Fixing `status_for()`'s 0–1 assumption for real ratio use is
+deferred until/unless a program actually needs a ratio indicator on a coverage-style page.
+
+**Trade-off:** the next non-percentage program (Leprosy/Rabies/Vital Stats, needing
+`formula_type="rate"` with a real `×1,000`/`×10,000`/`×100,000` multiplier — the
+`rate_multiplier` column already exists but has never been read by any code path) is a
+materially bigger lift than this one, since nothing currently applies that multiplier anywhere.
+Don't assume "ratio went smoothly" implies "rate will too."

@@ -51,8 +51,25 @@ Recipe: `memory-bank/adding_templates.md`.
       HIV-Syphilis-HepaB, Rabies, STH, Leprosy), WASH, Demographics, Oral Health, Vital Stats
       (Mortality, Natality), Maternal Care (Prenatal, Post Partum, Intra Partum), NCD, Geriatric,
       Family Planning, Morbidity. _Done 2026-07-05, session 4._
-- [ ] **Consolidate all 18 write-ups into one Joseph-facing summary** (flagged issues,
-      sensitive-indicator list, build-priority order) — next session, before any seeding starts.
+- [x] **Consolidated all 18 write-ups into one Joseph-facing summary** — decisions D1–D10,
+      sensitive-indicator ladder, DOH fix list, build-priority order:
+      `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md`. _Done 2026-07-06._
+- [x] **New skills added to formalize the per-program loop**: `.claude/skills/analyze-template`
+      (read-only inspection recipe) and `.claude/skills/add-template` (seed → config → validate →
+      dry-run loop with a machine-checkable definition of done). _Done 2026-07-06._
+- [~] **Demographics — first program built under the new priority order (pilot of the
+      add-template skill).** Indicators seeded (50 `DEMO_*` codes), config written
+      (`demographics_annual.json`, single combined config using `sheet_map` + `extra_sheets`,
+      not two separate configs as the raw analysis first suggested), config-validated clean via
+      `/api/validate-config`, registered in the Upload catalog (`upload_catalog.py` needed a
+      `PROGRAMS` entry too — `constants.js` alone wasn't enough, that only feeds Indicator
+      Reports) and confirmed live in the browser. **Introduces the dashboard's first
+      `formula_type="ratio"` indicators** (population/households-per-resource, no coverage %
+      ceiling) — schema already allowed the value, this is the first real use.
+      **Not yet done:** dry-run parse + spot-check against the real `Demographics_nir.xlsx` file,
+      which exists only on the HOME machine — needs to happen there (or after copying the file
+      over) before this program is fully signed off. _Built 2026-07-06, office machine;
+      uncommitted pending Joseph's call on when to commit._
 - [ ] Maternal Care and Services (all 3 sub-groups analyzed — Prenatal, Post Partum, Intra Partum)
 - [ ] Family Planning Services (analyzed — quarters stacked as row-blocks in one tab, not one tab
       per quarter; needs a `sheet_map` schema decision before config work)
@@ -65,14 +82,17 @@ Recipe: `memory-bank/adding_templates.md`.
       not yet built — `ncd_meds_nir.xlsx` needs a source-file fix, see below)
 - [ ] Oral Health Care and Services (analyzed — needs a parser change first, see below)
 - [ ] Geriatric Health (analyzed — 2 files; seed under existing `GERIATRIC` program code, not NCD)
-- [ ] Demographics (analyzed; needs a new `formula_type="ratio"` — not a coverage %)
+- [x] Demographics — built 2026-07-06 (see above); `formula_type="ratio"` now live in schema
+      and seeding, not just planned
 - [ ] Water, Sanitation, and Hygiene (WASH) (analyzed — `envi_sanitation_zod_nir.xlsx` Q3/Q4
       structure fix still needed from DOH before this template can be built)
 
 **Schema/parser decisions surfaced by the analysis, needed before seeding starts:**
-- New `formula_type` for non-percentage rate multipliers (×1,000 / ×10,000 / ×100,000) — needed
-  by Leprosy, Rabies, and both Vital Stats files; Demographics needs a `formula_type="ratio"`
-  (population-per-resource, unbounded, not a coverage %).
+- ~~New `formula_type="ratio"` for Demographics~~ — **resolved 2026-07-06**: schema already
+  allowed the value (unused until now), no migration needed; Demographics' 50 indicators use it.
+- New `formula_type` for non-percentage rate multipliers (×1,000 / ×10,000 / ×100,000) — still
+  needed by Leprosy, Rabies, and both Vital Stats files (`rate_multiplier` column exists but is
+  confirmed unused anywhere in the codebase — this would be its first real consumer).
 - Parser change: `extra_sheets` currently assumes a fixed sheet name reused every period: it
   cannot express Rabies's period-varying sub-templates (`Qtr1a`/`Qtr2a`/… vs a static tab) or
   Oral Health's row-stacked age-group/quarter dimensions.

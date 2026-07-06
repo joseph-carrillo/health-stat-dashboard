@@ -16,6 +16,13 @@ PROGRAMS = [
             {"name": "SBI (Annual)"},
         ],
     },
+    {
+        "code": "DEMOGRAPHICS",
+        "name": "Demographics",
+        "sub_programs": [
+            {"name": "Demographics"},
+        ],
+    },
 ]
 
 

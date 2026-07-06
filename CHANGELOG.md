@@ -15,6 +15,16 @@ always agree (a future CI check will enforce it).
 
 ## [Unreleased]
 
+### Added
+- **Demographics program** — first non-CHILD_CARE program built (50 indicators, single annual
+  snapshot config covering facility density and health workforce density). Introduces the
+  dashboard's first `formula_type="ratio"` indicators (population/households-per-resource, no
+  percentage ceiling). Config-validated; dry-run parse against the real source file still
+  pending (file only available on the HOME machine as of 2026-07-06).
+- Two new Claude Code skills: `analyze-template` (Excel template inspection recipe) and
+  `add-template` (seed → config → validate → dry-run build loop with a machine-checkable
+  definition of done), formalizing the per-program build process for the remaining 9 programs.
+
 ### Security
 - **Password hashing migrated to argon2** — new hashes are argon2id; existing
   bcrypt hashes still verify and upgrade to argon2 transparently on the user's

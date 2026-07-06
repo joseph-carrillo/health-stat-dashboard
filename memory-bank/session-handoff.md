@@ -1,22 +1,59 @@
 # session-handoff.md
 
 ## Last Updated
-2026-07-05, session 4 (HOME machine — remaining 6 file-groups analyzed, 18/18 total complete;
-no DB/code changes this session, docs-only). **Pushed commit: `f8cf907`** (verified — local and
-origin match, no "ahead").
+2026-07-06, session 5 (OFFICE machine — consolidated summary built, 2 skills created,
+Demographics built as pilot program, go-live status updated). **Pushed commit: `c2cb1e9`**
+(unchanged this session — nothing new committed or pushed; see "Uncommitted work" below,
+this is a real gap, not an oversight).
 
 ## Current Objective
 Two parallel tracks:
-1. **Go-live (v1.0.0)** — Steps 1+2 of `deployment-checklist.md` are DONE and verified; Step 3
-   (the actual deploy) waits only on **Joseph buying the .com domain** and **IT handing over
-   server IP + SSH** (+ confirm ports 80/443 open). When those arrive, follow
-   `RUNBOOK.md → Production — server deployment`, then tag `v1.0.0`.
-2. **Build out the 10 non-Child-Care programs** — files landed 2026-07-05: **46 files across 18
-   natural sub-groups**. **Analysis phase now COMPLETE: 18/18 sub-groups analyzed**, write-ups
-   in `memory-bank/template_analysis/`. **Next session: merge all 18 into one Joseph-facing
-   summary** (flagged issues, sensitive-indicator list, build-priority order) — Joseph explicitly
-   asked to do this next session rather than now. **Do NOT start seeding indicators/configs**
-   until that summary is built and Joseph has reviewed it.
+1. **Go-live (v1.0.0)** — Steps 1+2 done and verified. **As of 2026-07-06: domain purchased,
+   IT has handed over server IP + SSH.** Only remaining blocker: IT confirming inbound ports
+   80/443. **Joseph is targeting live within ~2 weeks of 2026-07-06.** Server prep
+   (`RUNBOOK.md → Production — server deployment → One-time server prep`) can start as soon as
+   the domain name + server IP are shared in chat — doesn't need to wait on ports.
+2. **Build out the 10 non-Child-Care programs** — analysis phase complete (18/18) and now
+   **consolidated** into `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` (decisions
+   D1–D10, sensitive-indicator ladder, DOH fix list, 11-step build-priority order). Demographics
+   built as the pilot (see below) — indicators + config done, dry-run test pending (needs the
+   HOME machine's real file). Next program per the priority order: HIV-Syphilis-HepaB.
+
+## Done This Session — Session 5 (2026-07-06, OFFICE machine)
+- **Built the consolidated Joseph-facing summary** (deferred from Session 4):
+  `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` — merged all 18 write-ups into
+  decisions D1–D10, a sensitive-indicator ladder, a DOH-fix list (4 files that block ingestion
+  entirely), and an 11-step build-priority order.
+- **Created 2 Claude Code skills**: `.claude/skills/analyze-template` (inspection recipe) and
+  `.claude/skills/add-template` (seed→config→validate→dry-run loop with a machine-checkable
+  definition of done — the goal→build→validate→loop pattern discussed 2026-07-04, now real).
+- **Built Demographics end-to-end as the pilot program** (chosen as the single simplest
+  remaining program): 50 `DEMO_*` indicators seeded (confirmed idempotent), one combined config
+  `demographics_annual.json` (`sheet_map` + `extra_sheets`, not two separate configs — ADR-019),
+  config-validated clean via `/api/validate-config`, and **confirmed working live in the
+  browser** (logged in, walked Program → Sub-Program → Template on the Upload page, saw the
+  correct annual-only period picker and filename hint). Introduces the dashboard's first
+  `formula_type="ratio"` indicators. 29/29 backend tests pass, ruff clean.
+- **Found and fixed a real gap the original plan missed**: `backend/app/services/
+  upload_catalog.py` has its own hardcoded `PROGRAMS` list, separate from
+  `frontend/src/services/constants.js` — the Upload page's dropdown reads the former, Indicator
+  Reports the latter. Both needed a Demographics entry. Corrected the `add-template` skill to
+  document this for future programs.
+- **Not done, genuinely blocked, not skipped:** dry-run parse + cell-value spot-check against
+  the real `Demographics_nir.xlsx` — the file only exists on the HOME machine (this office
+  machine's `backend/data/DEMOGRAPHICS/` only has the placeholder `.txt`). Config-structure
+  validation doesn't need the file; the actual parse test does.
+- **Go-live status updated**: Joseph confirmed the domain is purchased and IT has handed over
+  server IP + SSH. Only inbound-ports confirmation remains. ~2-week live target.
+  `deployment-checklist.md`/`ROADMAP.md` updated; DECISIONS_LOG.md got ADR-019; CHANGELOG.md
+  `[Unreleased]` got an entry.
+- **Uncommitted work at shutdown** (see "Machine-local state" below) — Joseph said "park this"
+  about Demographics but didn't explicitly say commit vs. hold; this was surfaced back to him
+  but the session ended before a firm answer. **Next session: confirm with Joseph before
+  committing**, don't assume.
+- Also corrected two stale files in the separate Claude Code auto-memory system (not this
+  git-tracked memory-bank): a wrong "Region VII" claim and an outdated "full autonomy" user
+  preference that now contradicts `working-agreement.md`.
 
 ## Done This Session — Session 4 (2026-07-05, HOME machine)
 - **Analyzed the remaining 6 file-groups** (NCD 5 files, Post Partum 3, Intra Partum 2, Family
@@ -104,37 +141,55 @@ Two parallel tracks:
 
 ## Next Session — first moves
 1. `startup protocols` (git sync FIRST, then memory; check machine-local state).
-2. Ask Joseph: domain bought? server credentials from IT? → if yes, Step 3 go-live per RUNBOOK.
-3. **Build the consolidated summary** — analysis phase is done (18/18). Read all 18 files in
-   `memory-bank/template_analysis/` and merge into one Joseph-facing report (flagged issues,
-   sensitive-indicator list, build-priority order) before any indicator seeding starts. Several
-   schema questions need his decision after that (`formula_type="rate"`/`"ratio"`,
-   period-varying `extra_sheets`, "sum of parts" DQC rule type, per-column rollup override,
-   Family Planning's stacked-quarters `sheet_map` shape, Morbidity's disease-as-row schema — see
-   `project_state.md` Open work #3 and `ROADMAP.md`'s "Schema/parser decisions surfaced").
-4. Parked decisions when Joseph's ready: stash@{0} fate (HOME machine), small-cell cutoff
-   (<5 or <10), data-dictionary greenlight, and whether to expand the sensitive-indicator list
-   (NCD Mental Health, Morbidity HIV/syphilis rows, Leprosy).
+2. **If this is the HOME machine:** finish Demographics first — dry-run parse
+   `demographics_annual` against the real `Demographics_nir.xlsx`, spot-check ≥3 cell values,
+   per `.claude/skills/add-template`'s definition of done. Then ask Joseph: commit the Session 5
+   changes now, or hold longer? Don't assume — he said "park this" but that wasn't a firm
+   commit/hold answer.
+3. Ask Joseph: has IT confirmed ports 80/443 yet? If domain name + server IP haven't been shared
+   in chat, ask for them so server prep can start (doesn't need ports confirmed first).
+4. Once Demographics is signed off: start the next program per the build-priority order in
+   `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` §5 — **HIV-Syphilis-HepaB**
+   recommended (smallest clean group, exercises sensitive-RBAC end-to-end). Use the
+   `add-template` skill.
+5. Parked decisions when Joseph's ready: stash@{0} fate (HOME machine), small-cell cutoff
+   (<5 or <10), data-dictionary greenlight, and the sensitive-indicator ladder (consolidated
+   summary §3 — Syphilis-treated, Hepatitis B reactive, Leprosy, NCD Mental Health, and whether
+   one `is_sensitive` bit is enough).
 
 ## Machine-local state (things GitHub does NOT sync — required section per shutdown protocol)
-As of shutdown 2026-07-05, session 4 (HOME machine):
-- **HOME machine (this one): `stash@{0}`** = untested Overview Card feature (parked by Joseph,
-  decision pending); **`stash@{1}`** = older "indicator-reports-area-filter", provenance
-  unknown. Unchanged from prior sessions — do not exist on the office desktop.
-- **Office machine**: should be clean at `19d6871` (or later once this session's commit is
-  pushed); will fast-forward on next pull. No known local state.
-- `backend/data/<PROGRAM>/` subfolders: **full of real `.xlsx` files on this machine** (46 files
-  across all 10 programs, dropped 2026-07-05 session 3 by Joseph — unchanged this session).
-  These raw Excel files are gitignored per `CLAUDE.md` (`Raw .xlsx under backend/data/
-  gitignored`) — they exist only on this machine, will NOT sync via git. If work resumes on a
-  different machine, the files need to be re-copied there manually, or all further
-  analysis/testing should stay on this machine until the per-program build is complete.
-- HOME machine has **no `gh` CLI** — check CI via the browser Actions tab here.
-- `.env` (per-machine): unchanged from last session (`CORS_ORIGINS=http://localhost:5173,http://localhost`).
+As of shutdown 2026-07-06, session 5 (OFFICE machine):
+- **Office machine (this one): uncommitted working-tree changes** — modified
+  `backend/app/core/seed_indicators.py`, `backend/app/services/upload_catalog.py`,
+  `frontend/src/services/constants.js`, `memory-bank/MEMORY.md`; new files
+  `backend/app/services/configs/demographics_annual.json`, `.claude/skills/` (2 skills),
+  `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md`, plus this session's own doc/memory
+  sync (ROADMAP.md, DECISIONS_LOG.md, CHANGELOG.md, deployment-checklist.md, project_state.md,
+  activeContext.md, this file). **None of this is pushed.** Joseph said "park this" about the
+  Demographics build but a firm commit-vs-hold decision wasn't reached before shutdown — ask
+  first thing next session, don't assume either way.
+- Office machine's DB: 247 CHILD_CARE + 50 DEMOGRAPHICS indicators seeded (the 50 are
+  session-local until the seed script change is committed and re-run elsewhere); own test data
+  separate from HOME's (7,538 rows in health_data/staging as of this session's startup check).
+- **HOME machine: `stash@{0}`** = untested Overview Card feature (parked by Joseph, decision
+  pending); **`stash@{1}`** = older "indicator-reports-area-filter", provenance unknown.
+  Unchanged from prior sessions.
+- **The real `Demographics_nir.xlsx` (and all 46 other program `.xlsx` files) exist only on the
+  HOME machine** — `backend/data/DEMOGRAPHICS/` here only has the placeholder `.txt`. This is
+  why Demographics' dry-run/spot-check step couldn't be completed this session — genuinely
+  blocked, not skipped. Gitignored per `CLAUDE.md`, will never sync via git.
+- Office machine has `git credential fill`-based GitHub API access documented from a prior
+  HOME-machine session; not re-verified here. No `gh` CLI confirmed on this machine either way.
+- `.env` (per-machine, office): has `DB_PASSWORD`/`JWT_SECRET_KEY` (fail-fast secrets satisfied);
+  missing `SITE_ADDRESS`/`IMAGE_TAG` (prod-only keys, expected absent in dev).
 
 ## Notes / Gotchas
-- **Uncommitted code: none.** This session was docs-only (analysis write-ups + memory sync) —
-  no application code changed.
+- **Uncommitted code this session — see "Machine-local state" above.** Not docs-only, unlike
+  Session 4.
+- **Registering a new template needs two places**: `frontend/src/services/constants.js`
+  `TEMPLATES` (Indicator Reports) AND `backend/app/services/upload_catalog.py` `PROGRAMS` (the
+  Upload page's actual dropdown source) — found the hard way building Demographics, now
+  documented in `.claude/skills/add-template` and `activeContext.md`'s "Watch out for".
 - Rate limiter: 10 bad logins/min/IP → 429; in-memory per gunicorn worker (documented).
 - Prod parity test: `docker compose -p healthstat-prod -f docker-compose.prod.yml up -d --build`
   (isolated project name — do NOT run the prod file without `-p`, it would collide with dev).
@@ -148,6 +203,9 @@ As of shutdown 2026-07-05, session 4 (HOME machine):
   redoing that whole task from scratch.
 - Changelog discipline: bump `frontend/package.json` on release; **1.0.0 = first deploy**.
 - PowerShell here-strings break for git messages — use `git commit -F <file>` or Bash heredoc.
+- Backend container needed `pip install pytest==9.1.1 ruff==0.15.20` again this session (not
+  persisted in the image, per-container install every fresh `up -d --build`) — matches the
+  already-documented per-machine gotcha in `project_state.md`.
 
 ## First Command Next Session
 ```

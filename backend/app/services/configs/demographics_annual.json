@@ -1,0 +1,109 @@
+{
+  "template_id": "DEMOGRAPHICS_ANNUAL",
+  "template_version": "2026",
+  "program_code": "DEMOGRAPHICS",
+  "source_file_pattern": "Demographics_nir",
+  "frequency": "annual",
+  "psgc_column": 0,
+  "location_column": 1,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000",
+    "Negros Island Region": "1800000000",
+    "Negros Island Region (NIR)": "1800000000",
+    "BARMM": "1800000000"
+  },
+
+  "display": {
+    "label": "Demographics - Facility & Workforce Density (Annual)",
+    "dqc_highlight": false,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City" }
+    ]
+  },
+
+  "upload": {
+    "sub_program": "Demographics",
+    "file_number": 1
+  },
+
+  "sheet_map": {
+    "annual": "BGY & BHS"
+  },
+
+  "columns": [
+    { "index": 2, "indicator_code": "DEMO_POP", "is_computed": false },
+    { "index": 3, "indicator_code": "DEMO_BGY_COUNT", "is_computed": false },
+    { "index": 4, "indicator_code": "DEMO_BGY_RATIO", "is_computed": true, "formula": "DEMO_POP / DEMO_BGY_COUNT" },
+    { "index": 5, "indicator_code": "DEMO_MUNIHC_COUNT", "is_computed": false },
+    { "index": 6, "indicator_code": "DEMO_MUNIHC_RATIO", "is_computed": true, "formula": "DEMO_POP / DEMO_MUNIHC_COUNT" },
+    { "index": 7, "indicator_code": "DEMO_CITYHC_COUNT", "is_computed": false },
+    { "index": 8, "indicator_code": "DEMO_CITYHC_RATIO", "is_computed": true, "formula": "DEMO_POP / DEMO_CITYHC_COUNT" },
+    { "index": 9, "indicator_code": "DEMO_RURALHU_COUNT", "is_computed": false },
+    { "index": 10, "indicator_code": "DEMO_RURALHU_RATIO", "is_computed": true, "formula": "DEMO_POP / DEMO_RURALHU_COUNT" },
+    { "index": 11, "indicator_code": "DEMO_TOTALHC_COUNT", "is_computed": true, "formula": "DEMO_MUNIHC_COUNT + DEMO_CITYHC_COUNT + DEMO_RURALHU_COUNT" },
+    { "index": 12, "indicator_code": "DEMO_TOTALHC_RATIO", "is_computed": true, "formula": "DEMO_POP / DEMO_TOTALHC_COUNT" },
+    { "index": 13, "indicator_code": "DEMO_BHS_COUNT", "is_computed": false },
+    { "index": 14, "indicator_code": "DEMO_BHS_RATIO", "is_computed": true, "formula": "DEMO_POP / DEMO_BHS_COUNT" }
+  ],
+
+  "extra_sheets": [
+    {
+      "sheet_name": "Health Workers",
+      "columns": [
+        { "index": 2, "indicator_code": "DEMO_POP", "is_computed": false },
+        { "index": 3, "indicator_code": "DEMO_DOCTORS_LGU", "is_computed": false },
+        { "index": 4, "indicator_code": "DEMO_DOCTORS_DOH", "is_computed": false },
+        { "index": 5, "indicator_code": "DEMO_DOCTORS_TOTAL", "is_computed": true, "formula": "DEMO_DOCTORS_LGU + DEMO_DOCTORS_DOH" },
+        { "index": 6, "indicator_code": "DEMO_DOCTORS_RATIO", "is_computed": true, "formula": "DEMO_POP / DEMO_DOCTORS_TOTAL" },
+
+        { "index": 7, "indicator_code": "DEMO_NURSES_LGU", "is_computed": false },
+        { "index": 8, "indicator_code": "DEMO_NURSES_DOH", "is_computed": false },
+        { "index": 9, "indicator_code": "DEMO_NURSES_TOTAL", "is_computed": true, "formula": "DEMO_NURSES_LGU + DEMO_NURSES_DOH" },
+        { "index": 10, "indicator_code": "DEMO_NURSES_RATIO", "is_computed": true, "formula": "DEMO_POP / DEMO_NURSES_TOTAL" },
+
+        { "index": 11, "indicator_code": "DEMO_MIDWIVES_LGU", "is_computed": false },
+        { "index": 12, "indicator_code": "DEMO_MIDWIVES_DOH", "is_computed": false },
+        { "index": 13, "indicator_code": "DEMO_MIDWIVES_TOTAL", "is_computed": true, "formula": "DEMO_MIDWIVES_LGU + DEMO_MIDWIVES_DOH" },
+        { "index": 14, "indicator_code": "DEMO_MIDWIVES_RATIO", "is_computed": true, "formula": "DEMO_POP / DEMO_MIDWIVES_TOTAL" },
+
+        { "index": 15, "indicator_code": "DEMO_DENTISTS_LGU", "is_computed": false },
+        { "index": 16, "indicator_code": "DEMO_DENTISTS_DOH", "is_computed": false },
+        { "index": 17, "indicator_code": "DEMO_DENTISTS_TOTAL", "is_computed": true, "formula": "DEMO_DENTISTS_LGU + DEMO_DENTISTS_DOH" },
+        { "index": 18, "indicator_code": "DEMO_DENTISTS_RATIO", "is_computed": true, "formula": "DEMO_POP / DEMO_DENTISTS_TOTAL" },
+
+        { "index": 19, "indicator_code": "DEMO_MEDTECH_LGU", "is_computed": false },
+        { "index": 20, "indicator_code": "DEMO_MEDTECH_DOH", "is_computed": false },
+        { "index": 21, "indicator_code": "DEMO_MEDTECH_TOTAL", "is_computed": true, "formula": "DEMO_MEDTECH_LGU + DEMO_MEDTECH_DOH" },
+        { "index": 22, "indicator_code": "DEMO_MEDTECH_RATIO", "is_computed": true, "formula": "DEMO_POP / DEMO_MEDTECH_TOTAL" },
+
+        { "index": 23, "indicator_code": "DEMO_NUTRITIONISTS_LGU", "is_computed": false },
+        { "index": 24, "indicator_code": "DEMO_NUTRITIONISTS_DOH", "is_computed": false },
+        { "index": 25, "indicator_code": "DEMO_NUTRITIONISTS_TOTAL", "is_computed": true, "formula": "DEMO_NUTRITIONISTS_LGU + DEMO_NUTRITIONISTS_DOH" },
+        { "index": 26, "indicator_code": "DEMO_NUTRITIONISTS_RATIO", "is_computed": true, "formula": "DEMO_POP / DEMO_NUTRITIONISTS_TOTAL" },
+
+        { "index": 27, "indicator_code": "DEMO_SANENGR_LGU", "is_computed": false },
+        { "index": 28, "indicator_code": "DEMO_SANENGR_DOH", "is_computed": false },
+        { "index": 29, "indicator_code": "DEMO_SANENGR_TOTAL", "is_computed": true, "formula": "DEMO_SANENGR_LGU + DEMO_SANENGR_DOH" },
+        { "index": 30, "indicator_code": "DEMO_SANENGR_RATIO", "is_computed": true, "formula": "DEMO_POP / DEMO_SANENGR_TOTAL" },
+
+        { "index": 31, "indicator_code": "DEMO_SANINSP_LGU", "is_computed": false },
+        { "index": 32, "indicator_code": "DEMO_SANINSP_DOH", "is_computed": false },
+        { "index": 33, "indicator_code": "DEMO_SANINSP_TOTAL", "is_computed": true, "formula": "DEMO_SANINSP_LGU + DEMO_SANINSP_DOH" },
+        { "index": 34, "indicator_code": "DEMO_SANINSP_RATIO", "is_computed": true, "formula": "DEMO_POP / DEMO_SANINSP_TOTAL" },
+
+        { "index": 35, "indicator_code": "DEMO_HOUSEHOLDS", "is_computed": false },
+        { "index": 36, "indicator_code": "DEMO_BHW_LGU", "is_computed": false },
+        { "index": 37, "indicator_code": "DEMO_BHW_DOH", "is_computed": false },
+        { "index": 38, "indicator_code": "DEMO_BHW_TOTAL", "is_computed": true, "formula": "DEMO_BHW_LGU + DEMO_BHW_DOH" },
+        { "index": 39, "indicator_code": "DEMO_BHW_RATIO", "is_computed": true, "formula": "DEMO_HOUSEHOLDS / DEMO_BHW_TOTAL" }
+      ]
+    }
+  ],
+
+  "notes": "Single annual snapshot file, not a recurring monthly/quarterly upload -- re-uploaded whenever DOH refreshes facility/staffing counts. 'BGY & BHS' (main sheet) and 'Health Workers' (extra sheet) are two unrelated indicator domains sharing only PSGC/location/population columns; DEMO_POP is read from both sheets under the same indicator code (harmless duplicate, matches the existing per-file population repetition pattern used elsewhere). All ratio indicators are population (or, for BHW, households) per resource -- no natural 100% ceiling, so no dqc_rules are defined here; the source file's own 'greater than 1' Excel highlight is not a meaningful threshold for these values (see memory-bank/template_analysis/demographics.md Flag D-7) and real DOH staffing/facility norms are not yet available to build a real one."
+}

@@ -2,18 +2,38 @@
 
 ## Current Session Goal (next session)
 Two parallel tracks, in whichever order inputs arrive:
-1. **Go-live Step 3** — deployment Steps 1+2 are DONE and verified (see
-   `deployment-checklist.md`). Step 3 needs: the purchased `.com` domain + server IP/SSH from
-   IT + ports 80/443 confirmed. Then: `RUNBOOK.md → Production — server deployment`, tag
-   `v1.0.0`, bump package.json, cut the changelog.
-2. **Build the consolidated Joseph-facing summary.** Analysis phase is now COMPLETE — all 18/18
-   sub-groups documented in `memory-bank/template_analysis/` (Session 3: 12, Session 4: the
-   remaining 6 — NCD, Post Partum, Intra Partum, Family Planning, Morbidity, Geriatric). Joseph
-   explicitly asked to defer the merge-into-one-summary step to next session rather than do it
-   now. Next session: read all 18 files, merge into one report (flagged issues,
-   sensitive-indicator list, build-priority order). After Joseph reviews it, several schema
-   questions need his decision before any seeding starts (see `project_state.md` → Open work #3
-   and `ROADMAP.md` → "Schema/parser decisions surfaced" for the full list).
+1. **Go-live Step 3** — domain purchased + IT has handed over server IP/SSH as of 2026-07-06;
+   only ports 80/443 confirmation is still pending. **Joseph is targeting live within ~2 weeks.**
+   Start server prep (`RUNBOOK.md → Production — server deployment → One-time server prep`)
+   as soon as the domain name + server IP are shared in chat — this doesn't need to wait on
+   ports. Then: DNS A record, deploy, smoke test, rotate admin password, tag `v1.0.0`.
+2. **Finish Demographics, then move to the next program.** Indicators + config are built and
+   config-validated (Session 5), but dry-run testing against the real `Demographics_nir.xlsx`
+   is blocked on this being the HOME machine — do that first. Then decide whether to commit the
+   Session 5 changes (Joseph said "park this" but didn't confirm commit vs. hold — check
+   session-handoff.md for how that was left). After Demographics is fully signed off, next up
+   per `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md`'s build order: **HIV-Syphilis-
+   HepaB** (recommended first — smallest clean group, exercises sensitive-data RBAC end-to-end).
+   Recipe: `.claude/skills/add-template` (new, formalizes what `adding_templates.md` used to be
+   the only source for).
+
+## 2026-07-06 session 5 (OFFICE machine) — Consolidated summary, 2 skills, Demographics pilot, go-live update
+Four things happened, in order: (1) built the consolidated summary
+(`memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md`) merging all 18 analysis write-ups
+into decisions D1–D10, a sensitive-indicator ladder, a DOH-fix list, and an 11-step build order;
+(2) created two Claude Code skills (`analyze-template`, `add-template`) to formalize the
+analysis and build loops, the latter with a machine-checkable definition-of-done (the
+goal→build→validate→loop pattern discussed 2026-07-04); (3) built Demographics end-to-end as
+the pilot program — 50 indicators, one combined config (`sheet_map` + `extra_sheets`, see
+ADR-019), config-validated, confirmed live in the browser Upload page — introducing the
+dashboard's first `formula_type="ratio"` indicators; found along the way that
+`upload_catalog.py`'s own hardcoded `PROGRAMS` list (separate from `constants.js`) also needed
+an entry, which the original plan had missed; dry-run testing against the real file is blocked
+since it only exists on the HOME machine; (4) Joseph confirmed domain + server SSH access are in
+hand, leaving port confirmation as the sole go-live blocker, with a ~2-week live target — updated
+`deployment-checklist.md`/`ROADMAP.md` accordingly. All Session 5 code/config changes are
+uncommitted at shutdown. Also corrected two stale auto-memory files (wrong region name, an
+outdated "full autonomy" preference note that now contradicts the locked working agreement).
 
 ## 2026-07-05 session 4 (HOME machine) — Remaining 6 file-groups analyzed; 18/18 done
 Finished what Session 3 started. Analyzed NCD (5 files), Post Partum (3), Intra Partum (2),
@@ -85,14 +105,19 @@ before the next. Never dump many files at once. Flag any new dependency and ask 
 See `working-agreement.md` (burnout → "manage, don't grind").
 
 ## First moves next session (after `startup protocols`)
-1. Ask Joseph: domain + server credentials in hand? → go-live Step 3.
-2. **Build the consolidated summary** — all 18/18 `template_analysis/*.md` files are done; read
-   them all and merge into one Joseph-facing report (flagged issues, sensitive-indicator list,
-   build-priority order). Do this before any indicator seeding starts.
-3. Parked, needing Joseph when ready: stash@{0} fate (HOME machine), small-cell suppression
-   cutoff, data-dictionary draft greenlight, and whether to expand CLAUDE.md's
-   sensitive-indicator list (NCD Mental Health, Morbidity HIV/syphilis rows, Leprosy — three
-   open asks now, see `project_state.md` Open work #4).
+1. If on the HOME machine: finish Demographics — dry-run parse `demographics_annual` against
+   the real `Demographics_nir.xlsx` and spot-check at least 3 cell values, per
+   `.claude/skills/add-template`'s definition of done. Then decide with Joseph whether to
+   commit the Session 5 changes.
+2. Ask Joseph: has IT confirmed ports 80/443 yet? If domain name + server IP haven't been
+   shared in chat yet, ask for them — server prep can start without waiting on ports.
+3. Once Demographics is fully signed off: start HIV-Syphilis-HepaB (next in the build-priority
+   order, `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` §5) using the
+   `add-template` skill.
+4. Parked, needing Joseph when ready: stash@{0} fate (HOME machine), small-cell suppression
+   cutoff, data-dictionary draft greenlight, and the sensitive-indicator ladder in the
+   consolidated summary §3 (Tier 2: Syphilis-treated, Hepatitis B reactive; Tier 3: Leprosy,
+   NCD Mental Health — plus whether one `is_sensitive` bit is enough or two tiers are needed).
 
 ## Watch out for
 - **`backend/data/<PROGRAM>/` folders can look empty at a shallow `ls` even when full of
@@ -115,3 +140,10 @@ See `working-agreement.md` (burnout → "manage, don't grind").
   — same project name as dev would collide.
 - The rate limiter counts per-worker in memory; dev uvicorn = exact 10/min, prod 3 workers =
   up to 3× worst case (documented, acceptable).
+- **Registering a new template needs TWO places, not one** (learned building Demographics,
+  2026-07-06): `frontend/src/services/constants.js` `TEMPLATES` feeds Indicator Reports, but the
+  **Upload page's** Program/Sub-Program dropdown reads from a separate hardcoded `PROGRAMS` list
+  in `backend/app/services/upload_catalog.py` (which then globs `configs/*.json` itself — no
+  restart needed, hot-reloads). `adding_templates.md`'s old "one frontend entry, nothing else
+  changes" claim is stale for the Upload page specifically — check both when adding a program
+  that doesn't already have a CHILD_CARE-style sub-program entry.
