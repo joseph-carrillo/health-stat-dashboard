@@ -209,6 +209,14 @@ export const getAuditLog = async (limit = 100) => {
 }
 
 // =====================================================
+// ESR REPORTS
+// =====================================================
+export const submitEsrReport = async (payload) => {
+  const response = await API.post('/esr-reports', payload)
+  return response.data
+}
+
+// =====================================================
 // TEMPLATE REPORTS (raw "Excel face")
 // =====================================================
 export const getTemplates = async () => {

@@ -44,6 +44,8 @@ services:
     volumes:
       # Live reload — host source overrides the image copy.
       - ./backend:/app/backend
+      # Google service-account key for the ESR -> Sheets push (gitignored).
+      - ./secrets:/app/secrets:ro
     ports:
       - "8000:8000"
     depends_on:

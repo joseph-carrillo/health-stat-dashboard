@@ -41,3 +41,7 @@ desktop.ini
 uploads/
 temp/
 tmp/
+
+# Google service-account credentials — never push to GitHub
+secrets/*.json
+!secrets/.gitkeep

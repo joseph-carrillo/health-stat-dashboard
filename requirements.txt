@@ -18,3 +18,6 @@ python-multipart==0.0.32
 gunicorn==26.0.0
 # Login rate limiting (in-memory, per worker).
 slowapi==0.1.9
+# Google Sheets push for ESR report submissions (Epidemiology line list).
+gspread==6.2.1
+google-auth==2.55.1

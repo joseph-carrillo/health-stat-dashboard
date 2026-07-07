@@ -27,6 +27,24 @@ docker compose exec backend python backend/bootstrap_db.py
 Creates the schema, seeds reference data (locations, programs, periods, indicators), and
 creates the `admin` user.
 
+## One-time setup — ESR reports → Google Sheets
+
+The ESR Verification Form pushes a line-list row to a Google Sheet on submit. This needs a
+one-time, manual Google Cloud setup (can't be scripted — needs your Google account):
+
+1. In [Google Cloud Console](https://console.cloud.google.com/): create or select a project,
+   enable the **Google Sheets API**, then create a **Service Account** and generate a JSON key.
+2. Save the downloaded key as `./secrets/google-service-account.json` (gitignored; the
+   `backend` container mounts `./secrets` read-only).
+3. Create the destination Google Sheet, copy its ID from the URL
+   (`https://docs.google.com/spreadsheets/d/<SHEET_ID>/edit`), and **share the Sheet with the
+   service account's `client_email`** (found inside the JSON key) as **Editor**.
+4. Set `ESR_SHEET_ID` in `.env` to that Sheet ID. `GOOGLE_SERVICE_ACCOUNT_FILE` already defaults
+   to the mounted path in `.env.example` — no change needed unless you move the file.
+
+Both env vars are read lazily (only when someone submits the form), so the app boots fine
+without them — a submission just gets `sheet_synced: false` until this is configured.
+
 ## Reset / reseed the database
 
 ```bash

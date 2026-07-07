@@ -2,6 +2,7 @@
 # Entry point for the Health Statistics Dashboard API
 # DOH-NIR CHD Philippines
 
+import json
 import os
 import shutil
 import sys
@@ -41,6 +42,8 @@ from app.services.commit import (
     approve_batch,
 )
 from app.services import analytics
+from app.services import google_sheets
+from app.schemas.esr_report import EsrReportSubmission
 
 # =====================================================
 # APP SETUP
@@ -1299,3 +1302,85 @@ def get_audit(
 ):
     """Recent audit-log entries. Admin only."""
     return {"entries": get_audit_log(limit=limit)}
+
+
+# =====================================================
+# ESR REPORTS (Event-based Surveillance and Response)
+# =====================================================
+@app.post("/api/esr-reports")
+def submit_esr_report(
+    submission: EsrReportSubmission,
+    current_user: dict = Depends(require_permission("can_submit_esr")),
+):
+    """Submit an ESR Verification Form.
+
+    Stores the full form payload as the source of record, then best-effort
+    mirrors a line-list summary row into Google Sheets for Epidemiology.
+    A Sheets failure does not fail the request — the DB write already
+    succeeded, and the Sheet can be backfilled later.
+    """
+    payload = submission.model_dump(mode="json")
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """INSERT INTO esr_reports (submitted_by, payload)
+           VALUES (%s, %s)
+           RETURNING id""",
+        (current_user.get("user_id"), json.dumps(payload)),
+    )
+    new_id = cur.fetchone()[0]
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    write_audit(
+        action="esr_submit",
+        actor=current_user,
+        entity_type="esr_report",
+        entity_id=new_id,
+        details={
+            "title": payload.get("filter_verification", {})
+            .get("description", {})
+            .get("title_of_health_event"),
+            "region": payload.get("filter_verification", {})
+            .get("description", {})
+            .get("location", {})
+            .get("region"),
+        },
+    )
+
+    sheet_synced = False
+    try:
+        google_sheets.append_esr_row(payload)
+        sheet_synced = True
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE esr_reports SET sheet_sync_status = 'synced' WHERE id = %s",
+            (new_id,),
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """UPDATE esr_reports
+               SET sheet_sync_status = 'failed', sheet_sync_error = %s
+               WHERE id = %s""",
+            (str(e), new_id),
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        write_audit(
+            action="esr_sheet_sync_failed",
+            actor=current_user,
+            entity_type="esr_report",
+            entity_id=new_id,
+            details={"error": str(e)},
+        )
+
+    return {"id": new_id, "sheet_synced": sheet_synced}

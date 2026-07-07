@@ -12,6 +12,7 @@ import Targets from "./pages/Targets";
 import DataAvailability from "./pages/DataAvailability";
 import Management from "./pages/Management";
 import Upload from "./pages/Upload";
+import EsrForm from "./pages/esr/EsrForm";
 import { getToken, can } from "./services/auth";
 
 // Protects all pages — if no token, redirect to login
@@ -46,6 +47,9 @@ export default function App() {
 
         {/* Uploaders only */}
         <Route path="/upload" element={<PermissionRoute permission="can_upload"><Upload /></PermissionRoute>} />
+
+        {/* ESR Verification Form submitters only */}
+        <Route path="/esr/new" element={<PermissionRoute permission="can_submit_esr"><EsrForm /></PermissionRoute>} />
 
         {/* Admin only */}
         <Route path="/management" element={<PermissionRoute permission="can_manage_users"><Management /></PermissionRoute>} />

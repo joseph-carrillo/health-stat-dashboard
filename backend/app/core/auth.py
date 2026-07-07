@@ -36,6 +36,7 @@ ROLES = {
         "can_view_all": True,
         "can_view_sensitive": True,
         "can_manage_users": True,
+        "can_submit_esr": True,
         "level": "region"
     },
     "data_encoder": {
@@ -44,6 +45,7 @@ ROLES = {
         "can_view_all": False,
         "can_view_sensitive": False,
         "can_manage_users": False,
+        "can_submit_esr": True,
         "level": "program"
     },
     "program_manager": {
@@ -52,6 +54,7 @@ ROLES = {
         "can_view_all": False,
         "can_view_sensitive": False,
         "can_manage_users": False,
+        "can_submit_esr": True,
         "level": "program"
     },
     "mancom": {
@@ -60,6 +63,7 @@ ROLES = {
         "can_view_all": True,
         "can_view_sensitive": False,
         "can_manage_users": False,
+        "can_submit_esr": False,
         "level": "province"
     },
     "execom": {
@@ -68,6 +72,7 @@ ROLES = {
         "can_view_all": True,
         "can_view_sensitive": False,
         "can_manage_users": False,
+        "can_submit_esr": False,
         "level": "region"
     }
 }

@@ -1,0 +1,19 @@
+-- =============================================================
+-- TABLE: esr_reports
+-- Event-based Surveillance and Response (ESR) Verification Form
+-- submissions (DOH-EB-AEHMD-QMOP-03-Form2 Rev.6). One row per
+-- submitted report, the whole form payload stored as JSONB
+-- (no listing/detail UI yet, so no need for extra query columns).
+-- Mirrored to a Google Sheet line list for Epidemiology on submit.
+-- =============================================================
+CREATE TABLE esr_reports (
+    id                  SERIAL PRIMARY KEY,
+    submitted_by        INTEGER REFERENCES users(id),
+    submitted_at        TIMESTAMP DEFAULT NOW(),
+    payload             JSONB NOT NULL,
+    sheet_sync_status   VARCHAR(20) DEFAULT 'pending'
+                        CHECK (sheet_sync_status IN ('pending','synced','failed')),
+    sheet_sync_error    TEXT
+);
+
+CREATE INDEX idx_esr_reports_submitted_by ON esr_reports(submitted_by);

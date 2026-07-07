@@ -80,6 +80,14 @@ export default function Navbar() {
             ⬆️ Upload Data
           </button>
         )}
+        {can("can_submit_esr") && (
+          <button
+            style={isActive("/esr/new") ? { ...styles.navItem, ...styles.navItemActive } : styles.navItem}
+            onClick={() => navigate("/esr/new")}
+          >
+            📝 ESR Report
+          </button>
+        )}
         <button
           style={isActive("/targets") ? { ...styles.navItem, ...styles.navItemActive } : styles.navItem}
           onClick={() => navigate("/targets")}

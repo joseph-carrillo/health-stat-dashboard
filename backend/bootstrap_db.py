@@ -27,6 +27,7 @@ SQL_FILES = [
     "seed_locations.sql",
     "seed_periods.slq",
     "seed_indicators_immunization.sql",
+    "esr_reports.slq",
 ]
 
 ADMIN = {
