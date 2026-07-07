@@ -1,14 +1,15 @@
 # session-handoff.md
 
 ## Last Updated
-2026-07-06, session 5 (OFFICE machine — consolidated summary built, 2 skills created,
-Demographics built as pilot program, go-live status updated). **Pushed commit: `b07ac1f`**
-(verified — local and origin match, no "ahead"). Joseph explicitly chose to commit the
-Demographics code together with docs/memory this shutdown, overriding the protocol's default
-"docs+memory only" — asked first, per the halt-and-ask rule.
+2026-07-07, session 6 (OFFICE machine — ESR Verification Form built end-to-end, Google Sheets
+credentials parked at Joseph's request). **Pushed commit: `dcf1f72`** (verified — `git status -sb`
+shows local and origin match exactly, no "ahead"). Joseph explicitly said "commit everything,"
+so all of Session 6's code + docs/memory are bundled into two commits: `8c9cc41` (ESR feature)
+and `dcf1f72` (UI polish + docs/memory sync) — two commits because the UI polish happened after
+the first one landed, not because of any docs-vs-code split.
 
 ## Current Objective
-Two parallel tracks:
+Three tracks:
 1. **Go-live (v1.0.0)** — Steps 1+2 done and verified. **As of 2026-07-06: domain purchased,
    IT has handed over server IP + SSH.** Only remaining blocker: IT confirming inbound ports
    80/443. **Joseph is targeting live within ~2 weeks of 2026-07-06.** Server prep
@@ -19,6 +20,49 @@ Two parallel tracks:
    D1–D10, sensitive-indicator ladder, DOH fix list, 11-step build-priority order). Demographics
    built as the pilot (see below) — indicators + config done, dry-run test pending (needs the
    HOME machine's real file). Next program per the priority order: HIV-Syphilis-HepaB.
+3. **PHRIC site + ESR reporting (new, Session 6)** — ESR Verification Form (`/esr/new`) built
+   end-to-end and verified live in the browser. Google Sheets credentials intentionally parked
+   by Joseph — one-time setup steps are in `RUNBOOK.md`, not urgent. Rest of the PHRIC public
+   site and a Google OAuth + granular-permissions overhaul (Joseph asked about this mid-scoping)
+   are both future, unscoped.
+
+## Done This Session — Session 6 (2026-07-07, OFFICE machine)
+- **Built the ESR Verification Form end-to-end** (`/esr/new`) — Epidemiology's immediate ask,
+  prompted by two new design handoffs Joseph shared (a big future PHRIC public site bundle, and
+  a dedicated, more precise handoff for just this form). Full scoping/decisions detail:
+  `project_state.md` Session 6 log, ADR-020.
+  - Backend: `esr_reports` table (JSONB payload, `sheet_sync_status`/`sheet_sync_error`), new
+    `can_submit_esr` permission (`data_encoder`/`program_manager`), `POST /api/esr-reports`
+    (codebase's **first Pydantic request model** — every other endpoint takes raw `dict`),
+    `backend/app/services/google_sheets.py` (lazy `require_env`, `gspread`). A Google Sheets
+    push failure never blocks the submission — DB is the source of record. 4 new tests
+    (permission, success+audit, Sheets-failure resilience, validation), all mocked. 33/33
+    backend tests pass, ruff clean.
+  - Frontend: 8 new files under `frontend/src/pages/esr/` recreating the dedicated handoff
+    pixel-close (own header/design system, not the app's Navbar chrome — deliberate). Route +
+    nav link gated by the new permission.
+  - **Verified live in the browser, not just unit tests**: logged in as admin, submitted a real
+    test report, confirmed the `esr_reports` DB row + both `esr_submit`/`esr_sheet_sync_failed`
+    audit entries landed correctly (Sheets intentionally unconfigured, so the failure path is
+    exactly what got exercised).
+  - **Found and fixed a real `bootstrap_db.py` bug**: `split_statements()` splits the whole SQL
+    file on every literal `;`, including ones inside `--` comments — a semicolon in a comment
+    sentence silently truncated the `CREATE TABLE` statement and the script's blanket
+    try/except reported it as "skipped (already present)" instead of failing loudly. Fixed by
+    rewording the comment (not touching the fragile splitter) — flagged in `activeContext.md`'s
+    "Watch out for" for next time a `.slq`/`.sql` file's table doesn't show up despite a clean
+    `bootstrap_db.py` run.
+  - **4 rounds of UI polish after Joseph reviewed it live**, each re-verified via screenshot:
+    centered Yes/No in the Assistance-needed table column; swapped Response's status radios for
+    a dropdown; fixed a font-fallback bug (`index.html` never loaded Poppins/Mulish at all, plus
+    one hardcoded `fontFamily` string had no fallback — both fixed); switched all 9 date/time
+    fields to native `<input type="date"/"time">` pickers (calendar/clock UI, zero new deps).
+  - **Google Sheets credentials explicitly parked** — Joseph said "let's park the google sheet
+    for now." One-time setup (service account, Sheet sharing, `ESR_SHEET_ID`) documented in
+    `RUNBOOK.md` as a self-serve pickup, not something to chase next session.
+- **Committed as instructed** ("commit everything"): `8c9cc41` (ESR feature) then `dcf1f72`
+  (UI polish + docs/memory sync) — two commits since the UI polish happened after the first
+  commit, not because of any docs-vs-code split.
 
 ## Done This Session — Session 5 (2026-07-06, OFFICE machine)
 - **Built the consolidated Joseph-facing summary** (deferred from Session 4):
@@ -142,51 +186,63 @@ Two parallel tracks:
 
 ## Next Session — first moves
 1. `startup protocols` (git sync FIRST, then memory; check machine-local state).
-2. **If this is the HOME machine:** the Demographics code is already committed/pushed
-   (`b07ac1f`) — pull it, then run `seed_indicators.py`/`bootstrap_db.py` to get the 50
-   DEMOGRAPHICS rows into this machine's DB too. Finish Demographics' definition of done:
-   dry-run parse `demographics_annual` against the real `Demographics_nir.xlsx`, spot-check ≥3
-   cell values, per `.claude/skills/add-template`.
+2. **If this is the HOME machine:** the ESR Verification Form + Demographics code are already
+   committed/pushed (`8c9cc41`, `dcf1f72`, `b07ac1f`) — pull, then run `bootstrap_db.py` to get
+   both the `esr_reports` table and the 50 DEMOGRAPHICS indicator rows into this machine's DB
+   too. Finish Demographics' definition of done: dry-run parse `demographics_annual` against the
+   real `Demographics_nir.xlsx`, spot-check ≥3 cell values, per `.claude/skills/add-template`.
 3. Ask Joseph: has IT confirmed ports 80/443 yet? If domain name + server IP haven't been shared
    in chat, ask for them so server prep can start (doesn't need ports confirmed first).
-4. Once Demographics is signed off: start the next program per the build-priority order in
+4. Ask Joseph: ready to do the Google Sheets one-time setup for ESR reports (RUNBOOK.md)? Not
+   urgent — just a self-serve pickup whenever he wants it live.
+5. Once Demographics is signed off: start the next program per the build-priority order in
    `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` §5 — **HIV-Syphilis-HepaB**
    recommended (smallest clean group, exercises sensitive-RBAC end-to-end). Use the
    `add-template` skill.
-5. Parked decisions when Joseph's ready: stash@{0} fate (HOME machine), small-cell cutoff
-   (<5 or <10), data-dictionary greenlight, and the sensitive-indicator ladder (consolidated
-   summary §3 — Syphilis-treated, Hepatitis B reactive, Leprosy, NCD Mental Health, and whether
-   one `is_sensitive` bit is enough).
+6. Parked decisions when Joseph's ready: Google OAuth + granular per-user permissions (needs its
+   own design pass, see ROADMAP.md), rest of the PHRIC public site, stash@{0} fate (HOME
+   machine), small-cell cutoff (<5 or <10), data-dictionary greenlight, and the
+   sensitive-indicator ladder (consolidated summary §3 — Syphilis-treated, Hepatitis B reactive,
+   Leprosy, NCD Mental Health, and whether one `is_sensitive` bit is enough).
 
 ## Machine-local state (things GitHub does NOT sync — required section per shutdown protocol)
-As of shutdown 2026-07-06, session 5 (OFFICE machine):
-- **Office machine (this one): clean, everything committed and pushed** (`b07ac1f`, verified).
-  Joseph explicitly chose "commit everything together now" when asked, so all of Session 5's
-  docs/memory AND the Demographics code (seed_indicators.py, upload_catalog.py, constants.js,
-  demographics_annual.json, the 2 new skills, the consolidated summary) are in git — will
-  fast-forward on the HOME machine's next pull.
-- Office machine's DB: 247 CHILD_CARE + 50 DEMOGRAPHICS indicators seeded locally — the seed
-  *script* is now committed, but running it is still a per-machine step
-  (`docker compose exec backend python backend/bootstrap_db.py` or re-run
-  `seed_indicators.py` directly) — the HOME machine's DB won't have the 50 DEMOGRAPHICS rows
-  until that's run there too. Office DB's health_data/staging test data (7,538 rows) is
-  separate from HOME's, as before.
+As of shutdown 2026-07-07, session 6 (OFFICE machine):
+- **Office machine (this one): clean, everything committed and pushed** (`dcf1f72` on top of
+  `8c9cc41`, verified below). Joseph explicitly said "commit everything," so all of Session 6's
+  ESR code + docs/memory are in git — will fast-forward on the HOME machine's next pull.
+- Office machine's DB has one real test row in the new `esr_reports` table (`id=1`, "Test
+  Measles Cluster", `sheet_sync_status='failed'` since `ESR_SHEET_ID` is intentionally unset) —
+  from this session's live browser verification. `reset db protocols` does **not** truncate this
+  table (only `health_data`/`staging_health_data`), so it'll persist across resets; harmless test
+  data, not flagged as a concern, just noting it exists so it isn't mistaken for a real report
+  later. Office DB otherwise unchanged: 247 CHILD_CARE + 50 DEMOGRAPHICS indicators,
+  health_data/staging test data (7,538 rows).
+- **`secrets/` folder created this session** (`./secrets/.gitkeep` tracked, everything else
+  gitignored) — empty except the placeholder. Google service-account JSON key goes here once
+  Joseph does the parked Sheets setup; per-machine, never synced via git by design.
 - **HOME machine: `stash@{0}`** = untested Overview Card feature (parked by Joseph, decision
   pending); **`stash@{1}`** = older "indicator-reports-area-filter", provenance unknown.
   Unchanged from prior sessions.
 - **The real `Demographics_nir.xlsx` (and all 46 other program `.xlsx` files) exist only on the
   HOME machine** — `backend/data/DEMOGRAPHICS/` here only has the placeholder `.txt`. This is
-  why Demographics' dry-run/spot-check step couldn't be completed this session — genuinely
-  blocked, not skipped. Gitignored per `CLAUDE.md`, will never sync via git.
-- Office machine has `git credential fill`-based GitHub API access documented from a prior
-  HOME-machine session; not re-verified here. No `gh` CLI confirmed on this machine either way.
+  why Demographics' dry-run/spot-check step still isn't done — genuinely blocked, not skipped.
+  Gitignored per `CLAUDE.md`, will never sync via git.
 - `.env` (per-machine, office): has `DB_PASSWORD`/`JWT_SECRET_KEY` (fail-fast secrets satisfied);
-  missing `SITE_ADDRESS`/`IMAGE_TAG` (prod-only keys, expected absent in dev).
+  missing `SITE_ADDRESS`/`IMAGE_TAG` (prod-only, expected absent in dev) and
+  `GOOGLE_SERVICE_ACCOUNT_FILE`/`ESR_SHEET_ID` (parked — both read lazily, so their absence
+  doesn't break anything except the Sheets push itself).
 
 ## Notes / Gotchas
-- **Committed code this session, not docs-only** — unlike Session 4. Joseph explicitly opted
-  in to committing the Demographics build before its real-file dry-run test, since it was
-  config-validated and browser-confirmed already. See `b07ac1f`.
+- **Committed code this session, not docs-only** — Joseph explicitly said "commit everything."
+  Two commits: `8c9cc41` (ESR feature) then `dcf1f72` (UI polish + docs/memory), not a
+  docs-vs-code split — the polish just happened after the first commit landed.
+- **`bootstrap_db.py`'s `split_statements()` breaks on semicolons inside `--` comments** — see
+  `activeContext.md`'s "Watch out for" for the full story. If a new `.slq`/`.sql` file's table
+  doesn't show up despite a clean-looking `bootstrap_db.py` run, check this first via manual
+  `psql` apply before assuming the DB itself is fine.
+- **This environment's Python fork uses `httpx2`, not `httpx`**, for FastAPI's `TestClient` —
+  pinned in `requirements-dev.txt`. Re-`pip install -r requirements-dev.txt` in the container if
+  a fresh container errors on `TestClient` import.
 - **Registering a new template needs two places**: `frontend/src/services/constants.js`
   `TEMPLATES` (Indicator Reports) AND `backend/app/services/upload_catalog.py` `PROGRAMS` (the
   Upload page's actual dropdown source) — found the hard way building Demographics, now
@@ -204,9 +260,9 @@ As of shutdown 2026-07-06, session 5 (OFFICE machine):
   redoing that whole task from scratch.
 - Changelog discipline: bump `frontend/package.json` on release; **1.0.0 = first deploy**.
 - PowerShell here-strings break for git messages — use `git commit -F <file>` or Bash heredoc.
-- Backend container needed `pip install pytest==9.1.1 ruff==0.15.20` again this session (not
-  persisted in the image, per-container install every fresh `up -d --build`) — matches the
-  already-documented per-machine gotcha in `project_state.md`.
+- Backend container needed `pip install pytest==9.1.1 ruff==0.15.20 httpx2==2.5.0` again this
+  session (not persisted in the image, per-container install every fresh `up -d --build`) —
+  matches the already-documented per-machine gotcha in `project_state.md`.
 
 ## First Command Next Session
 ```
