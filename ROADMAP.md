@@ -127,6 +127,35 @@ Recipe: `memory-bank/adding_templates.md`.
 - [ ] Deployment to IT's server (self-managed: SSH, public-facing, .com domain) — full plan in
       `memory-bank/deployment-checklist.md` (hardening → infra → go-live = v1.0.0)
 
+## PHRIC site + ESR reporting (new track, started 2026-07-07)
+Joseph shared two design handoffs for a future **PHRIC public site** (landing page + gated
+Health Statistics portal + Epidemiology Surveillance/Research/Laboratory cluster pages) —
+`design_handoff_phric_site/` and a more precise, dedicated `design_handoff_esr_verification_form/`.
+The full public site is a future/parked initiative; **only the ESR Verification Form was built
+this session**, prompted by an immediate ask from Epidemiology (a form that auto-populates a
+Google Sheets line list they already use to digest events).
+- [x] **ESR Verification Form** (`/esr/new`) — full 5-section form (Detection, Filter and
+      Verification, Assessment, Response, Report Generation) recreating the dedicated handoff
+      pixel-close, incl. native date/time pickers and Yes/No-as-radio-buttons over the
+      prototype's checkboxes. `POST /api/esr-reports` (new `can_submit_esr` permission on
+      `data_encoder`/`program_manager`) stores the full submission as JSONB
+      (`esr_reports` table) and best-effort mirrors a line-list row to Google Sheets — a Sheets
+      failure never blocks the submission (ADR-020). 4 new backend tests, ruff/eslint clean.
+      Verified end-to-end in the browser (submit → DB row → audit log; Sheets-failure path also
+      confirmed since credentials aren't configured yet).
+- [ ] **Google Sheets credentials** — parked at Joseph's request. One-time setup (service
+      account + Sheet sharing + `ESR_SHEET_ID`) documented in `RUNBOOK.md`. Until done,
+      submissions save fine but sit at `sheet_sync_status='failed'`.
+- [ ] Rest of the PHRIC site (landing page, gated Health Statistics portal, Epidemiology
+      Surveillance/Research/Laboratory cluster pages) — not started, no priority order set yet.
+- [ ] **Google OAuth login + granular per-user permissions** — Joseph asked for this during ESR
+      scoping (real "Sign in with Google" + an admin UI to set what an individual user can do,
+      not just pick one of 5 fixed roles). Explicitly deferred to its own initiative — today's
+      auth is 100% username/password JWT with permissions derived purely from a hardcoded
+      per-role dict (`backend/app/core/auth.py` `ROLES`); no per-user override exists in the
+      schema. Needs its own design pass (OAuth client setup, consent flow, a `users.permissions`
+      or similar model) before building, not bundled into the ESR form.
+
 ## Phase 2 — Web form input (future)
 - [ ] Web form mirroring the FHSIS template → PostgreSQL (replaces Excel upload)
 - [ ] Build so it does not block on Phase 1 internals

@@ -54,23 +54,19 @@ export default function EsrResponseSection({ value, onChange, esuLevel, onEsuLev
                 <input style={esrStyles.cellInput} value={value[idx]?.actions || ""} onChange={(e) => updateRow(idx, { category, actions: e.target.value })} />
               </td>
               <td style={esrStyles.td}>
-                <input style={esrStyles.cellInput} placeholder="mm/dd/yyyy" value={value[idx]?.dateStarted || ""} onChange={(e) => updateRow(idx, { category, dateStarted: e.target.value })} />
+                <input type="date" style={esrStyles.cellInput} value={value[idx]?.dateStarted || ""} onChange={(e) => updateRow(idx, { category, dateStarted: e.target.value })} />
               </td>
               <td style={{ ...esrStyles.td, padding: "8px 10px" }}>
-                <div style={{ display: "flex", gap: "10px" }}>
+                <select
+                  style={esrStyles.select}
+                  value={value[idx]?.status || ""}
+                  onChange={(e) => updateRow(idx, { category, status: e.target.value })}
+                >
+                  <option value="">Select…</option>
                   {STATUS_OPTIONS.map((opt) => (
-                    <label key={opt} style={esrStyles.chk}>
-                      <input
-                        type="radio"
-                        name={`response-status-${idx}`}
-                        style={esrStyles.checkboxInput}
-                        checked={value[idx]?.status === opt}
-                        onChange={() => updateRow(idx, { category, status: opt })}
-                      />
-                      {opt}
-                    </label>
+                    <option key={opt} value={opt}>{opt}</option>
                   ))}
-                </div>
+                </select>
               </td>
             </tr>
           ))}

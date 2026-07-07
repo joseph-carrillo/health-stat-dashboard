@@ -99,11 +99,11 @@ export default function EsrVerificationSection({ value, onChange }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           <div>
             <div style={{ ...esrStyles.fieldLabel, marginBottom: "6px" }}>Date of verification:</div>
-            <input style={esrStyles.ulInput} placeholder="mm/dd/yyyy" value={value.dateOfVerification} onChange={(e) => update({ dateOfVerification: e.target.value })} />
+            <input type="date" style={esrStyles.ulInput} value={value.dateOfVerification} onChange={(e) => update({ dateOfVerification: e.target.value })} />
           </div>
           <div>
             <div style={{ ...esrStyles.fieldLabel, marginBottom: "6px" }}>Time of verification:</div>
-            <input style={esrStyles.ulInput} placeholder="00:00 AM/PM" value={value.timeOfVerification} onChange={(e) => update({ timeOfVerification: e.target.value })} />
+            <input type="time" style={esrStyles.ulInput} value={value.timeOfVerification} onChange={(e) => update({ timeOfVerification: e.target.value })} />
           </div>
         </div>
 
@@ -161,7 +161,7 @@ export default function EsrVerificationSection({ value, onChange }) {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
             <span style={esrStyles.fieldLabel}>Date of declaration:</span>
-            <input style={esrStyles.ulInput} placeholder="mm/dd/yyyy" value={value.dateOfDeclaration} onChange={(e) => update({ dateOfDeclaration: e.target.value })} />
+            <input type="date" style={esrStyles.ulInput} value={value.dateOfDeclaration} onChange={(e) => update({ dateOfDeclaration: e.target.value })} />
           </div>
         </div>
       </div>
@@ -188,11 +188,11 @@ export default function EsrVerificationSection({ value, onChange }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           <div>
             <div style={{ ...esrStyles.fieldLabel, marginBottom: "6px" }}>Start date:</div>
-            <input style={esrStyles.ulInput} placeholder="mm/dd/yyyy" value={value.description.startDate} onChange={(e) => updateDescription({ startDate: e.target.value })} />
+            <input type="date" style={esrStyles.ulInput} value={value.description.startDate} onChange={(e) => updateDescription({ startDate: e.target.value })} />
           </div>
           <div>
             <div style={{ ...esrStyles.fieldLabel, marginBottom: "6px" }}>Latest onset:</div>
-            <input style={esrStyles.ulInput} placeholder="mm/dd/yyyy" value={value.description.latestOnset} onChange={(e) => updateDescription({ latestOnset: e.target.value })} />
+            <input type="date" style={esrStyles.ulInput} value={value.description.latestOnset} onChange={(e) => updateDescription({ latestOnset: e.target.value })} />
           </div>
         </div>
         <CountBlock title="cases" value={value.description.cases} onChange={(v) => updateDescription({ cases: v })} />

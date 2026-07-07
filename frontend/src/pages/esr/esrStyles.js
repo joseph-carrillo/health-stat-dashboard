@@ -56,6 +56,7 @@ export const esrStyles = {
 
   ulInput: { width: "100%", border: "none", borderBottom: `1px solid ${colors.inputUnderline}`, background: "transparent", padding: "6px 2px", fontSize: "15px", color: colors.textPrimary, outline: "none", fontFamily: fonts.body },
   cellInput: { width: "100%", border: "none", background: "transparent", padding: "8px 10px", fontSize: "14px", color: colors.textPrimary, outline: "none", fontFamily: fonts.body, minHeight: "40px" },
+  select: { width: "100%", border: `1px solid ${colors.inputUnderline}`, borderRadius: "6px", background: "#fff", padding: "8px 10px", fontSize: "14px", color: colors.textPrimary, outline: "none", fontFamily: fonts.body, cursor: "pointer" },
   textarea: { width: "100%", border: `1px solid ${colors.inputUnderline}`, borderRadius: "8px", background: "transparent", padding: "12px 14px", fontSize: "14.5px", color: colors.textPrimary, outline: "none", resize: "vertical", fontFamily: fonts.body },
 
   chk: { display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "14.5px", color: "#2b3543", cursor: "pointer" },

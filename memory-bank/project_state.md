@@ -18,9 +18,82 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
 - **Indicators may be stale.** Fix is idempotent:
   `docker compose exec backend python backend/bootstrap_db.py` → backfills all.
 - **pytest/ruff install per-container**: `docker compose exec backend pip install
-  pytest==9.1.1 ruff==0.15.20` (requirements-dev.txt is NOT mounted into the container), then
-  `docker compose exec backend python -m pytest backend/tests/ -q` (29 tests).
-- **Clean slate for testing:** type `reset db protocols` (truncates data, keeps indicators).
+  pytest==9.1.1 ruff==0.15.20 httpx2==2.5.0` (requirements-dev.txt is NOT mounted into the
+  container; `httpx2` — note the name, not `httpx` — is new this session, required by
+  `starlette.testclient`/FastAPI's `TestClient` for the new ESR endpoint tests), then
+  `docker compose exec backend python -m pytest backend/tests/ -q` (33 tests).
+- **Clean slate for testing:** type `reset db protocols` (truncates `health_data`/
+  `staging_health_data` only — **does not touch the new `esr_reports` table**, which has one
+  real test row from this session's browser verification, `id=1` "Test Measles Cluster").
+
+## Session 6 (2026-07-07, OFFICE) — ESR Verification Form built + Google Sheets line list (parked)
+- **Context:** Joseph shared two design handoffs — a big future **PHRIC public site** bundle
+  (`design_handoff_phric_site/`) and a **dedicated, more precise ESR Verification Form handoff**
+  (`design_handoff_esr_verification_form/`, verified against the real DOH paper form). Only the
+  ESR form was built this session, prompted by an immediate ask from Epidemiology: a form that
+  auto-populates a Google Sheets line list they already use to digest events. Full ROADMAP entry
+  under "PHRIC site + ESR reporting."
+- **Scoping decisions locked before building** (see plan file / ADR-020): custom form → our
+  FastAPI backend → Google Sheets push (not a bare Google Form); full form, not a stripped
+  subset; ship on the **existing** JWT/role system (new `can_submit_esr` permission bit) — real
+  **Google OAuth login + granular per-user permissions**, which Joseph asked about mid-scoping,
+  was explicitly deferred to its own future initiative rather than bundled in (today's auth is
+  100% username/password JWT, 100% role-derived permissions, zero per-user override anywhere in
+  the schema); `gspread` + `google-auth` approved as new Python deps; v1 is submit-only, no
+  listing/detail view (Epi reads the Sheet itself), Save Draft stays `localStorage`-only.
+- **Built end-to-end, verified in the browser, not just unit-tested:**
+  - Backend: `esr_reports` table (JSONB payload + `sheet_sync_status`/`sheet_sync_error`,
+    modeled on the `audit_log.details` JSONB precedent — the only one in the schema), new
+    `can_submit_esr` permission (`data_encoder`/`program_manager` true, `mancom`/`execom`
+    false), `POST /api/esr-reports` (**the codebase's first Pydantic request model**,
+    `app/schemas/esr_report.py` — every other endpoint takes raw `dict`, justified here by the
+    payload's depth), `backend/app/services/google_sheets.py` (lazy `require_env` reads so CI/
+    other machines aren't forced to have Google credentials just to boot or test). A Sheets
+    failure **never** fails the submission — DB write is the source of record, Sheets is a
+    best-effort mirror (ADR-020). 4 new tests (permission-gate, successful submit + audit,
+    Sheets-failure resilience, validation), all mocked (no real DB/Google API in CI) — confirmed
+    by hitting the real endpoint live: DB row + both `esr_submit`/`esr_sheet_sync_failed` audit
+    entries landed correctly with `ESR_SHEET_ID` intentionally unset.
+  - Frontend: `/esr/new` (gated route + sidebar link via the new permission), 8 new files under
+    `frontend/src/pages/esr/` recreating the dedicated handoff pixel-close — own header/design
+    system (Poppins/Mulish, green `#15764a`), not the app's Navbar chrome, since this is a
+    different visual system from today's dashboard by design. `gspread`/`google-auth` pinned at
+    whatever exact versions resolved on install (`6.2.1`/`2.55.1`), matching the repo's
+    exact-pin convention; `httpx2==2.5.0` added to `requirements-dev.txt` (test-only, needed by
+    `TestClient` — this environment's fork uses `httpx2`, not `httpx`).
+  - **Found and fixed one real bug while wiring the schema file**: `bootstrap_db.py`'s
+    `split_statements()` naively splits the whole SQL file on every `;`, **including ones inside
+    `--` comments** — a semicolon in an early comment-block sentence ("submitted report; the
+    whole form...") silently truncated the real `CREATE TABLE` statement and leaked stray
+    comment text into it, so the table wasn't created even though the script reported "skipped
+    (already present)" (a false-positive from the script's blanket try/except). Root-caused via
+    manual `psql` apply + inspecting `split_statements()`'s actual output; fixed by rewording the
+    comment to avoid the embedded semicolon, not by touching the fragile splitter itself — flag
+    this splitter fragility if a future `.slq`/`.sql` file's comments ever use semicolons in
+    prose.
+- **4 rounds of UI polish after Joseph reviewed it live**, each verified in-browser via
+  screenshot before moving on: (1) centered the Yes/No radio pair in III.d Assistance-needed's
+  table column (was left-aligned in the cell); (2) IV. Response's per-row Status changed from a
+  3-way radio cluster to a `<select>` dropdown (pending/ongoing/done); (3) fixed "Epidemiology
+  Bureau" rendering in a mismatched serif fallback font — root cause was two-fold: `index.html`
+  never actually loads Poppins/Mulish (only Barlow/Montserrat, for the rest of the dashboard),
+  and the "Epidemiology Bureau" line itself had `fontFamily: "'Poppins'"` hardcoded **with no
+  fallback stack**, unlike every other Poppins usage on the page (which goes through
+  `esrStyles.js`'s `fonts.heading` and safely falls back to `system-ui, sans-serif`) — fixed
+  both (added the Google Fonts `<link>` for Poppins/Mulish to `index.html`, switched the one
+  hardcoded string to the shared `fonts.heading` token); (4)
+    all 9 date/time fields (Detection, Filter and Verification, Assessment, Response) switched
+    from free-text `mm/dd/yyyy`/`00:00 AM/PM` inputs to native `<input type="date"/"time">` —
+    gives a real calendar/clock picker like Google Forms with zero new dependencies; values now
+    serialize as ISO date/24h-time strings instead of free text (harmless — every field is a
+    plain `Optional[str]` in the Pydantic model, no backend change needed).
+- **Not done / explicitly parked, per Joseph:** Google Sheets credentials (service account +
+  Sheet + `ESR_SHEET_ID`) — he said "let's park the google sheet for now." One-time setup steps
+  are documented in `RUNBOOK.md`'s new section so this is a self-serve pickup later, not a
+  blocker to remember contextually.
+- **Committed and pushed this session** (see Git section below) — Joseph explicitly said
+  "commit everything," matching the Session 5 precedent of bundling code with docs/memory when
+  he opts in.
 
 ## Session 5 (2026-07-06, OFFICE) — Consolidated summary, 2 new skills, Demographics pilot built, go-live update
 - **Built the consolidated Joseph-facing summary** (deferred from Session 4):
@@ -176,8 +249,8 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   finished result for his UI check. Not yet built; would need `adding_templates.md` updated
   with a "definition of done" template when he's ready to try it. See [[working-agreement]].
 
-## Current focus (as of 2026-07-06, end of session 5)
-Two parallel tracks:
+## Current focus (as of 2026-07-07, end of session 6)
+Three tracks now, running in parallel:
 1. **Go-live (v1.0.0).** `memory-bank/deployment-checklist.md` is the working checklist.
    Steps 1 (hardening) + 2 (deploy infra) DONE and verified end-to-end. **Domain purchased and
    IT has handed over server IP + SSH as of 2026-07-06** — the one remaining blocker is IT
@@ -195,6 +268,13 @@ Two parallel tracks:
    `.claude/skills/add-template` (formalizes what was `memory-bank/adding_templates.md`). This is
    the demo content for the health-professional higher-ups; deployment is only the delivery
    vehicle.
+3. **PHRIC site + ESR reporting (new, Session 6).** Full ROADMAP.md entry under "PHRIC site +
+   ESR reporting." **ESR Verification Form built end-to-end** (`/esr/new`) — Epidemiology's
+   immediate ask, a form that mirrors submissions into a Google Sheets line list. Google Sheets
+   credentials parked at Joseph's request (RUNBOOK.md has the one-time setup); the rest of the
+   PHRIC public site (landing page, gated portals, other cluster pages) and a Google OAuth +
+   granular-permissions overhaul (Joseph asked about this mid-scoping) are both explicitly
+   deferred, not started.
 
 ## Shipped 2026-07-04 (HOME machine) — deployment infrastructure
 - **Step 1 hardening** (`da851f9`): fail-fast secrets (`app/core/env.py`; also killed a third
@@ -219,25 +299,30 @@ Two parallel tracks:
 - Full stack (React 19 + FastAPI + PostgreSQL 15 + Docker) on both machines; prod compose
   now: Caddy → nginx → gunicorn → db (+ db-backup sidecar).
 - Reference data: 128 NIR locations, 11 programs, 34 periods. Indicators: CHILD_CARE (247) +
-  DEMOGRAPHICS (50, Session 5, uncommitted on the office machine as of 2026-07-06). Other 9
-  programs still have 0 indicators (current focus to fix, per the build-priority order).
+  DEMOGRAPHICS (50, committed `b07ac1f`). Other 9 programs still have 0 indicators (current
+  focus to fix, per the build-priority order).
 - Upload pipeline: validate-first → staging (deltas) → conflict review → approve → commit.
 - CHILD_CARE templates live: Immunization File 1 + 4, Nutrition 1–6, Sick 1–3, SBI annual.
-  16 configs in `backend/app/services/configs/`, plus `demographics_annual.json` (uncommitted,
-  config-validated but not yet dry-run tested against a real file).
+  16 configs in `backend/app/services/configs/`, plus `demographics_annual.json`
+  (config-validated; dry-run parse against the real file still pending, HOME machine only).
 - Analytics: Home scorecard, Overview (11-program grid + Child Care all-KPI card + Needs
   Attention), Coverage, Rankings, Trends, Indicator Reports, Data Availability, Targets.
 - Auth: JWT login (argon2 passwords), RBAC, user/role management, audit logging, rate-limited
-  login. CI: pytest (29) + ruff + eslint on every push; GHCR images on version tags.
+  login. CI: pytest (33) + ruff + eslint on every push; GHCR images on version tags.
+- **ESR Verification Form** (Session 6): `/esr/new`, `esr_reports` table (JSONB), best-effort
+  Google Sheets mirror on submit (ADR-020). Google Sheets credentials parked — see RUNBOOK.md.
 
 ## Open work (priority order)
-1. **Finish Demographics** — dry-run parse + spot-check the real `Demographics_nir.xlsx`
-   (HOME machine only), then decide whether to commit the uncommitted seed/config/upload_catalog
-   changes from Session 5 (see Git section).
-2. **Go-live Step 3** — domain + SSH already in hand (2026-07-06); waiting on IT to confirm
+1. **Google Sheets setup for ESR reports** (parked by Joseph, self-serve when ready): create the
+   Google Cloud service account + Sheet, share the Sheet with the service account's `client_email`,
+   drop the key at `./secrets/google-service-account.json`, set `ESR_SHEET_ID` in `.env`. Steps
+   in `RUNBOOK.md`. Until then, ESR submissions save fine with `sheet_sync_status='failed'`.
+2. **Finish Demographics** — dry-run parse + spot-check the real `Demographics_nir.xlsx`
+   (HOME machine only — the file doesn't exist on the office machine).
+3. **Go-live Step 3** — domain + SSH already in hand (2026-07-06); waiting on IT to confirm
    ports 80/443. Server prep can start in parallel: RUNBOOK "One-time server prep" → DNS A
    record → deploy → smoke test → rotate admin password → tag v1.0.0. **2-week target.**
-3. **Next program per the consolidated summary's build order**: HIV-Syphilis-HepaB
+4. **Next program per the consolidated summary's build order**: HIV-Syphilis-HepaB
    (recommended — smallest clean group, exercises sensitive-RBAC end-to-end), then WASH water
    file, then Maternal Care. Full 11-step order + per-group blockers/decisions:
    `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` §5. Remaining schema/parser
@@ -245,15 +330,22 @@ Two parallel tracks:
    workbooks (D3), a new DQC "reconciliation" rule type (D4), per-column rollup override (D5),
    row-stacked-period parsing (D6), Morbidity's disease-as-row schema (D7/D10), sensitive-
    indicator ladder confirmation (D9).
-4. **Parked decisions** (Joseph, when ready): stash@{0} Overview Card — finish or drop (HOME
-   machine only); small-cell suppression cutoff (<5 or <10); data-dictionary draft greenlight;
-   sensitive-indicator list expansion (Tier 2/3 in the consolidated summary §3 — Syphilis-
-   treated, Hepatitis B reactive, Morbidity's HIV/syphilis rows, Leprosy, NCD Mental Health).
-5. Remaining CHILD_CARE Immunization files 5–8 when real data arrives.
-6. Deferred refactors: split `backend/main.py` (~1200 lines) + oversized frontend pages;
+5. **Parked decisions** (Joseph, when ready): Google OAuth + granular per-user permissions
+   (needs its own design pass, see ROADMAP.md); rest of the PHRIC public site (no priority order
+   set); stash@{0} Overview Card — finish or drop (HOME machine only); small-cell suppression
+   cutoff (<5 or <10); data-dictionary draft greenlight; sensitive-indicator list expansion
+   (Tier 2/3 in the consolidated summary §3 — Syphilis-treated, Hepatitis B reactive,
+   Morbidity's HIV/syphilis rows, Leprosy, NCD Mental Health).
+6. Remaining CHILD_CARE Immunization files 5–8 when real data arrives.
+7. Deferred refactors: split `backend/main.py` (~1300 lines) + oversized frontend pages;
    9 cosmetic ESLint warnings.
 
-## Done this session (session 5), closed out
+## Done this session (session 6), closed out
+- ✅ ESR Verification Form built end-to-end (backend + frontend), verified live in the browser,
+  4 rounds of UI polish after Joseph's review — see Session 6 log above for full detail.
+- ✅ Google Sheets integration wired but credentials intentionally parked per Joseph.
+
+## Done session 5, closed out
 - ✅ Consolidated summary built, 2 new skills created, Demographics pilot built end-to-end
   (indicators + config + validation + UI confirmation) — see Session 5 log above for full detail.
 - ✅ Go-live blockers narrowed from 3 to 1 (domain + SSH done; ports pending).

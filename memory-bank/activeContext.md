@@ -1,21 +1,47 @@
 # activeContext.md
 
 ## Current Session Goal (next session)
-Two parallel tracks, in whichever order inputs arrive:
+Three tracks, in whichever order inputs arrive:
 1. **Go-live Step 3** — domain purchased + IT has handed over server IP/SSH as of 2026-07-06;
    only ports 80/443 confirmation is still pending. **Joseph is targeting live within ~2 weeks.**
    Start server prep (`RUNBOOK.md → Production — server deployment → One-time server prep`)
    as soon as the domain name + server IP are shared in chat — this doesn't need to wait on
    ports. Then: DNS A record, deploy, smoke test, rotate admin password, tag `v1.0.0`.
-2. **Finish Demographics, then move to the next program.** Indicators + config are built and
-   config-validated (Session 5), but dry-run testing against the real `Demographics_nir.xlsx`
-   is blocked on this being the HOME machine — do that first. Then decide whether to commit the
-   Session 5 changes (Joseph said "park this" but didn't confirm commit vs. hold — check
-   session-handoff.md for how that was left). After Demographics is fully signed off, next up
-   per `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md`'s build order: **HIV-Syphilis-
+2. **Finish Demographics, then move to the next program.** Indicators + config are built,
+   committed (`b07ac1f`), and config-validated (Session 5), but dry-run testing against the real
+   `Demographics_nir.xlsx` is blocked on this being the HOME machine — do that first. After
+   Demographics is fully signed off, next up per
+   `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md`'s build order: **HIV-Syphilis-
    HepaB** (recommended first — smallest clean group, exercises sensitive-data RBAC end-to-end).
    Recipe: `.claude/skills/add-template` (new, formalizes what `adding_templates.md` used to be
    the only source for).
+3. **ESR Verification Form (Session 6, done) — Google Sheets setup is the only thing left.**
+   Joseph explicitly parked it: create the Google Cloud service account + Sheet, share the
+   Sheet with the service account's email, drop the key at
+   `./secrets/google-service-account.json`, set `ESR_SHEET_ID` in `.env` — steps in
+   `RUNBOOK.md`. Not a blocker, just needs Joseph to do it whenever. Rest of the PHRIC public
+   site and the Google OAuth + granular-permissions overhaul are both future, not yet scoped.
+
+## 2026-07-07 session 6 (OFFICE machine) — ESR Verification Form built, Google Sheets parked
+Joseph shared two new design handoffs — a big future PHRIC public site bundle, and a dedicated,
+more precise handoff for just the ESR Verification Form (Epidemiology Bureau's event-based
+surveillance paper form). Scoped down to just the ESR form this session, prompted by an
+immediate ask: Epi wants a form that auto-populates a Google Sheets line list they already work
+from. Locked scoping decisions before building (full detail: `project_state.md` Session 6 log,
+ADR-020): custom form → our backend → Sheets push (not a bare Google Form); full form, not a
+subset; ship on the *existing* JWT/role system (new `can_submit_esr` permission) — Joseph's
+mid-scoping ask for real Google OAuth login + granular per-user permissions was deliberately
+**deferred to its own future initiative**, not bundled in; `gspread`/`google-auth` approved as
+new deps; submit-only v1, no listing view. Built end-to-end and verified live in the browser,
+not just unit-tested: `esr_reports` JSONB table, `POST /api/esr-reports` (codebase's first
+Pydantic model), Sheets push that never blocks submission on failure, 8 new frontend files
+recreating the handoff pixel-close. Found and fixed a real `bootstrap_db.py` bug along the way
+(`split_statements()` breaks on semicolons inside SQL comments, not just outside them — see
+"Watch out for" below). After Joseph reviewed it live, did 4 rounds of UI polish (Yes/No
+centering, a status dropdown instead of radio buttons, a font-fallback bug, native date/time
+pickers), each re-verified in the browser. Google Sheets credentials explicitly parked — "let's
+park the google sheet for now" — documented as a self-serve RUNBOOK.md pickup. Committed and
+pushed per Joseph's explicit "commit everything" instruction.
 
 ## 2026-07-06 session 5 (OFFICE machine) — Consolidated summary, 2 skills, Demographics pilot, go-live update
 Four things happened, in order: (1) built the consolidated summary
@@ -108,17 +134,18 @@ See `working-agreement.md` (burnout → "manage, don't grind").
 ## First moves next session (after `startup protocols`)
 1. If on the HOME machine: finish Demographics — dry-run parse `demographics_annual` against
    the real `Demographics_nir.xlsx` and spot-check at least 3 cell values, per
-   `.claude/skills/add-template`'s definition of done. Then decide with Joseph whether to
-   commit the Session 5 changes.
+   `.claude/skills/add-template`'s definition of done.
 2. Ask Joseph: has IT confirmed ports 80/443 yet? If domain name + server IP haven't been
    shared in chat yet, ask for them — server prep can start without waiting on ports.
-3. Once Demographics is fully signed off: start HIV-Syphilis-HepaB (next in the build-priority
+3. Ask Joseph: ready to do the Google Sheets one-time setup for ESR reports yet (RUNBOOK.md)?
+   Not urgent — submissions work fine without it, just don't sync to a Sheet yet.
+4. Once Demographics is fully signed off: start HIV-Syphilis-HepaB (next in the build-priority
    order, `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` §5) using the
    `add-template` skill.
-4. Parked, needing Joseph when ready: stash@{0} fate (HOME machine), small-cell suppression
-   cutoff, data-dictionary draft greenlight, and the sensitive-indicator ladder in the
-   consolidated summary §3 (Tier 2: Syphilis-treated, Hepatitis B reactive; Tier 3: Leprosy,
-   NCD Mental Health — plus whether one `is_sensitive` bit is enough or two tiers are needed).
+5. Parked, needing Joseph when ready: stash@{0} fate (HOME machine), small-cell suppression
+   cutoff, data-dictionary draft greenlight, the sensitive-indicator ladder in the consolidated
+   summary §3 (Tier 2: Syphilis-treated, Hepatitis B reactive; Tier 3: Leprosy, NCD Mental
+   Health), the Google OAuth + granular-permissions overhaul, and the rest of the PHRIC site.
 
 ## Watch out for
 - **`backend/data/<PROGRAM>/` folders can look empty at a shallow `ls` even when full of
@@ -148,3 +175,21 @@ See `working-agreement.md` (burnout → "manage, don't grind").
   restart needed, hot-reloads). `adding_templates.md`'s old "one frontend entry, nothing else
   changes" claim is stale for the Upload page specifically — check both when adding a program
   that doesn't already have a CHILD_CARE-style sub-program entry.
+- **`bootstrap_db.py`'s `split_statements()` breaks on semicolons inside `--` comments, not
+  just real SQL statement terminators** (found 2026-07-07 building `esr_reports.slq`): it splits
+  the whole file on every literal `;` *before* filtering comment lines, so a semicolon in
+  comment prose ("submitted report; the whole form...") silently truncates the next real
+  statement and leaks stray comment text into it — and the script's blanket try/except reports
+  this as "skipped (already present)", not a failure. No fix to the splitter itself; just avoid
+  semicolons in `.slq`/`.sql` comment prose. If a new schema file's table seems to silently not
+  get created despite `bootstrap_db.py` reporting no errors, check this first via manual `psql`
+  apply before assuming the DB is fine.
+- **The ESR form page (`/esr/new`) deliberately does NOT use the app's Navbar/sidebar chrome** —
+  it recreates the dedicated design handoff's own header/layout (dark header, Poppins/Mulish,
+  green `#15764a`), a different visual system by design. Don't "fix" this to match the rest of
+  the dashboard without checking with Joseph first — the PHRIC site tracks are intentionally a
+  separate look from today's internal dashboard.
+- **This environment's Python fork uses `httpx2`, not `httpx`**, for `starlette.testclient`
+  (FastAPI's `TestClient`) — pinned `httpx2==2.5.0` in `requirements-dev.txt`. If a future
+  endpoint test import-errors on `TestClient` needing "httpx2", this is why — it's already a
+  known dependency, just re-`pip install -r requirements-dev.txt` in the container.

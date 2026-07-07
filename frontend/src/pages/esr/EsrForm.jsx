@@ -13,7 +13,7 @@ import EsrVerificationSection from "./EsrVerificationSection";
 import EsrAssessmentSection from "./EsrAssessmentSection";
 import EsrResponseSection from "./EsrResponseSection";
 import EsrReportGenerationSection from "./EsrReportGenerationSection";
-import { esrStyles } from "./esrStyles";
+import { esrStyles, fonts } from "./esrStyles";
 import { submitEsrReport } from "../../services/api";
 
 const DRAFT_KEY = "esr_form_draft";
@@ -286,7 +286,7 @@ export default function EsrForm() {
               <div style={{ fontSize: "12px", color: "#a3835f", fontWeight: 600, letterSpacing: ".3px", marginBottom: "10px" }}>
                 DOH-EB-AEHMD-QMOP-03-Form2 Rev.6
               </div>
-              <div style={{ fontFamily: "'Poppins'", fontWeight: 700, fontSize: "22px", color: "#111826" }}>Epidemiology Bureau</div>
+              <div style={{ fontFamily: fonts.heading, fontWeight: 700, fontSize: "22px", color: "#111826" }}>Epidemiology Bureau</div>
               <div style={{ fontWeight: 700, fontSize: "15px", color: "#1f2733", marginTop: "2px" }}>
                 Event-based Surveillance and Response (ESR)
               </div>

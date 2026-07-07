@@ -105,7 +105,7 @@ export default function EsrAssessmentSection({ value, onChange }) {
         </div>
         <div style={{ flex: 1, minWidth: "220px", maxWidth: "280px" }}>
           <div style={esrStyles.fieldLabelSmall}>Date closed</div>
-          <input style={esrStyles.ulInput} placeholder="mm/dd/yyyy" value={value.status.dateClosed} onChange={(e) => updateStatus({ dateClosed: e.target.value })} />
+          <input type="date" style={esrStyles.ulInput} value={value.status.dateClosed} onChange={(e) => updateStatus({ dateClosed: e.target.value })} />
         </div>
       </div>
 
@@ -159,12 +159,14 @@ export default function EsrAssessmentSection({ value, onChange }) {
             {ASSISTANCE_CATEGORIES.map((category, idx) => (
               <tr key={category}>
                 <td style={esrStyles.tdText}>{idx + 1}. {category}</td>
-                <td style={esrStyles.td}>
-                  <EsrYesNo
-                    name={`assistance-${idx}`}
-                    value={value.assistanceNeeded[idx]?.yesNo || ""}
-                    onChange={(v) => updateAssistanceRow(idx, { category, yesNo: v })}
-                  />
+                <td style={{ ...esrStyles.td, padding: "8px 10px" }}>
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <EsrYesNo
+                      name={`assistance-${idx}`}
+                      value={value.assistanceNeeded[idx]?.yesNo || ""}
+                      onChange={(v) => updateAssistanceRow(idx, { category, yesNo: v })}
+                    />
+                  </div>
                 </td>
                 <td style={esrStyles.td}>
                   <input

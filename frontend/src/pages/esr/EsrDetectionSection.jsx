@@ -25,8 +25,8 @@ export default function EsrDetectionSection({ value, onChange }) {
           <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
             <span style={{ ...esrStyles.fieldLabel, flex: "0 0 120px" }}>Date detected:</span>
             <input
+              type="date"
               style={esrStyles.ulInput}
-              placeholder="mm/dd/yyyy"
               value={value.dateDetected}
               onChange={(e) => update({ dateDetected: e.target.value })}
             />
@@ -34,8 +34,8 @@ export default function EsrDetectionSection({ value, onChange }) {
           <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
             <span style={{ ...esrStyles.fieldLabel, flex: "0 0 120px" }}>Time detected:</span>
             <input
+              type="time"
               style={esrStyles.ulInput}
-              placeholder="00:00 AM/PM"
               value={value.timeDetected}
               onChange={(e) => update({ timeDetected: e.target.value })}
             />

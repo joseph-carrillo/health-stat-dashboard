@@ -263,3 +263,23 @@ deferred until/unless a program actually needs a ratio indicator on a coverage-s
 `rate_multiplier` column already exists but has never been read by any code path) is a
 materially bigger lift than this one, since nothing currently applies that multiplier anywhere.
 Don't assume "ratio went smoothly" implies "rate will too."
+
+## ADR-020 — ESR reports: JSONB storage + best-effort Google Sheets mirror
+**Status:** Accepted · **Date:** 2026-07-07
+Epidemiology's ESR Verification Form (`POST /api/esr-reports`) stores the whole submitted form
+as one `JSONB` column (`esr_reports.payload`) rather than modeling ~40 fields as narrow/tall
+`health_data`-style rows — this is an event-based form submission, not a periodic indicator
+value, so the narrow/tall schema doesn't fit; the only existing JSONB precedent in this schema
+is `audit_log.details`. On submit, the backend also attempts to push a flattened summary row
+into a Google Sheet (`gspread`, service-account auth) that Epidemiology already uses as a line
+list. **The Sheets push is best-effort and never fails the request** — the Postgres row is the
+source of record; `sheet_sync_status` (`pending`/`synced`/`failed`) plus `sheet_sync_error`
+track whether the mirror succeeded, and a failed sync can be backfilled later without losing the
+submission. **Why:** an external API (rate limits, credential expiry, network) must not be able
+to block a surveillance report from being recorded. **Trade-off:** v1 has no listing/detail view
+in our own UI — Epidemiology reads history from the Sheet itself; a failed sync is currently only
+visible via the DB column or audit log (`esr_sheet_sync_failed`), not surfaced to the submitter
+beyond a soft "will sync shortly" message. This also introduces the codebase's first Pydantic
+request model (`app/schemas/esr_report.py`) — every other endpoint validates via raw `dict` —
+justified here by the payload's depth (nested objects/arrays) making hand validation error-prone;
+not (yet) applied retroactively to existing endpoints.

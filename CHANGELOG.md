@@ -16,6 +16,15 @@ always agree (a future CI check will enforce it).
 ## [Unreleased]
 
 ### Added
+- **ESR Verification Form** (`/esr/new`) — Epidemiology asked for a way to submit event-based
+  surveillance reports that auto-populate a line list they already work from. New
+  `can_submit_esr` permission (`data_encoder`, `program_manager`); `POST /api/esr-reports` stores
+  the full form as JSONB (source of truth) and best-effort mirrors a summary row into a Google
+  Sheet via `gspread` — a Sheets failure never blocks the submission (see ADR-020). Frontend
+  recreates the dedicated ESR design handoff pixel-close, including native `<input type="date"
+  /time">` pickers and a Yes/No-as-radio-buttons fix over the prototype's checkboxes. Google
+  Sheets credentials are parked for now (`RUNBOOK.md` has the one-time setup); submissions save
+  fine in the meantime with `sheet_sync_status='failed'`.
 - **Demographics program** — first non-CHILD_CARE program built (50 indicators, single annual
   snapshot config covering facility density and health workforce density). Introduces the
   dashboard's first `formula_type="ratio"` indicators (population/households-per-resource, no
