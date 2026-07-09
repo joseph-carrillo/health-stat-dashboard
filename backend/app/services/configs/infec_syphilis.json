@@ -1,0 +1,68 @@
+{
+  "template_id": "INFEC_SYPHILIS",
+  "template_version": "2026",
+  "program_code": "INFECTIOUS_DISEASE",
+  "source_file_pattern": "infec_syphilis_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000",
+    "NIRA": "1800000000",
+    "Negros Island Region": "1800000000",
+    "Negros Island Region (NIR)": "1800000000",
+    "BARMM": "1800000000"
+  },
+
+  "display": {
+    "label": "Syphilis — Antenatal Screening, Reactive & Treated (Pregnant Women)",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City, Municipality" }
+    ]
+  },
+
+  "upload": {
+    "sub_program": "Infectious Disease",
+    "file_number": 3
+  },
+
+  "sheet_map": {
+    "1": "Qtr1",
+    "2": "Qtr2",
+    "3": "Qtr3",
+    "4": "Qtr4"
+  },
+
+  "columns": [
+    { "index": 3, "indicator_code": "SYPH_POP_U1", "is_computed": false },
+    { "index": 4, "indicator_code": "SYPH_SCREEN_10_14", "is_computed": false },
+    { "index": 5, "indicator_code": "SYPH_SCREEN_15_19", "is_computed": false },
+    { "index": 6, "indicator_code": "SYPH_SCREEN_20_49", "is_computed": false },
+    { "index": 7, "indicator_code": "SYPH_SCREEN_TOTAL", "is_computed": true, "formula": "SYPH_SCREEN_10_14 + SYPH_SCREEN_15_19 + SYPH_SCREEN_20_49" },
+    { "index": 8, "indicator_code": "SYPH_SCREEN_PCT", "is_computed": true, "formula": "SYPH_SCREEN_TOTAL / SYPH_POP_U1" },
+    { "index": 9, "indicator_code": "SYPH_REACTIVE_10_14", "is_computed": false },
+    { "index": 10, "indicator_code": "SYPH_REACTIVE_15_19", "is_computed": false },
+    { "index": 11, "indicator_code": "SYPH_REACTIVE_20_49", "is_computed": false },
+    { "index": 12, "indicator_code": "SYPH_REACTIVE_TOTAL", "is_computed": true, "formula": "SYPH_REACTIVE_10_14 + SYPH_REACTIVE_15_19 + SYPH_REACTIVE_20_49" },
+    { "index": 13, "indicator_code": "SYPH_REACTIVE_PCT", "is_computed": true, "formula": "SYPH_REACTIVE_TOTAL / SYPH_SCREEN_TOTAL" },
+    { "index": 14, "indicator_code": "SYPH_TREATED_10_14", "is_computed": false },
+    { "index": 15, "indicator_code": "SYPH_TREATED_15_19", "is_computed": false },
+    { "index": 16, "indicator_code": "SYPH_TREATED_20_49", "is_computed": false },
+    { "index": 17, "indicator_code": "SYPH_TREATED_TOTAL", "is_computed": true, "formula": "SYPH_TREATED_10_14 + SYPH_TREATED_15_19 + SYPH_TREATED_20_49" },
+    { "index": 18, "indicator_code": "SYPH_TREATED_PCT", "is_computed": true, "formula": "SYPH_TREATED_TOTAL / SYPH_REACTIVE_TOTAL" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "SYPH_SCREEN_PCT", "threshold": 2.0, "numerator_code": "SYPH_SCREEN_TOTAL", "denominator_code": "SYPH_POP_U1", "message": "Syphilis screening coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "SYPH_REACTIVE_PCT", "threshold": 1.0, "numerator_code": "SYPH_REACTIVE_TOTAL", "denominator_code": "SYPH_SCREEN_TOTAL", "message": "Reactive-for-Syphilis count exceeds screened count (over 100%)", "hint": "Reactive cases are a subset of those screened, so this should never exceed 100%. Check the source file — likely a transcription error." },
+    { "rule_type": "over_threshold", "indicator_code": "SYPH_TREATED_PCT", "threshold": 1.0, "numerator_code": "SYPH_TREATED_TOTAL", "denominator_code": "SYPH_REACTIVE_TOTAL", "message": "Treated-for-Syphilis count exceeds reactive count (over 100%)", "hint": "Only reactive women are eligible for treatment, so this should never exceed 100%. Check the source file — likely a transcription error." }
+  ],
+
+  "notes": "5 extra columns (14-18, 'treated') vs infec_hiv.json/infec_hepatitisb.json's 14-column layout — confirmed intentional via change_log (syphilis has a curative antenatal treatment protocol HIV/HepB don't). All REACTIVE and TREATED columns are is_sensitive=True (treated implies reactive status, so it carries the same disclosure risk) — confirmed with Joseph 2026-07-09. KNOWN DATA-QUALITY ISSUE (do not silently fix): the source file's Population column (SYPH_POP_U1) is blank/NaN in every sample row across all quarters, while the same column is populated in the HIV/HepB files for the same period/locations — this is specific to the Syphilis file, not a sitewide gap. SYPH_SCREEN_PCT will compute as 0 or null for every row until DOH corrects this; flag to the data owner rather than trusting the percentage. Quarterly upload only; Annual sheet is a pure rollup, not ingested."
+}

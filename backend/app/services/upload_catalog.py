@@ -23,6 +23,13 @@ PROGRAMS = [
             {"name": "Demographics"},
         ],
     },
+    {
+        "code": "INFECTIOUS_DISEASE",
+        "name": "Infectious Disease Prevention and Control",
+        "sub_programs": [
+            {"name": "Infectious Disease"},
+        ],
+    },
 ]
 
 

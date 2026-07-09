@@ -29,8 +29,16 @@ Repo: health-stat-dashboard (private)
 ## Sensitive Indicators
 - HIV reactive cases
 - Syphilis reactive cases
+- Syphilis treated cases (being treated discloses reactive status)
+- Hepatitis B reactive cases
+- Morbidity template's HIV/Syphilis disease-count rows (once Morbidity is built)
+- Leprosy (stigma-based; small province-level counts can identify individuals)
+- NCD Mental Health / mhGAP screening (same stigma rationale as Leprosy)
 - These require extra RBAC restrictions at API level
 - Dashboard shows aggregated totals only for unauthorized roles
+
+*(Expanded 2026-07-09 from the original HIV/Syphilis-reactive-only policy — see
+`memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` §3 for the tier rationale.)*
 
 ## Current Status
 See progress.md

@@ -1,0 +1,62 @@
+{
+  "template_id": "INFEC_HEPATITISB",
+  "template_version": "2026",
+  "program_code": "INFECTIOUS_DISEASE",
+  "source_file_pattern": "infec_hepatitisb_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000",
+    "NIRA": "1800000000",
+    "Negros Island Region": "1800000000",
+    "Negros Island Region (NIR)": "1800000000",
+    "BARMM": "1800000000"
+  },
+
+  "display": {
+    "label": "Hepatitis B — Antenatal Screening (Pregnant Women)",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City, Municipality" }
+    ]
+  },
+
+  "upload": {
+    "sub_program": "Infectious Disease",
+    "file_number": 2
+  },
+
+  "sheet_map": {
+    "1": "Qtr1",
+    "2": "Qtr2",
+    "3": "Qtr3",
+    "4": "Qtr4"
+  },
+
+  "columns": [
+    { "index": 3, "indicator_code": "HEPB_POP_U1", "is_computed": false },
+    { "index": 4, "indicator_code": "HEPB_SCREEN_10_14", "is_computed": false },
+    { "index": 5, "indicator_code": "HEPB_SCREEN_15_19", "is_computed": false },
+    { "index": 6, "indicator_code": "HEPB_SCREEN_20_49", "is_computed": false },
+    { "index": 7, "indicator_code": "HEPB_SCREEN_TOTAL", "is_computed": true, "formula": "HEPB_SCREEN_10_14 + HEPB_SCREEN_15_19 + HEPB_SCREEN_20_49" },
+    { "index": 8, "indicator_code": "HEPB_SCREEN_PCT", "is_computed": true, "formula": "HEPB_SCREEN_TOTAL / HEPB_POP_U1" },
+    { "index": 9, "indicator_code": "HEPB_REACTIVE_10_14", "is_computed": false },
+    { "index": 10, "indicator_code": "HEPB_REACTIVE_15_19", "is_computed": false },
+    { "index": 11, "indicator_code": "HEPB_REACTIVE_20_49", "is_computed": false },
+    { "index": 12, "indicator_code": "HEPB_REACTIVE_TOTAL", "is_computed": true, "formula": "HEPB_REACTIVE_10_14 + HEPB_REACTIVE_15_19 + HEPB_REACTIVE_20_49" },
+    { "index": 13, "indicator_code": "HEPB_REACTIVE_PCT", "is_computed": true, "formula": "HEPB_REACTIVE_TOTAL / HEPB_SCREEN_TOTAL" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "HEPB_SCREEN_PCT", "threshold": 2.0, "numerator_code": "HEPB_SCREEN_TOTAL", "denominator_code": "HEPB_POP_U1", "message": "Hepatitis B screening coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "HEPB_REACTIVE_PCT", "threshold": 1.0, "numerator_code": "HEPB_REACTIVE_TOTAL", "denominator_code": "HEPB_SCREEN_TOTAL", "message": "Reactive-for-Hepatitis-B count exceeds screened count (over 100%)", "hint": "Reactive cases are a subset of those screened, so this should never exceed 100%. Check the source file — likely a transcription error." }
+  ],
+
+  "notes": "Structurally identical to infec_hiv.json (same 14-column layout, same 5 data rows, same age-band-only disaggregation) — confirmed via the file's own change_log that HepaB never had, and should never gain, a 'treated' column group like Syphilis. Quarterly upload only; Annual sheet is a pure rollup, not ingested. HEPB_REACTIVE_* columns are is_sensitive=True — not literally named in CLAUDE.md's original policy text, but extended by analogy (same bloodborne-infection PHI class as HIV) and confirmed with Joseph 2026-07-09."
+}

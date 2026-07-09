@@ -1,0 +1,62 @@
+{
+  "template_id": "INFEC_HIV",
+  "template_version": "2026",
+  "program_code": "INFECTIOUS_DISEASE",
+  "source_file_pattern": "infec_hiv_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000",
+    "NIRA": "1800000000",
+    "Negros Island Region": "1800000000",
+    "Negros Island Region (NIR)": "1800000000",
+    "BARMM": "1800000000"
+  },
+
+  "display": {
+    "label": "HIV — Antenatal Screening (Pregnant Women)",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City, Municipality" }
+    ]
+  },
+
+  "upload": {
+    "sub_program": "Infectious Disease",
+    "file_number": 1
+  },
+
+  "sheet_map": {
+    "1": "Qtr1",
+    "2": "Qtr2",
+    "3": "Qtr3",
+    "4": "Qtr4"
+  },
+
+  "columns": [
+    { "index": 3, "indicator_code": "HIV_POP_U1", "is_computed": false },
+    { "index": 4, "indicator_code": "HIV_SCREEN_10_14", "is_computed": false },
+    { "index": 5, "indicator_code": "HIV_SCREEN_15_19", "is_computed": false },
+    { "index": 6, "indicator_code": "HIV_SCREEN_20_49", "is_computed": false },
+    { "index": 7, "indicator_code": "HIV_SCREEN_TOTAL", "is_computed": true, "formula": "HIV_SCREEN_10_14 + HIV_SCREEN_15_19 + HIV_SCREEN_20_49" },
+    { "index": 8, "indicator_code": "HIV_SCREEN_PCT", "is_computed": true, "formula": "HIV_SCREEN_TOTAL / HIV_POP_U1" },
+    { "index": 9, "indicator_code": "HIV_REACTIVE_10_14", "is_computed": false },
+    { "index": 10, "indicator_code": "HIV_REACTIVE_15_19", "is_computed": false },
+    { "index": 11, "indicator_code": "HIV_REACTIVE_20_49", "is_computed": false },
+    { "index": 12, "indicator_code": "HIV_REACTIVE_TOTAL", "is_computed": true, "formula": "HIV_REACTIVE_10_14 + HIV_REACTIVE_15_19 + HIV_REACTIVE_20_49" },
+    { "index": 13, "indicator_code": "HIV_REACTIVE_PCT", "is_computed": true, "formula": "HIV_REACTIVE_TOTAL / HIV_SCREEN_TOTAL" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "HIV_SCREEN_PCT", "threshold": 2.0, "numerator_code": "HIV_SCREEN_TOTAL", "denominator_code": "HIV_POP_U1", "message": "HIV screening coverage exceeds 200% of projected population", "hint": "Coverage is measured against a projected population (an estimate), so over 100% can be real. Over 200% almost always means a data error — check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "HIV_REACTIVE_PCT", "threshold": 1.0, "numerator_code": "HIV_REACTIVE_TOTAL", "denominator_code": "HIV_SCREEN_TOTAL", "message": "Reactive-for-HIV count exceeds screened count (over 100%)", "hint": "Reactive cases are a subset of those screened, so this should never exceed 100%. Check the source file — likely a transcription error." }
+  ],
+
+  "notes": "Quarterly upload only (Qtr1-4). No Annual sheet ingestion — the template's Annual tab is a pure Excel rollup of the 4 quarters (confirmed via formula inspection); the dashboard computes the annual view from stored quarterly data instead of trusting the sheet's own formula. Column 1 (blank header, 'NIRA' abbreviation) is a redundant convenience column added later per the file's change_log — intentionally not mapped. No sex disaggregation (age-band only: 10-14/15-19/20-49) — this is an antenatal (pregnant-women) indicator, not a general-population one. HIV_REACTIVE_* columns are is_sensitive=True per CLAUDE.md's explicit sensitive-indicator policy — dashboard shows aggregated totals only for unauthorized roles."
+}

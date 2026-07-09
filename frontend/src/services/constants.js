@@ -50,6 +50,21 @@ export const TEMPLATES = [
     label: "Demographics — Facility & Workforce Density (Annual)",
     program_code: "DEMOGRAPHICS",
   },
+  {
+    id: "infec_hiv",
+    label: "HIV — Antenatal Screening",
+    program_code: "INFECTIOUS_DISEASE",
+  },
+  {
+    id: "infec_hepatitisb",
+    label: "Hepatitis B — Antenatal Screening",
+    program_code: "INFECTIOUS_DISEASE",
+  },
+  {
+    id: "infec_syphilis",
+    label: "Syphilis — Antenatal Screening, Reactive & Treated",
+    program_code: "INFECTIOUS_DISEASE",
+  },
 ];
 
 export const MONTHS = [
