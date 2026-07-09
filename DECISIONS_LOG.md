@@ -283,3 +283,24 @@ beyond a soft "will sync shortly" message. This also introduces the codebase's f
 request model (`app/schemas/esr_report.py`) — every other endpoint validates via raw `dict` —
 justified here by the payload's depth (nested objects/arrays) making hand validation error-prone;
 not (yet) applied retroactively to existing endpoints.
+
+## ADR-021 — Sensitive-indicator policy expanded beyond HIV/Syphilis-reactive
+**Status:** Accepted · **Date:** 2026-07-09
+**Context.** CLAUDE.md's original "Sensitive Indicators" list only named HIV reactive and
+Syphilis reactive cases, written before the template analysis phase surfaced more candidates.
+The consolidated summary (`template_analysis/00_CONSOLIDATED_SUMMARY.md` §3) proposed a tiered
+ladder: Tier 1 (locked policy), Tier 2 (recommended), Tier 3 (open questions). Starting the
+Infectious Disease build (HIV/HepB/Syphilis antenatal screening) forced the question, since the
+Syphilis file also has a Treated group and the HepB file has its own reactive column — both
+disclose the same reactive status as an already-covered indicator, just one hop removed.
+
+**Decision.** Expand the policy (not just for this sub-group) to also cover: Syphilis-treated
+counts (being treated for a reactive result discloses the reactive status itself), Hepatitis B
+reactive counts, Morbidity's future HIV/syphilis disease-count rows, Leprosy (stigma + small
+province-level counts can identify individuals), and NCD Mental Health / mhGAP screening (same
+stigma rationale as Leprosy). All five get `is_sensitive=True` at the indicator-seed level, same
+mechanism as the original two.
+
+**Not done:** whether a single `is_sensitive` boolean is enough granularity, or some indicators
+need a tiered RBAC scheme (e.g. program-manager-visible vs. admin-only) rather than one binary
+flag, is still open — flagged in ROADMAP.md, not blocking this build.

@@ -76,8 +76,15 @@ Recipe: `memory-bank/adding_templates.md`.
 - [ ] Vital Statistics (Mortality + Natality analyzed; indicators/config not yet built)
 - [ ] Morbidity (analyzed — disease-as-row matrix, not location-as-row; needs ~10,400
       auto-generated indicator codes or a `diseases` reference table, see below)
-- [ ] Infectious Disease Prevention and Control (all 6 sub-diseases analyzed; indicators/config
-      not yet built — Rabies needs a parser change first, see below)
+- [~] **Infectious Disease Prevention and Control — HIV/HepB/Syphilis sub-group started
+      2026-07-09 (next per the build-priority order, recommended first for the sensitive-RBAC
+      exercise).** 38 indicators seeded, 3 configs written (`infec_hiv.json`,
+      `infec_hepatitisb.json`, `infec_syphilis.json`), registered in `upload_catalog.py` +
+      `constants.js`. **Not yet done:** `/api/validate-config` check and dry-run parse + cell
+      spot-check against the real `infec_*_nir.xlsx` files (office machine has no source files
+      yet — need to confirm which machine has them, see Schistosomiasis/Filariasis/Rabies/STH/
+      Leprosy sub-groups still to follow in the same `INFECTIOUS_DISEASE` program). See ADR-021
+      for the sensitive-indicator ladder decision made alongside this build.
 - [ ] Non-Communicable Disease Prevention and Control (all 5 files analyzed; indicators/config
       not yet built — `ncd_meds_nir.xlsx` needs a source-file fix, see below)
 - [ ] Oral Health Care and Services (analyzed — needs a parser change first, see below)
@@ -118,9 +125,11 @@ Recipe: `memory-bank/adding_templates.md`.
 - A recurring "DQC conditional-formatting anchored one row past real data" bug (dead-on-arrival
   rules) recurs across NCD, Post Partum, and Geriatric files — don't port `sqref` ranges
   verbatim into `dqc_rules`; re-derive intended logic and anchor to the config's real row extent.
-- Sensitive-indicator list needs Joseph's decision, not just HIV/Syphilis: NCD Mental Health
-  (mhGAP screening) and Morbidity's HIV/syphilis case-count rows raise the same RBAC question
-  already open for Leprosy — CLAUDE.md's "Sensitive Indicators" section may need to expand.
+- ~~Sensitive-indicator list needs Joseph's decision~~ — **resolved 2026-07-09**: CLAUDE.md's
+  "Sensitive Indicators" section expanded to include Syphilis-treated, Hepatitis B reactive,
+  Morbidity's HIV/syphilis case-count rows, Leprosy, and NCD Mental Health (mhGAP). See ADR-021.
+  Still open: whether one `is_sensitive` bit is enough granularity, or a tiered RBAC scheme is
+  needed later.
 
 ### Remaining
 - [ ] GeoJSON choropleth maps (`frontend/public/geojson/`)

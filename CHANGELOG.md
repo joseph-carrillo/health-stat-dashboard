@@ -33,6 +33,12 @@ always agree (a future CI check will enforce it).
 - Two new Claude Code skills: `analyze-template` (Excel template inspection recipe) and
   `add-template` (seed → config → validate → dry-run build loop with a machine-checkable
   definition of done), formalizing the per-program build process for the remaining 9 programs.
+- **Infectious Disease program (started)** — HIV/Hepatitis B/Syphilis antenatal-screening
+  sub-group: 38 indicators, 3 configs (`infec_hiv`, `infec_hepatitisb`, `infec_syphilis`),
+  quarterly + age-band disaggregated (10-14/15-19/20-49). Sensitive-indicator policy expanded
+  (see ADR-021) to cover Syphilis-treated and Hepatitis B reactive alongside the existing
+  HIV/Syphilis-reactive entries. Config validation + dry-run parse against the real source
+  files still pending.
 
 ### Security
 - **Password hashing migrated to argon2** — new hashes are argon2id; existing

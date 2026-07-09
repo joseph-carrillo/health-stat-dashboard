@@ -26,6 +26,37 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   `staging_health_data` only — **does not touch the new `esr_reports` table**, which has one
   real test row from this session's browser verification, `id=1` "Test Measles Cluster").
 
+## Session 7 (2026-07-09, OFFICE) — Infectious Disease (HIV/HepB/Syphilis) build started
+- **Started the next program per the build-priority order**: HIV-Syphilis-HepaB antenatal
+  screening, the recommended-first sub-group of `INFECTIOUS_DISEASE` (smallest clean group,
+  exercises sensitive-data RBAC end-to-end). 38 indicators seeded (`HIV_*`/`HEPB_*`/`SYPH_*`,
+  quarterly, age-band disaggregated 10-14/15-19/20-49; Syphilis has an extra Treated group HIV
+  and HepB don't). 3 configs written: `infec_hiv.json`, `infec_hepatitisb.json`,
+  `infec_syphilis.json` — each parses clean as JSON, columns line up with the seeded codes.
+  Registered in both `upload_catalog.py` (`INFECTIOUS_DISEASE` program, "Infectious Disease"
+  sub-program) and `constants.js` `TEMPLATES` — the two-places gotcha from the Demographics
+  build, applied correctly this time without re-discovering it.
+- **Sensitive-indicator policy expanded** (ADR-021): CLAUDE.md's list now also covers
+  Syphilis-treated (discloses reactive status one hop removed), Hepatitis B reactive,
+  Morbidity's future HIV/syphilis rows, Leprosy, and NCD Mental Health/mhGAP — promoting the
+  consolidated summary's Tier 2/3 candidates into locked Tier 1 policy. All new sensitive
+  indicator codes seeded with `is_sensitive=True`.
+- **Indicators confirmed live in this (office) machine's DB** — `bootstrap_db.py` was run this
+  session; `SELECT count(*) ... WHERE program=INFECTIOUS_DISEASE` = 38, matches the seed file.
+- **Not yet done — genuinely blocked, not skipped:** `/api/validate-config` check and dry-run
+  parse + cell-value spot-check against the real `infec_hiv_nir.xlsx`/`infec_hepatitisb_nir.xlsx`/
+  `infec_syphilis_nir.xlsx` files. This (office) machine's `backend/data/INFECTIOUS_DISEASE/`
+  only has the placeholder `.txt` — need to confirm which machine (if either) actually has these
+  3 real files before that step can happen; unlike Demographics, this wasn't confirmed to be
+  HOME-only, just unconfirmed. **First move next session: locate the real files, then finish the
+  `add-template` skill's definition of done for this sub-group.**
+- **Committed and pushed this session** (Joseph explicitly asked to commit + push the code, then
+  run full shutdown protocols) — code commit `87950a4`, docs/memory shutdown commit follows (see
+  Git section below).
+- Remaining `INFECTIOUS_DISEASE` sub-groups not yet started: Schistosomiasis, Filariasis,
+  Rabies, STH, Leprosy — all analyzed (Session 3), none built yet. Rabies still needs the
+  `extra_sheets` parser change (period-varying sub-templates) before it can be built.
+
 ## Session 6 (2026-07-07, OFFICE) — ESR Verification Form built + Google Sheets line list (parked)
 - **Context:** Joseph shared two design handoffs — a big future **PHRIC public site** bundle
   (`design_handoff_phric_site/`) and a **dedicated, more precise ESR Verification Form handoff**
@@ -249,7 +280,7 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   finished result for his UI check. Not yet built; would need `adding_templates.md` updated
   with a "definition of done" template when he's ready to try it. See [[working-agreement]].
 
-## Current focus (as of 2026-07-07, end of session 6)
+## Current focus (as of 2026-07-09, end of session 7)
 Three tracks now, running in parallel:
 1. **Go-live (v1.0.0).** `memory-bank/deployment-checklist.md` is the working checklist.
    Steps 1 (hardening) + 2 (deploy infra) DONE and verified end-to-end. **Domain purchased and
@@ -260,14 +291,14 @@ Three tracks now, running in parallel:
 2. **Building out the other 10 programs.** Analysis phase COMPLETE (18/18, Session 3+4) and
    **consolidated into one summary** (Session 5):
    `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` — decisions D1–D10, sensitive-
-   indicator ladder, DOH fix list, 11-step build-priority order. **Demographics built as the
-   first program (pilot of the new `add-template` skill)** — indicators + config done,
-   `formula_type="ratio"` now real (was schema-only before). Blocked only on dry-run testing
-   against the real file (HOME machine). Next program per the priority order: HIV-Syphilis-
-   HepaB (recommended — smallest clean group, exercises sensitive-data RBAC end-to-end). Recipe:
-   `.claude/skills/add-template` (formalizes what was `memory-bank/adding_templates.md`). This is
-   the demo content for the health-professional higher-ups; deployment is only the delivery
-   vehicle.
+   indicator ladder, DOH fix list, 11-step build-priority order. **Demographics built** —
+   indicators + config done, `formula_type="ratio"` now real (was schema-only before). Blocked
+   only on dry-run testing against the real file (HOME machine). **HIV-Syphilis-HepaB started
+   Session 7** (2026-07-09) — 38 indicators + 3 configs done, registered, seeded live in this
+   machine's DB; blocked on locating the real `infec_*_nir.xlsx` files for dry-run testing.
+   Recipe: `.claude/skills/add-template` (formalizes what was `memory-bank/adding_templates.md`).
+   This is the demo content for the health-professional higher-ups; deployment is only the
+   delivery vehicle.
 3. **PHRIC site + ESR reporting (new, Session 6).** Full ROADMAP.md entry under "PHRIC site +
    ESR reporting." **ESR Verification Form built end-to-end** (`/esr/new`) — Epidemiology's
    immediate ask, a form that mirrors submissions into a Google Sheets line list. Google Sheets
@@ -299,12 +330,15 @@ Three tracks now, running in parallel:
 - Full stack (React 19 + FastAPI + PostgreSQL 15 + Docker) on both machines; prod compose
   now: Caddy → nginx → gunicorn → db (+ db-backup sidecar).
 - Reference data: 128 NIR locations, 11 programs, 34 periods. Indicators: CHILD_CARE (247) +
-  DEMOGRAPHICS (50, committed `b07ac1f`). Other 9 programs still have 0 indicators (current
+  DEMOGRAPHICS (50, committed `b07ac1f`) + INFECTIOUS_DISEASE (38, committed `87950a4`, Session
+  7 — HIV/HepB/Syphilis sub-group only). Other 8 programs still have 0 indicators (current
   focus to fix, per the build-priority order).
 - Upload pipeline: validate-first → staging (deltas) → conflict review → approve → commit.
 - CHILD_CARE templates live: Immunization File 1 + 4, Nutrition 1–6, Sick 1–3, SBI annual.
   16 configs in `backend/app/services/configs/`, plus `demographics_annual.json`
-  (config-validated; dry-run parse against the real file still pending, HOME machine only).
+  (config-validated; dry-run parse against the real file still pending, HOME machine only) and
+  `infec_hiv.json`/`infec_hepatitisb.json`/`infec_syphilis.json` (structure-validated as JSON;
+  `/api/validate-config` + dry-run parse against real files still pending, Session 7).
 - Analytics: Home scorecard, Overview (11-program grid + Child Care all-KPI card + Needs
   Attention), Coverage, Rankings, Trends, Indicator Reports, Data Availability, Targets.
 - Auth: JWT login (argon2 passwords), RBAC, user/role management, audit logging, rate-limited
@@ -317,28 +351,35 @@ Three tracks now, running in parallel:
    Google Cloud service account + Sheet, share the Sheet with the service account's `client_email`,
    drop the key at `./secrets/google-service-account.json`, set `ESR_SHEET_ID` in `.env`. Steps
    in `RUNBOOK.md`. Until then, ESR submissions save fine with `sheet_sync_status='failed'`.
-2. **Finish Demographics** — dry-run parse + spot-check the real `Demographics_nir.xlsx`
+2. **Finish HIV-Syphilis-HepaB (Infectious Disease)** — locate the real `infec_hiv_nir.xlsx`/
+   `infec_hepatitisb_nir.xlsx`/`infec_syphilis_nir.xlsx` files (not confirmed on either machine
+   yet), then run `/api/validate-config` + dry-run parse + spot-check per the `add-template`
+   skill's definition of done.
+3. **Finish Demographics** — dry-run parse + spot-check the real `Demographics_nir.xlsx`
    (HOME machine only — the file doesn't exist on the office machine).
-3. **Go-live Step 3** — domain + SSH already in hand (2026-07-06); waiting on IT to confirm
+4. **Go-live Step 3** — domain + SSH already in hand (2026-07-06); waiting on IT to confirm
    ports 80/443. Server prep can start in parallel: RUNBOOK "One-time server prep" → DNS A
    record → deploy → smoke test → rotate admin password → tag v1.0.0. **2-week target.**
-4. **Next program per the consolidated summary's build order**: HIV-Syphilis-HepaB
-   (recommended — smallest clean group, exercises sensitive-RBAC end-to-end), then WASH water
-   file, then Maternal Care. Full 11-step order + per-group blockers/decisions:
+5. **Remaining Infectious Disease sub-groups + next programs per the consolidated summary's
+   build order**: Schistosomiasis, Filariasis, Rabies, STH, Leprosy (all analyzed, none built),
+   then WASH water file, then Maternal Care. Full 11-step order + per-group blockers/decisions:
    `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` §5. Remaining schema/parser
-   decisions (D3–D10, since D1/D2 resolved via Demographics): split-configs for multi-sheet
-   workbooks (D3), a new DQC "reconciliation" rule type (D4), per-column rollup override (D5),
-   row-stacked-period parsing (D6), Morbidity's disease-as-row schema (D7/D10), sensitive-
-   indicator ladder confirmation (D9).
-5. **Parked decisions** (Joseph, when ready): Google OAuth + granular per-user permissions
+   decisions (D3–D8, D10 — D9 sensitive-indicator ladder resolved via ADR-021): split-configs for
+   multi-sheet workbooks (D3), a new DQC "reconciliation" rule type (D4), per-column rollup
+   override (D5), row-stacked-period parsing (D6), Morbidity's disease-as-row schema (D7/D10).
+6. **Parked decisions** (Joseph, when ready): Google OAuth + granular per-user permissions
    (needs its own design pass, see ROADMAP.md); rest of the PHRIC public site (no priority order
    set); stash@{0} Overview Card — finish or drop (HOME machine only); small-cell suppression
-   cutoff (<5 or <10); data-dictionary draft greenlight; sensitive-indicator list expansion
-   (Tier 2/3 in the consolidated summary §3 — Syphilis-treated, Hepatitis B reactive,
-   Morbidity's HIV/syphilis rows, Leprosy, NCD Mental Health).
-6. Remaining CHILD_CARE Immunization files 5–8 when real data arrives.
-7. Deferred refactors: split `backend/main.py` (~1300 lines) + oversized frontend pages;
+   cutoff (<5 or <10); data-dictionary draft greenlight; whether one `is_sensitive` bit is
+   granular enough or a tiered RBAC scheme is needed (open question left by ADR-021).
+7. Remaining CHILD_CARE Immunization files 5–8 when real data arrives.
+8. Deferred refactors: split `backend/main.py` (~1300 lines) + oversized frontend pages;
    9 cosmetic ESLint warnings.
+
+## Done this session (session 7), closed out
+- ✅ Infectious Disease (HIV/HepB/Syphilis) — 38 indicators seeded + 3 configs written +
+  registered in both catalogs + sensitive-indicator policy expanded (ADR-021) — see Session 7
+  log above. Not signed off: dry-run parse against real files (blocked, files not located yet).
 
 ## Done this session (session 6), closed out
 - ✅ ESR Verification Form built end-to-end (backend + frontend), verified live in the browser,
@@ -350,15 +391,22 @@ Three tracks now, running in parallel:
   (indicators + config + validation + UI confirmation) — see Session 5 log above for full detail.
 - ✅ Go-live blockers narrowed from 3 to 1 (domain + SSH done; ports pending).
 
-## Data currently in DB (this = HOME machine)
-Jan 2026 monthly (CPAB/BCG/HepaB, DPT-HiB-HepB, OPV, IPV, PCV, MMR, FIC — 6,072 rows across
-92 indicators), Q1 2026 quarterly (Nutrition, Sick — 295 rows/74 indicators), Annual 2026
-(Nutrition MAM/SAM, SBI Td/MR/HPV — 396 rows/27 indicators). **No February data of any kind**
-(confirmed 2026-07-04 — see session log above; corrects the earlier wrong "CPAB Jan+Feb" note).
-CHILD_CARE test data only. NOTE: admin's password hash is now argon2 (upgraded live during testing).
+## Data currently in DB (per-machine — DBs are NOT git-synced, check on whichever machine you're on)
+**Office machine (confirmed 2026-07-09, Session 7):** `health_data` and `staging_health_data`
+both at 7,538 rows (CHILD_CARE test data), `esr_reports` has 1 real row (`id=1`, "Test Measles
+Cluster", from Session 6's live browser verification). Indicators: CHILD_CARE 247 +
+DEMOGRAPHICS 50 + INFECTIOUS_DISEASE 38 (all three confirmed seeded live this session).
+**HOME machine (last confirmed 2026-07-04, may be stale — re-check there):** Jan 2026 monthly
+(CPAB/BCG/HepaB, DPT-HiB-HepB, OPV, IPV, PCV, MMR, FIC — 6,072 rows/92 indicators), Q1 2026
+quarterly (Nutrition, Sick — 295 rows/74 indicators), Annual 2026 (Nutrition MAM/SAM, SBI
+Td/MR/HPV — 396 rows/27 indicators). No February data of any kind (confirmed 2026-07-04).
+NOTE: admin's password hash is argon2 on both machines (upgraded live during testing).
 
 ## Git
 - Work goes **directly on `main`** (sole developer). Push when done.
+- **2026-07-09 session 7 (OFFICE):** Joseph asked to commit + push the Infectious Disease code
+  immediately, then run full shutdown protocols. Code committed as `87950a4`; docs/memory
+  shutdown sync committed and pushed separately (see `session-handoff.md` for the verified hash).
 - **2026-07-06 session (OFFICE):** pulled clean to `c2cb1e9` at startup (10 commits behind from
   the 3 HOME sessions on 07-04/07-05). Asked Joseph explicitly how to handle the pending code
   (Demographics build) vs. docs/memory at shutdown, per the halt-and-ask rule — **he chose to

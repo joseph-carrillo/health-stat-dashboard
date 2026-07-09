@@ -1,26 +1,49 @@
 # activeContext.md
 
 ## Current Session Goal (next session)
-Three tracks, in whichever order inputs arrive:
+Four tracks, in whichever order inputs arrive:
 1. **Go-live Step 3** — domain purchased + IT has handed over server IP/SSH as of 2026-07-06;
    only ports 80/443 confirmation is still pending. **Joseph is targeting live within ~2 weeks.**
    Start server prep (`RUNBOOK.md → Production — server deployment → One-time server prep`)
    as soon as the domain name + server IP are shared in chat — this doesn't need to wait on
    ports. Then: DNS A record, deploy, smoke test, rotate admin password, tag `v1.0.0`.
-2. **Finish Demographics, then move to the next program.** Indicators + config are built,
-   committed (`b07ac1f`), and config-validated (Session 5), but dry-run testing against the real
-   `Demographics_nir.xlsx` is blocked on this being the HOME machine — do that first. After
-   Demographics is fully signed off, next up per
-   `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md`'s build order: **HIV-Syphilis-
-   HepaB** (recommended first — smallest clean group, exercises sensitive-data RBAC end-to-end).
-   Recipe: `.claude/skills/add-template` (new, formalizes what `adding_templates.md` used to be
-   the only source for).
-3. **ESR Verification Form (Session 6, done) — Google Sheets setup is the only thing left.**
+2. **Finish HIV-Syphilis-HepaB (Infectious Disease), started Session 7.** 38 indicators + 3
+   configs (`infec_hiv`/`infec_hepatitisb`/`infec_syphilis`) are built, committed (`87950a4`),
+   and seeded live in this (office) machine's DB — but `/api/validate-config` and dry-run parse
+   against the real `infec_*_nir.xlsx` files are still pending. **First step: locate the real
+   files** — not confirmed on either machine yet (office `backend/data/INFECTIOUS_DISEASE/` only
+   has the placeholder `.txt`; unlike Demographics this was never confirmed HOME-only, just
+   unconfirmed — check there first).
+3. **Finish Demographics.** Indicators + config are built, committed (`b07ac1f`), and
+   config-validated (Session 5), but dry-run testing against the real `Demographics_nir.xlsx` is
+   blocked on this being the HOME machine.
+4. **ESR Verification Form (Session 6, done) — Google Sheets setup is the only thing left.**
    Joseph explicitly parked it: create the Google Cloud service account + Sheet, share the
    Sheet with the service account's email, drop the key at
    `./secrets/google-service-account.json`, set `ESR_SHEET_ID` in `.env` — steps in
    `RUNBOOK.md`. Not a blocker, just needs Joseph to do it whenever. Rest of the PHRIC public
    site and the Google OAuth + granular-permissions overhaul are both future, not yet scoped.
+
+Once both HIV-Syphilis-HepaB and Demographics are signed off, move to the remaining
+`INFECTIOUS_DISEASE` sub-groups (Schistosomiasis, Filariasis, Rabies, STH, Leprosy — all
+analyzed, none built) or the next program per
+`memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md`'s build order.
+
+## 2026-07-09 session 7 (OFFICE machine) — Infectious Disease (HIV/HepB/Syphilis) build started
+Started the next program per the build-priority order: the HIV-Syphilis-HepaB antenatal-
+screening sub-group of `INFECTIOUS_DISEASE` (recommended first — smallest clean group, exercises
+sensitive-data RBAC end-to-end). Seeded 38 indicators (`HIV_*`/`HEPB_*`/`SYPH_*`, quarterly,
+age-band disaggregated 10-14/15-19/20-49; Syphilis alone has an extra Treated group), wrote 3
+template configs (`infec_hiv.json`, `infec_hepatitisb.json`, `infec_syphilis.json`), and
+registered the program in both `upload_catalog.py` and `constants.js` — got the "two places"
+gotcha right this time without re-discovering it. Expanded the sensitive-indicator policy
+(ADR-021): CLAUDE.md's list now also covers Syphilis-treated, Hepatitis B reactive, Morbidity's
+future HIV/syphilis rows, Leprosy, and NCD Mental Health — promoting the consolidated summary's
+Tier 2/3 candidates to locked policy. Confirmed indicators seeded live in this machine's DB
+(38 rows under `INFECTIOUS_DISEASE`). Joseph asked to commit + push the code immediately
+(`87950a4`), then run full shutdown protocols. **Not done: `/api/validate-config` and dry-run
+parse against the real `infec_*_nir.xlsx` files** — not confirmed to exist on either machine yet,
+genuinely blocked (see "First moves next session" below).
 
 ## 2026-07-07 session 6 (OFFICE machine) — ESR Verification Form built, Google Sheets parked
 Joseph shared two new design handoffs — a big future PHRIC public site bundle, and a dedicated,
@@ -132,22 +155,31 @@ before the next. Never dump many files at once. Flag any new dependency and ask 
 See `working-agreement.md` (burnout → "manage, don't grind").
 
 ## First moves next session (after `startup protocols`)
-1. If on the HOME machine: finish Demographics — dry-run parse `demographics_annual` against
-   the real `Demographics_nir.xlsx` and spot-check at least 3 cell values, per
-   `.claude/skills/add-template`'s definition of done.
-2. Ask Joseph: has IT confirmed ports 80/443 yet? If domain name + server IP haven't been
+1. **Locate the real `infec_hiv_nir.xlsx`/`infec_hepatitisb_nir.xlsx`/`infec_syphilis_nir.xlsx`
+   files** — check `backend/data/INFECTIOUS_DISEASE/` on whichever machine this is. Office
+   machine only has the placeholder `.txt` as of Session 7. If found, run `/api/validate-config`
+   then dry-run parse + spot-check ≥3 cell values per `.claude/skills/add-template`'s definition
+   of done, to sign off the HIV-Syphilis-HepaB sub-group.
+2. If on the HOME machine: also finish Demographics — dry-run parse `demographics_annual` against
+   the real `Demographics_nir.xlsx` and spot-check at least 3 cell values.
+3. Ask Joseph: has IT confirmed ports 80/443 yet? If domain name + server IP haven't been
    shared in chat yet, ask for them — server prep can start without waiting on ports.
-3. Ask Joseph: ready to do the Google Sheets one-time setup for ESR reports yet (RUNBOOK.md)?
+4. Ask Joseph: ready to do the Google Sheets one-time setup for ESR reports yet (RUNBOOK.md)?
    Not urgent — submissions work fine without it, just don't sync to a Sheet yet.
-4. Once Demographics is fully signed off: start HIV-Syphilis-HepaB (next in the build-priority
-   order, `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` §5) using the
-   `add-template` skill.
-5. Parked, needing Joseph when ready: stash@{0} fate (HOME machine), small-cell suppression
-   cutoff, data-dictionary draft greenlight, the sensitive-indicator ladder in the consolidated
-   summary §3 (Tier 2: Syphilis-treated, Hepatitis B reactive; Tier 3: Leprosy, NCD Mental
-   Health), the Google OAuth + granular-permissions overhaul, and the rest of the PHRIC site.
+5. Once HIV-Syphilis-HepaB and Demographics are both fully signed off: move to the remaining
+   `INFECTIOUS_DISEASE` sub-groups (Schistosomiasis, Filariasis, Rabies, STH, Leprosy) or the
+   next program per `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` §5.
+6. Parked, needing Joseph when ready: stash@{0} fate (HOME machine), small-cell suppression
+   cutoff, data-dictionary draft greenlight, whether one `is_sensitive` bit is granular enough
+   or a tiered RBAC scheme is needed (open question left by ADR-021), the Google OAuth +
+   granular-permissions overhaul, and the rest of the PHRIC site.
 
 ## Watch out for
+- **This machine's hostname is `RESUDesktop2` = the OFFICE desktop** (confirmed 2026-07-09,
+  Session 7 — Joseph confirmed directly since neither `secrets/` nor a git stash was present to
+  infer it from). `hostname` (or `PowerShell`'s `$env:COMPUTERNAME`) is a fast, reliable way to
+  self-identify the machine at startup instead of asking Joseph every time — if it's not
+  `RESUDesktop2`, it's the HOME/laptop machine.
 - **`backend/data/<PROGRAM>/` folders can look empty at a shallow `ls` even when full of
   files** — three programs' files are nested one level deeper in sub-category folders
   (`MATERNAL_CARE/Prenatal|Post Partum|Intra Partum`, `INFECTIOUS_DISEASE/<6 sub-diseases>`,

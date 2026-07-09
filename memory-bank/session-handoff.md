@@ -1,30 +1,55 @@
 # session-handoff.md
 
 ## Last Updated
-2026-07-07, session 6 (OFFICE machine — ESR Verification Form built end-to-end, Google Sheets
-credentials parked at Joseph's request). **Pushed commit: `dcf1f72`** (verified — `git status -sb`
-shows local and origin match exactly, no "ahead"). Joseph explicitly said "commit everything,"
-so all of Session 6's code + docs/memory are bundled into two commits: `8c9cc41` (ESR feature)
-and `dcf1f72` (UI polish + docs/memory sync) — two commits because the UI polish happened after
-the first one landed, not because of any docs-vs-code split.
+2026-07-09, session 7 (OFFICE machine, hostname `RESUDesktop2` — Infectious Disease
+HIV/HepB/Syphilis sub-group started). **Pushed commit: PENDING — see end of this shutdown for
+the verified hash** (code commit `87950a4` landed first at Joseph's explicit request, docs/memory
+shutdown commit follows in the same push).
 
 ## Current Objective
-Three tracks:
+Four tracks:
 1. **Go-live (v1.0.0)** — Steps 1+2 done and verified. **As of 2026-07-06: domain purchased,
    IT has handed over server IP + SSH.** Only remaining blocker: IT confirming inbound ports
    80/443. **Joseph is targeting live within ~2 weeks of 2026-07-06.** Server prep
    (`RUNBOOK.md → Production — server deployment → One-time server prep`) can start as soon as
    the domain name + server IP are shared in chat — doesn't need to wait on ports.
-2. **Build out the 10 non-Child-Care programs** — analysis phase complete (18/18) and now
+2. **Build out the 10 non-Child-Care programs** — analysis phase complete (18/18) and
    **consolidated** into `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` (decisions
    D1–D10, sensitive-indicator ladder, DOH fix list, 11-step build-priority order). Demographics
-   built as the pilot (see below) — indicators + config done, dry-run test pending (needs the
-   HOME machine's real file). Next program per the priority order: HIV-Syphilis-HepaB.
-3. **PHRIC site + ESR reporting (new, Session 6)** — ESR Verification Form (`/esr/new`) built
+   built (indicators + config done, dry-run test pending — needs the HOME machine's real file).
+   **HIV-Syphilis-HepaB started Session 7** (see below) — indicators + configs done, seeded
+   live in this machine's DB, dry-run test pending (real source files not located yet).
+3. **PHRIC site + ESR reporting (Session 6)** — ESR Verification Form (`/esr/new`) built
    end-to-end and verified live in the browser. Google Sheets credentials intentionally parked
    by Joseph — one-time setup steps are in `RUNBOOK.md`, not urgent. Rest of the PHRIC public
    site and a Google OAuth + granular-permissions overhaul (Joseph asked about this mid-scoping)
    are both future, unscoped.
+
+## Done This Session — Session 7 (2026-07-09, OFFICE machine)
+- **Started HIV-Syphilis-HepaB, the next program per the build-priority order** (`INFECTIOUS_
+  DISEASE`'s antenatal-screening sub-group — recommended first for exercising sensitive-data
+  RBAC end-to-end): 38 indicators seeded (`HIV_*`/`HEPB_*`/`SYPH_*`, quarterly, age-band
+  10-14/15-19/20-49; Syphilis has an extra Treated group HIV/HepB don't), 3 configs written
+  (`infec_hiv.json`, `infec_hepatitisb.json`, `infec_syphilis.json`), registered in both
+  `upload_catalog.py` and `constants.js` (the "two places" gotcha from Demographics, applied
+  correctly this time). Confirmed all 38 indicators live in this machine's DB via `psql` (count
+  matches the seed file exactly).
+- **Sensitive-indicator policy expanded — ADR-021**: CLAUDE.md's list grew from "HIV reactive,
+  Syphilis reactive" to also cover Syphilis-treated (discloses reactive status one hop removed),
+  Hepatitis B reactive, Morbidity's future HIV/syphilis rows, Leprosy, and NCD Mental Health —
+  promoting the consolidated summary's Tier 2/3 candidates into locked Tier 1 policy. Open
+  question left for later: whether one `is_sensitive` boolean is granular enough.
+- **Not done — genuinely blocked:** `/api/validate-config` and dry-run parse + cell-value
+  spot-check against the real `infec_hiv_nir.xlsx`/`infec_hepatitisb_nir.xlsx`/
+  `infec_syphilis_nir.xlsx` files. Neither machine has confirmed possession of these 3 files —
+  office machine's `backend/data/INFECTIOUS_DISEASE/` only has the placeholder `.txt`. Unlike
+  Demographics, this was never pinned to "HOME machine only," so check there first next session.
+- **Joseph's instruction this session**: commit + push the code immediately (didn't want it left
+  uncommitted), then run full shutdown protocols on top of that. Code landed as `87950a4`; this
+  docs/memory sync is the follow-up shutdown commit.
+- Confirmed via direct question that this machine's hostname `RESUDesktop2` = the OFFICE
+  desktop — now documented in `activeContext.md`'s "Watch out for" so future sessions can
+  self-identify via `hostname` instead of asking.
 
 ## Done This Session — Session 6 (2026-07-07, OFFICE machine)
 - **Built the ESR Verification Form end-to-end** (`/esr/new`) — Epidemiology's immediate ask,
@@ -186,54 +211,59 @@ Three tracks:
 
 ## Next Session — first moves
 1. `startup protocols` (git sync FIRST, then memory; check machine-local state).
-2. **If this is the HOME machine:** the ESR Verification Form + Demographics code are already
-   committed/pushed (`8c9cc41`, `dcf1f72`, `b07ac1f`) — pull, then run `bootstrap_db.py` to get
-   both the `esr_reports` table and the 50 DEMOGRAPHICS indicator rows into this machine's DB
-   too. Finish Demographics' definition of done: dry-run parse `demographics_annual` against the
-   real `Demographics_nir.xlsx`, spot-check ≥3 cell values, per `.claude/skills/add-template`.
-3. Ask Joseph: has IT confirmed ports 80/443 yet? If domain name + server IP haven't been shared
+2. **Locate the real `infec_hiv_nir.xlsx`/`infec_hepatitisb_nir.xlsx`/`infec_syphilis_nir.xlsx`
+   files** — check `backend/data/INFECTIOUS_DISEASE/` on whichever machine this is (not
+   confirmed on either as of Session 7). If found: run `/api/validate-config`, then dry-run
+   parse + spot-check ≥3 cell values per `.claude/skills/add-template`'s definition of done, to
+   sign off HIV-Syphilis-HepaB. The indicators + configs are already committed/pushed (`87950a4`)
+   and seeded live in the office machine's DB (`bootstrap_db.py` — idempotent, safe to re-run on
+   any machine that needs it).
+3. **If this is the HOME machine:** also finish Demographics — dry-run parse
+   `demographics_annual` against the real `Demographics_nir.xlsx`, spot-check ≥3 cell values.
+4. Ask Joseph: has IT confirmed ports 80/443 yet? If domain name + server IP haven't been shared
    in chat, ask for them so server prep can start (doesn't need ports confirmed first).
-4. Ask Joseph: ready to do the Google Sheets one-time setup for ESR reports (RUNBOOK.md)? Not
+5. Ask Joseph: ready to do the Google Sheets one-time setup for ESR reports (RUNBOOK.md)? Not
    urgent — just a self-serve pickup whenever he wants it live.
-5. Once Demographics is signed off: start the next program per the build-priority order in
-   `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` §5 — **HIV-Syphilis-HepaB**
-   recommended (smallest clean group, exercises sensitive-RBAC end-to-end). Use the
-   `add-template` skill.
-6. Parked decisions when Joseph's ready: Google OAuth + granular per-user permissions (needs its
+6. Once HIV-Syphilis-HepaB and Demographics are both signed off: move to the remaining
+   `INFECTIOUS_DISEASE` sub-groups (Schistosomiasis, Filariasis, Rabies, STH, Leprosy) or the
+   next program per `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` §5.
+7. Parked decisions when Joseph's ready: Google OAuth + granular per-user permissions (needs its
    own design pass, see ROADMAP.md), rest of the PHRIC public site, stash@{0} fate (HOME
-   machine), small-cell cutoff (<5 or <10), data-dictionary greenlight, and the
-   sensitive-indicator ladder (consolidated summary §3 — Syphilis-treated, Hepatitis B reactive,
-   Leprosy, NCD Mental Health, and whether one `is_sensitive` bit is enough).
+   machine), small-cell cutoff (<5 or <10), data-dictionary greenlight, and whether one
+   `is_sensitive` bit is granular enough or a tiered RBAC scheme is needed (open question left
+   by ADR-021).
 
 ## Machine-local state (things GitHub does NOT sync — required section per shutdown protocol)
-As of shutdown 2026-07-07, session 6 (OFFICE machine):
-- **Office machine (this one): clean, everything committed and pushed** (`dcf1f72` on top of
-  `8c9cc41`, verified below). Joseph explicitly said "commit everything," so all of Session 6's
-  ESR code + docs/memory are in git — will fast-forward on the HOME machine's next pull.
-- Office machine's DB has one real test row in the new `esr_reports` table (`id=1`, "Test
-  Measles Cluster", `sheet_sync_status='failed'` since `ESR_SHEET_ID` is intentionally unset) —
-  from this session's live browser verification. `reset db protocols` does **not** truncate this
-  table (only `health_data`/`staging_health_data`), so it'll persist across resets; harmless test
-  data, not flagged as a concern, just noting it exists so it isn't mistaken for a real report
-  later. Office DB otherwise unchanged: 247 CHILD_CARE + 50 DEMOGRAPHICS indicators,
-  health_data/staging test data (7,538 rows).
-- **`secrets/` folder created this session** (`./secrets/.gitkeep` tracked, everything else
-  gitignored) — empty except the placeholder. Google service-account JSON key goes here once
-  Joseph does the parked Sheets setup; per-machine, never synced via git by design.
+As of shutdown 2026-07-09, session 7 (OFFICE machine, hostname `RESUDesktop2`):
+- **Office machine (this one): clean, everything committed and pushed** — code commit `87950a4`
+  (Infectious Disease indicators/configs) plus this docs/memory shutdown commit, both pushed;
+  verified below. Joseph explicitly asked for code to be committed + pushed immediately this
+  session, ahead of the full shutdown sync.
+- Office machine's DB now has 38 `INFECTIOUS_DISEASE` indicators live (confirmed via `psql`),
+  on top of the unchanged 247 CHILD_CARE + 50 DEMOGRAPHICS. `health_data`/`staging_health_data`
+  still 7,538 rows each (CHILD_CARE test data, unchanged this session); `esr_reports` still has
+  the one real test row from Session 6 (`id=1`, "Test Measles Cluster").
+- **The real `infec_hiv_nir.xlsx`/`infec_hepatitisb_nir.xlsx`/`infec_syphilis_nir.xlsx` files are
+  NOT present on this (office) machine** — `backend/data/INFECTIOUS_DISEASE/` only has the
+  placeholder `.txt`. Unconfirmed whether the HOME machine has them either (unlike Demographics,
+  this was never pinned down) — check there next, don't assume.
+- **`secrets/` folder** (created Session 6, `./secrets/.gitkeep` tracked) — still empty except
+  the placeholder, unchanged this session.
 - **HOME machine: `stash@{0}`** = untested Overview Card feature (parked by Joseph, decision
   pending); **`stash@{1}`** = older "indicator-reports-area-filter", provenance unknown.
   Unchanged from prior sessions.
-- **The real `Demographics_nir.xlsx` (and all 46 other program `.xlsx` files) exist only on the
-  HOME machine** — `backend/data/DEMOGRAPHICS/` here only has the placeholder `.txt`. This is
-  why Demographics' dry-run/spot-check step still isn't done — genuinely blocked, not skipped.
-  Gitignored per `CLAUDE.md`, will never sync via git.
-- `.env` (per-machine, office): has `DB_PASSWORD`/`JWT_SECRET_KEY` (fail-fast secrets satisfied);
-  missing `SITE_ADDRESS`/`IMAGE_TAG` (prod-only, expected absent in dev) and
-  `GOOGLE_SERVICE_ACCOUNT_FILE`/`ESR_SHEET_ID` (parked — both read lazily, so their absence
-  doesn't break anything except the Sheets push itself).
+- **The real `Demographics_nir.xlsx` (and 45 other program `.xlsx` files) still exist only on the
+  HOME machine** — unchanged from Session 5/6, still genuinely blocking Demographics' dry-run
+  step.
+- `.env` (per-machine, office): unchanged this session — `DB_PASSWORD`/`JWT_SECRET_KEY` present;
+  `SITE_ADDRESS`/`IMAGE_TAG` (prod-only) and `GOOGLE_SERVICE_ACCOUNT_FILE`/`ESR_SHEET_ID`
+  (parked) still absent, both read lazily so nothing breaks.
 
 ## Notes / Gotchas
-- **Committed code this session, not docs-only** — Joseph explicitly said "commit everything."
+- **Joseph asked for a two-step commit this session**: commit + push the Infectious Disease code
+  immediately (`87950a4`), *then* run full shutdown protocols on top of that — not the usual
+  single "commit everything at shutdown" pattern from Sessions 5/6.
+- **Committed code Session 6, not docs-only** — Joseph explicitly said "commit everything."
   Two commits: `8c9cc41` (ESR feature) then `dcf1f72` (UI polish + docs/memory), not a
   docs-vs-code split — the polish just happened after the first commit landed.
 - **`bootstrap_db.py`'s `split_statements()` breaks on semicolons inside `--` comments** — see
