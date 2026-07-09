@@ -2,9 +2,10 @@
 
 ## Last Updated
 2026-07-09, session 7 (OFFICE machine, hostname `RESUDesktop2` — Infectious Disease
-HIV/HepB/Syphilis sub-group started). **Pushed commit: PENDING — see end of this shutdown for
-the verified hash** (code commit `87950a4` landed first at Joseph's explicit request, docs/memory
-shutdown commit follows in the same push).
+HIV/HepB/Syphilis sub-group started). **Pushed commit: `39f2441`** (verified — `git status -sb`
+shows local and origin match exactly, no "ahead"). Code commit `87950a4` (Infectious Disease
+indicators/configs) landed first at Joseph's explicit request, then this docs/memory shutdown
+commit `39f2441` — two commits, both pushed together at the end.
 
 ## Current Objective
 Four tracks:
