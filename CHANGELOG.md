@@ -44,12 +44,22 @@ always agree (a future CI check will enforce it).
 - Two new Claude Code skills: `analyze-template` (Excel template inspection recipe) and
   `add-template` (seed → config → validate → dry-run build loop with a machine-checkable
   definition of done), formalizing the per-program build process for the remaining 9 programs.
-- **Infectious Disease program (started)** — HIV/Hepatitis B/Syphilis antenatal-screening
+- **Infectious Disease program** — HIV/Hepatitis B/Syphilis antenatal-screening
   sub-group: 38 indicators, 3 configs (`infec_hiv`, `infec_hepatitisb`, `infec_syphilis`),
   quarterly + age-band disaggregated (10-14/15-19/20-49). Sensitive-indicator policy expanded
   (see ADR-021) to cover Syphilis-treated and Hepatitis B reactive alongside the existing
-  HIV/Syphilis-reactive entries. Config validation + dry-run parse against the real source
-  files still pending.
+  HIV/Syphilis-reactive entries. Config validation + dry-run parse against the real source files
+  now pass (all 3 files × 4 quarters, 0 errors); 69 cell values hand-verified against the source
+  spreadsheets. The blank Syphilis population column is confirmed as a DOH-side data gap (parser
+  stores `None`, not a fabricated 0), not a parser bug.
+
+### Fixed
+- **Sheet footer/annotation rows are no longer reported as location errors.** The Infectious
+  Disease templates are the first whose sheets carry footer text ("Source: DOH-FHSIS", "Legend:",
+  asterisk/zero notes) in the PSGC column; the parser flagged each as "Location not found." A new
+  `is_annotation_row()` helper skips a row only when it can't resolve to a location **and** every
+  mapped data cell is blank — a genuinely mis-located data row (with values) still errors as
+  before. Covered by `backend/tests/test_annotation_rows.py`.
 
 ### Security
 - **Password hashing migrated to argon2** — new hashes are argon2id; existing

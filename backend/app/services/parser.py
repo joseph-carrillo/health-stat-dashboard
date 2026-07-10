@@ -463,6 +463,23 @@ def is_blank(value) -> bool:
     return False
 
 
+def is_annotation_row(row, col_defs) -> bool:
+    """True when every mapped raw (non-computed) data cell in the row is blank.
+
+    Some templates (Infectious Disease antenatal screening) end with footer
+    text in the PSGC column ('Source: DOH-FHSIS', 'Legend:', asterisk/zero
+    notes). Those rows carry no value in any mapped data column, so an
+    unresolvable location + all-blank data cells means sheet annotation, not
+    a data row — skip it instead of reporting a location error. A genuinely
+    mislocated data row still errors because its data cells hold values.
+    """
+    return all(
+        is_blank(row.iloc[col_def["index"]])
+        for col_def in col_defs
+        if not col_def["is_computed"]
+    )
+
+
 def safe_float(value) -> float | None:
     """Convert a cell value to float safely."""
     if is_blank(value):
@@ -697,6 +714,8 @@ def parse_file(
                     consecutive_blanks += 1
                     if consecutive_blanks >= MAX_CONSECUTIVE_BLANKS:
                         break
+                    continue
+                if is_annotation_row(row, col_defs):
                     continue
                 location_label = (
                     str(row.iloc[loc_col]).strip()
