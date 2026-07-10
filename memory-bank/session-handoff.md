@@ -4,9 +4,8 @@
 2026-07-10, session 8 (HOME machine, hostname `_hansell_` — PHRIC public site landing + 4
 cluster pages built). Per the shutdown protocol's halt-and-ask rule, Joseph was asked whether to
 commit the pending PHRIC frontend code together with this docs/memory sync or hold it back —
-**he chose to commit everything together** (matching the Session 5/6 precedent). **Pushed
-commit: see `PUSHED_COMMIT_PLACEHOLDER`** (verify with `git status -sb` after push — local and
-origin must match exactly, no "ahead").
+**he chose to commit everything together** (matching the Session 5/6 precedent). **Pushed commit: `f14f099`** (verified — `git status -sb` shows local and origin match exactly,
+no "ahead").
 
 ## Current Objective
 Five tracks:
