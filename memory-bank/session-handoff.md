@@ -1,14 +1,15 @@
 # session-handoff.md
 
 ## Last Updated
-2026-07-09, session 7 (OFFICE machine, hostname `RESUDesktop2` — Infectious Disease
-HIV/HepB/Syphilis sub-group started). **Pushed commit: `39f2441`** (verified — `git status -sb`
-shows local and origin match exactly, no "ahead"). Code commit `87950a4` (Infectious Disease
-indicators/configs) landed first at Joseph's explicit request, then this docs/memory shutdown
-commit `39f2441` — two commits, both pushed together at the end.
+2026-07-10, session 8 (HOME machine, hostname `_hansell_` — PHRIC public site landing + 4
+cluster pages built). Per the shutdown protocol's halt-and-ask rule, Joseph was asked whether to
+commit the pending PHRIC frontend code together with this docs/memory sync or hold it back —
+**he chose to commit everything together** (matching the Session 5/6 precedent). **Pushed
+commit: see `PUSHED_COMMIT_PLACEHOLDER`** (verify with `git status -sb` after push — local and
+origin must match exactly, no "ahead").
 
 ## Current Objective
-Four tracks:
+Five tracks:
 1. **Go-live (v1.0.0)** — Steps 1+2 done and verified. **As of 2026-07-06: domain purchased,
    IT has handed over server IP + SSH.** Only remaining blocker: IT confirming inbound ports
    80/443. **Joseph is targeting live within ~2 weeks of 2026-07-06.** Server prep
@@ -19,12 +20,60 @@ Four tracks:
    D1–D10, sensitive-indicator ladder, DOH fix list, 11-step build-priority order). Demographics
    built (indicators + config done, dry-run test pending — needs the HOME machine's real file).
    **HIV-Syphilis-HepaB started Session 7** (see below) — indicators + configs done, seeded
-   live in this machine's DB, dry-run test pending (real source files not located yet).
-3. **PHRIC site + ESR reporting (Session 6)** — ESR Verification Form (`/esr/new`) built
-   end-to-end and verified live in the browser. Google Sheets credentials intentionally parked
-   by Joseph — one-time setup steps are in `RUNBOOK.md`, not urgent. Rest of the PHRIC public
-   site and a Google OAuth + granular-permissions overhaul (Joseph asked about this mid-scoping)
-   are both future, unscoped.
+   live in the office machine's DB, dry-run test pending (real source files not located yet).
+3. **PHRIC site + ESR reporting (Session 6, expanded Session 8)** — ESR Verification Form
+   (`/esr/new`) built end-to-end and verified live in the browser (Session 6). **Session 8: the
+   rest of the public site is no longer parked** — landing page + all 4 cluster pages (Health
+   Statistics, Epidemiology Surveillance, Research, Laboratory) built public-state-only,
+   pixel-close to the design handoff (ADR-022), Joseph-reviewed and approved live
+   ("checked the pages, all good for me"), committed and pushed this session (see commit hash
+   above). Google Sheets credentials for ESR still intentionally parked by Joseph (RUNBOOK.md
+   has the one-time setup). The auth-gated variant of the 4 cluster pages, real backend data
+   wiring for them, and a Google OAuth + granular-permissions overhaul (Joseph asked about this
+   mid-ESR-scoping) are all future, unscoped.
+
+## Done This Session — Session 8 (2026-07-10, HOME machine, hostname `_hansell_`)
+- **Joseph pivoted the PHRIC site from "parked" to "build the skeleton now."** He wants the
+  public-facing site live and linkable to internal clients ahead of higher-up approval for full
+  public access, even though only the Health Statistics dashboard has real data behind it today.
+- **Found a redundant design handoff copy**: `design_handoff_phric_site/` was sitting untracked
+  in the repo root (12 files — 7 `.dc.html` prototypes, `manifest.json`, `README.md`,
+  `support.js`, `sw.js`, a logo asset). Verified against `PHRIC site.zip` already in Joseph's
+  Downloads folder — same 12 files, identical sizes via zip listing — so the repo copy was
+  redundant. Moved it out of the repo (into this session's job temp dir, not deleted) rather than
+  committing or discarding it; source control now shows 0 pending for that folder.
+- **Locked 4 architecture decisions via direct questions before building** (now ADR-022): same
+  React app (not a separate frontend); landing page becomes the site root (`/`), existing
+  `Login` moves to `/login`; the 4 cluster pages ship **public-state only** (the design's
+  logged-in variant — unblurred tables, working downloads — is real future work); Epi
+  Surveillance's "+ Submit ESR Report" button links to the existing `/esr/new` form instead of
+  being rebuilt from the design handoff a second time.
+- **Built end-to-end:**
+  - `frontend/src/pages/public/` — `Landing.jsx`, `HealthStatistics.jsx`,
+    `EpidemiologySurveillance.jsx`, `Research.jsx`, `Laboratory.jsx`.
+  - `frontend/src/components/public/` — `ClusterPage.jsx` (shared scaffold: gov bar → header →
+    hero → report cards → blur-locked table → footer) + `PublicChrome.jsx` (gov bar, cluster
+    header/footer, sign-in pill, lock icon) + `publicTheme.js` (design tokens) + `public.css`
+    (responsive breakpoint classes) — the 4 cluster pages are thin config objects through this
+    one scaffold, not 4 duplicated layouts.
+  - Fonts (Sora + Plus Jakarta Sans) added to `index.html`; DOH/PHRIC logo copied to
+    `frontend/public/images/phric-logo.png`.
+  - Every simulated "Sign in with Google" trigger in the prototype (design-only per the
+    handoff's own README — no real OAuth) replaced with a "Staff Sign In" pill routing to
+    `/login`; the real JWT login flow is completely unchanged, just moved off the site root.
+  - `App.jsx` rewired: `/` → `Landing`, `/login` → the existing `Login` page,
+    `ProtectedRoute`/`PermissionRoute` redirect to `/login` (was `/`), catch-all redirects to
+    `/` (was `/home`). `services/api.js`'s 401 interceptor and `Navbar.jsx`'s logout both
+    updated to `/login` too. All existing protected/admin routes under `/home` untouched.
+- **Verified:** ESLint 0 errors project-wide (9 pre-existing warnings in unrelated old files,
+  none in new code); production build (`npm run build`) compiles clean; all 5 new routes + the
+  logo asset return HTTP 200 on the running dev server. **Not done: a live browser
+  click-through** — the Claude Chrome extension wasn't connected this session, so screenshot
+  verification wasn't possible. Joseph reviewed the pages himself in his own browser afterward
+  and confirmed: "checked the pages, all good for me."
+- **Asked Joseph how to handle the pending code at shutdown (per the halt-and-ask rule); he chose
+  to commit it together with docs/memory** — committed and pushed this session, see commit hash
+  at the top of this file.
 
 ## Done This Session — Session 7 (2026-07-09, OFFICE machine)
 - **Started HIV-Syphilis-HepaB, the next program per the build-priority order** (`INFECTIOUS_
@@ -229,38 +278,41 @@ Four tracks:
    `INFECTIOUS_DISEASE` sub-groups (Schistosomiasis, Filariasis, Rabies, STH, Leprosy) or the
    next program per `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` §5.
 7. Parked decisions when Joseph's ready: Google OAuth + granular per-user permissions (needs its
-   own design pass, see ROADMAP.md), rest of the PHRIC public site, stash@{0} fate (HOME
-   machine), small-cell cutoff (<5 or <10), data-dictionary greenlight, and whether one
-   `is_sensitive` bit is granular enough or a tiered RBAC scheme is needed (open question left
-   by ADR-021).
+   own design pass, see ROADMAP.md), the auth-gated variant of the PHRIC cluster pages,
+   stash@{0} fate (HOME machine), small-cell cutoff (<5 or <10), data-dictionary greenlight, and
+   whether one `is_sensitive` bit is granular enough or a tiered RBAC scheme is needed (open
+   question left by ADR-021).
 
 ## Machine-local state (things GitHub does NOT sync — required section per shutdown protocol)
-As of shutdown 2026-07-09, session 7 (OFFICE machine, hostname `RESUDesktop2`):
-- **Office machine (this one): clean, everything committed and pushed** — code commit `87950a4`
-  (Infectious Disease indicators/configs) plus this docs/memory shutdown commit, both pushed;
-  verified below. Joseph explicitly asked for code to be committed + pushed immediately this
-  session, ahead of the full shutdown sync.
-- Office machine's DB now has 38 `INFECTIOUS_DISEASE` indicators live (confirmed via `psql`),
-  on top of the unchanged 247 CHILD_CARE + 50 DEMOGRAPHICS. `health_data`/`staging_health_data`
-  still 7,538 rows each (CHILD_CARE test data, unchanged this session); `esr_reports` still has
-  the one real test row from Session 6 (`id=1`, "Test Measles Cluster").
-- **The real `infec_hiv_nir.xlsx`/`infec_hepatitisb_nir.xlsx`/`infec_syphilis_nir.xlsx` files are
-  NOT present on this (office) machine** — `backend/data/INFECTIOUS_DISEASE/` only has the
-  placeholder `.txt`. Unconfirmed whether the HOME machine has them either (unlike Demographics,
-  this was never pinned down) — check there next, don't assume.
-- **`secrets/` folder** (created Session 6, `./secrets/.gitkeep` tracked) — still empty except
-  the placeholder, unchanged this session.
-- **HOME machine: `stash@{0}`** = untested Overview Card feature (parked by Joseph, decision
-  pending); **`stash@{1}`** = older "indicator-reports-area-filter", provenance unknown.
-  Unchanged from prior sessions.
-- **The real `Demographics_nir.xlsx` (and 45 other program `.xlsx` files) still exist only on the
-  HOME machine** — unchanged from Session 5/6, still genuinely blocking Demographics' dry-run
-  step.
-- `.env` (per-machine, office): unchanged this session — `DB_PASSWORD`/`JWT_SECRET_KEY` present;
-  `SITE_ADDRESS`/`IMAGE_TAG` (prod-only) and `GOOGLE_SERVICE_ACCOUNT_FILE`/`ESR_SHEET_ID`
-  (parked) still absent, both read lazily so nothing breaks.
+As of shutdown 2026-07-10, session 8 (HOME machine, hostname `_hansell_`):
+- **This machine (HOME): clean, everything committed and pushed.** Joseph chose to commit the
+  PHRIC public site code together with this docs/memory sync (per the halt-and-ask rule) —
+  see the commit hash at the top of this file. Committed files: modified
+  `frontend/index.html`, `frontend/src/App.jsx`, `frontend/src/components/Navbar.jsx`,
+  `frontend/src/services/api.js`; new `frontend/public/images/phric-logo.png`,
+  `frontend/src/components/public/` (4 files), `frontend/src/pages/public/` (5 files).
+- **`design_handoff_phric_site/` removed from the repo root** (was untracked, 12 files) — verified
+  identical to `PHRIC site.zip` already in Joseph's Downloads, so moved out (not deleted, not
+  committed) into this session's job temp directory. `git status` no longer shows it.
+- **Both stashes confirmed still present on this machine** (`stash@{0}` = untested Overview Card
+  feature, parked; `stash@{1}` = older "indicator-reports-area-filter", provenance unknown) —
+  this is what confirmed hostname `_hansell_` = the HOME/laptop machine (see
+  `activeContext.md`'s "Watch out for"). Unchanged from prior sessions.
+- **The real `Demographics_nir.xlsx` (and 45 other program `.xlsx` files) exist on this (HOME)
+  machine** — unchanged from Session 5/6, Demographics' dry-run step can happen here whenever
+  picked back up.
+- **The real `infec_hiv_nir.xlsx`/`infec_hepatitisb_nir.xlsx`/`infec_syphilis_nir.xlsx` files**
+  were not checked for on this machine this session (frontend-only session) — still needs
+  confirming here or on the office machine, per Session 7's open item.
+- **`secrets/` folder** (created Session 6, `./secrets/.gitkeep` tracked) — not touched this
+  session; assume still empty except the placeholder unless confirmed otherwise.
+- `.env` (per-machine, HOME): not touched this session.
 
 ## Notes / Gotchas
+- **The public cluster pages (`ClusterPage.jsx`) intentionally render public-state only** — no
+  `isLoggedIn` branch exists yet, unlike the design handoff's own prototypes (which simulate both
+  states with a boolean). Don't be surprised the components have no auth-check prop; that's the
+  ADR-022 scope cut, not an oversight.
 - **Joseph asked for a two-step commit this session**: commit + push the Infectious Disease code
   immediately (`87950a4`), *then* run full shutdown protocols on top of that — not the usual
   single "commit everything at shutdown" pattern from Sessions 5/6.

@@ -9,25 +9,50 @@ Four tracks, in whichever order inputs arrive:
    ports. Then: DNS A record, deploy, smoke test, rotate admin password, tag `v1.0.0`.
 2. **Finish HIV-Syphilis-HepaB (Infectious Disease), started Session 7.** 38 indicators + 3
    configs (`infec_hiv`/`infec_hepatitisb`/`infec_syphilis`) are built, committed (`87950a4`),
-   and seeded live in this (office) machine's DB — but `/api/validate-config` and dry-run parse
+   and seeded live in the office machine's DB — but `/api/validate-config` and dry-run parse
    against the real `infec_*_nir.xlsx` files are still pending. **First step: locate the real
    files** — not confirmed on either machine yet (office `backend/data/INFECTIOUS_DISEASE/` only
    has the placeholder `.txt`; unlike Demographics this was never confirmed HOME-only, just
    unconfirmed — check there first).
 3. **Finish Demographics.** Indicators + config are built, committed (`b07ac1f`), and
    config-validated (Session 5), but dry-run testing against the real `Demographics_nir.xlsx` is
-   blocked on this being the HOME machine.
+   blocked on this being the HOME machine — this machine.
 4. **ESR Verification Form (Session 6, done) — Google Sheets setup is the only thing left.**
    Joseph explicitly parked it: create the Google Cloud service account + Sheet, share the
    Sheet with the service account's email, drop the key at
    `./secrets/google-service-account.json`, set `ESR_SHEET_ID` in `.env` — steps in
-   `RUNBOOK.md`. Not a blocker, just needs Joseph to do it whenever. Rest of the PHRIC public
-   site and the Google OAuth + granular-permissions overhaul are both future, not yet scoped.
+   `RUNBOOK.md`. Not a blocker, just needs Joseph to do it whenever. The auth-gated variant of
+   the PHRIC cluster pages and the Google OAuth + granular-permissions overhaul are both future,
+   not yet scoped.
 
 Once both HIV-Syphilis-HepaB and Demographics are signed off, move to the remaining
 `INFECTIOUS_DISEASE` sub-groups (Schistosomiasis, Filariasis, Rabies, STH, Leprosy — all
 analyzed, none built) or the next program per
 `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md`'s build order.
+
+## 2026-07-10 session 8 (HOME machine, hostname `_hansell_`) — PHRIC public site built
+Joseph pivoted the PHRIC site from "parked, future initiative" to "build the skeleton now" — he
+wants public-facing pages live and linkable to internal clients before higher-up approval for
+full public access, even though only the Health Statistics dashboard has real data today. He'd
+independently found a design handoff bundle sitting untracked in the repo
+(`design_handoff_phric_site/` on Desktop) which turned out to be the same 12 files as
+`PHRIC site.zip` already in his Downloads folder (verified byte-identical) — moved the redundant
+repo copy out rather than deleting it. Locked 4 architecture decisions via direct questions
+before building (ADR-022): same React app, not a separate frontend; landing page becomes the
+site root (`/`), existing `Login` moves to `/login`; the 4 cluster pages ship public-state only
+(the design's logged-in variant is real future work); Epi Surveillance's "+ Submit ESR Report"
+button links to the existing `/esr/new` form. Built the landing page + all 4 cluster pages
+(Health Statistics, Epidemiology Surveillance, Research, Laboratory) pixel-close to the handoff,
+using one shared scaffold component (`ClusterPage.jsx`/`PublicChrome.jsx`) driven by per-page
+config objects rather than 4 duplicated layouts. Every simulated "Sign in with Google" trigger
+became a "Staff Sign In" pill routing to `/login` — the real JWT login is unchanged, just moved
+off the site root. `App.jsx`, `services/api.js`, and `Navbar.jsx` all updated so every redirect
+that used to point at `/` now points at `/login`, and the catch-all points at `/` instead of
+`/home`. ESLint clean, production build compiles, all new routes verified 200 on the dev server;
+the Chrome extension wasn't connected so the actual visual click-through was done by Joseph in
+his own browser, who confirmed it looks right. Per the halt-and-ask rule, asked Joseph how to
+handle the pending code — **he chose to commit it together with this docs/memory sync**;
+committed and pushed, see `session-handoff.md` for the verified hash.
 
 ## 2026-07-09 session 7 (OFFICE machine) — Infectious Disease (HIV/HepB/Syphilis) build started
 Started the next program per the build-priority order: the HIV-Syphilis-HepaB antenatal-
@@ -172,7 +197,7 @@ See `working-agreement.md` (burnout → "manage, don't grind").
 6. Parked, needing Joseph when ready: stash@{0} fate (HOME machine), small-cell suppression
    cutoff, data-dictionary draft greenlight, whether one `is_sensitive` bit is granular enough
    or a tiered RBAC scheme is needed (open question left by ADR-021), the Google OAuth +
-   granular-permissions overhaul, and the rest of the PHRIC site.
+   granular-permissions overhaul, and the auth-gated variant of the PHRIC cluster pages.
 
 ## Watch out for
 - **This machine's hostname is `RESUDesktop2` = the OFFICE desktop** (confirmed 2026-07-09,
@@ -180,6 +205,15 @@ See `working-agreement.md` (burnout → "manage, don't grind").
   infer it from). `hostname` (or `PowerShell`'s `$env:COMPUTERNAME`) is a fast, reliable way to
   self-identify the machine at startup instead of asking Joseph every time — if it's not
   `RESUDesktop2`, it's the HOME/laptop machine.
+- **The HOME/laptop machine's hostname is `_hansell_`** (confirmed 2026-07-10, Session 8 — both
+  `stash@{0}` and `stash@{1}` were present, matching the already-documented "both stashes live on
+  the HOME machine" fact). So: `RESUDesktop2` = office, `_hansell_` = HOME/laptop — `hostname`
+  alone now fully self-identifies either machine, no more guessing needed.
+- **A design handoff folder can land untracked in the repo root without being new work** —
+  Session 8 found `design_handoff_phric_site/` sitting untracked on this machine's Desktop; it
+  turned out to be identical to a zip Joseph already had in Downloads. Worth a byte-size/zip-
+  listing check before assuming an untracked folder is either abandoned work or something to
+  delete outright — moving it out of the repo (not deleting) was the safe middle ground here.
 - **`backend/data/<PROGRAM>/` folders can look empty at a shallow `ls` even when full of
   files** — three programs' files are nested one level deeper in sub-category folders
   (`MATERNAL_CARE/Prenatal|Post Partum|Intra Partum`, `INFECTIOUS_DISEASE/<6 sub-diseases>`,

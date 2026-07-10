@@ -304,3 +304,44 @@ mechanism as the original two.
 **Not done:** whether a single `is_sensitive` boolean is enough granularity, or some indicators
 need a tiered RBAC scheme (e.g. program-manager-visible vs. admin-only) rather than one binary
 flag, is still open — flagged in ROADMAP.md, not blocking this build.
+
+## ADR-022 — PHRIC public site: same React app, public-state-only cluster pages, real login unchanged
+**Status:** Accepted · **Date:** 2026-07-10
+
+**Context.** Joseph pivoted the PHRIC site work from "parked, future initiative" (as of Session
+6/ROADMAP) to "build the skeleton now" — he wants a public-facing site up and linkable to
+internal clients before higher-up approval for full public access, even though only the Health
+Statistics dashboard has real data behind it today. The design handoff
+(`design_handoff_phric_site/`) specs a landing page + 4 gated cluster pages (Health Statistics,
+Epidemiology Surveillance, Research, Laboratory), each with a public and a logged-in render
+state driven by a simulated `isLoggedIn` boolean and a fake "Sign in with Google" flow.
+
+**Decisions locked (asked via AskUserQuestion, all four resolved before building):**
+1. **Same React app, not a separate frontend.** The public pages are new routes in the existing
+   `frontend/` app, not a second deployable. One codebase, one deploy target; internal links
+   between the public site and the internal dashboard stay same-origin.
+2. **Landing page becomes the site root (`/`).** The existing `Login` page moves to `/login`.
+   Every redirect that used to point at `/` (`ProtectedRoute`, `PermissionRoute`, the 401
+   interceptor in `services/api.js`, `Navbar`'s logout) now points at `/login`; the catch-all
+   route redirects unknown URLs to `/` (the public landing page) instead of `/home`.
+3. **The 4 cluster pages ship public-state only.** The design's logged-in variant (unblurred
+   tables, working download pills, "Welcome back" hero) is real future work, not built this
+   session — see ROADMAP.md's open item. Every sign-in trigger in the public state is now a
+   "Staff Sign In" pill that routes to `/login`, since the prototype's Google OAuth was
+   design-only and this app's real auth is JWT username/password (unrelated to the still-future
+   Google-OAuth initiative from ADR-020's scoping).
+4. **Epidemiology Surveillance's "+ Submit ESR Report" button links to the existing `/esr/new`
+   form** rather than rebuilding it from the design handoff a second time — that form was already
+   built pixel-close to a separate, more precise handoff in Session 6.
+
+**Why:** matches how Joseph actually wants to ship this (internal-preview link now, public
+access later pending higher-up sign-off) without duplicating infrastructure or rebuilding a form
+that already exists. Keeping the cluster pages public-state-only was the fastest path to
+something clickable for internal review; the auth-gated variant is real work that can follow
+once he decides how much of it he wants before the public launch.
+
+**Trade-off:** the public cluster pages currently show static placeholder report/table data
+(same numbers as the design prototype) — none of it is wired to live backend data yet, since
+only Health Statistics' *internal* dashboard (a separate, pre-existing page) has real queries
+behind it. Anyone reaching these public pages sees illustrative, not real, figures until the
+logged-in variant and real data wiring are built.

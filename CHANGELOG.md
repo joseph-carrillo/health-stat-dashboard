@@ -16,6 +16,17 @@ always agree (a future CI check will enforce it).
 ## [Unreleased]
 
 ### Added
+- **PHRIC public site — landing page + 4 cluster pages** (`/`, `/health-statistics`,
+  `/epidemiology-surveillance`, `/research`, `/laboratory`). Recreated pixel-close from the
+  `design_handoff_phric_site/` design handoff, public (logged-out) state only: hero sections,
+  report-card grids, blurred/locked data-table teasers. The 4 cluster pages share one scaffold
+  (`frontend/src/components/public/ClusterPage.jsx` + `PublicChrome.jsx`) driven by per-page
+  config objects rather than 4 duplicated layouts. Every "Sign in with Google" trigger in the
+  prototype (design-only, no real OAuth) is replaced with a "Staff Sign In" pill that routes to
+  `/login` — the existing JWT login flow is unchanged, it just moved off the site root. The
+  existing internal dashboard (`/home` and everything under it) is untouched. See ADR-022.
+- Existing login page moved from `/` to `/login`; unknown routes now redirect to the new public
+  landing page (`/`) instead of `/home`.
 - **ESR Verification Form** (`/esr/new`) — Epidemiology asked for a way to submit event-based
   surveillance reports that auto-populate a line list they already work from. New
   `can_submit_esr` permission (`data_encoder`, `program_manager`); `POST /api/esr-reports` stores

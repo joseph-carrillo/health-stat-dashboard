@@ -1,0 +1,31 @@
+/* Responsive utility classes for the public PHRIC pages.
+   Copied from the design handoff prototypes (design_handoff_phric_site) —
+   the pages use inline styles for everything except these media queries. */
+
+.r-show {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .r-hide  { display: none !important; }
+  .r-show  { display: flex !important; align-items: center; }
+  .r-col   { flex-direction: column !important; }
+  .r-full  { width: 100% !important; flex: none !important; }
+  .r-g2    { grid-template-columns: 1fr !important; }
+  .r-g3    { grid-template-columns: 1fr !important; }
+  .r-g4    { grid-template-columns: 1fr 1fr !important; }
+  .r-p     { padding: 36px 20px !important; }
+  .r-ph    { padding: 12px 20px !important; }
+  .r-h1    { font-size: 30px !important; line-height: 1.1 !important; }
+  .r-h2    { font-size: 22px !important; }
+  .r-tbl   { overflow-x: auto !important; display: block !important; }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .r-col  { flex-direction: column !important; }
+  .r-full { width: 100% !important; flex: none !important; }
+  .r-g2   { grid-template-columns: 1fr !important; }
+  .r-g3   { grid-template-columns: 1fr 1fr !important; }
+  .r-g4   { grid-template-columns: 1fr 1fr !important; }
+  .r-h1   { font-size: 38px !important; }
+}

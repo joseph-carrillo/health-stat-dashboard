@@ -26,6 +26,43 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   `staging_health_data` only — **does not touch the new `esr_reports` table**, which has one
   real test row from this session's browser verification, `id=1` "Test Measles Cluster").
 
+## Session 8 (2026-07-10, HOME) — PHRIC public site: landing + 4 cluster pages built
+- **Joseph pivoted the PHRIC site from "parked" to "build now."** He wants the public-facing
+  skeleton up and linkable to internal clients before higher-up approval for full public access —
+  even though only the Health Statistics dashboard has real data behind it today. He'd separately
+  found a design handoff bundle (`design_handoff_phric_site/`, an untracked folder on this
+  machine's Desktop) matching one Joseph confirmed he already has as `PHRIC site.zip` in his
+  Downloads folder — same 12 files, verified byte-identical via zip listing, so the repo copy was
+  redundant and moved out (see Machine-local state below), not deleted.
+- **Four architecture decisions locked via direct questions before building** (ADR-022): same
+  React app, not a separate frontend; landing page becomes the site root (`/`), existing `Login`
+  moves to `/login`; the 4 cluster pages (Health Statistics, Epidemiology Surveillance, Research,
+  Laboratory) ship **public-state only** — the design's logged-in variant (unblurred tables,
+  working downloads) is real future work, not built this session; Epi Surveillance's
+  "+ Submit ESR Report" button links to the existing `/esr/new` form rather than rebuilding it.
+- **Built end-to-end:** `frontend/src/pages/public/` (Landing, HealthStatistics,
+  EpidemiologySurveillance, Research, Laboratory) + a shared scaffold
+  (`frontend/src/components/public/ClusterPage.jsx`, `PublicChrome.jsx`, `publicTheme.js`,
+  `public.css`) — the 4 structurally-identical cluster pages (gov bar → header → hero → report
+  cards → blur-locked table → footer) are driven by per-page config objects through one scaffold
+  component instead of 4 copies of the same JSX. Fonts (Sora + Plus Jakarta Sans) added to
+  `index.html`; the DOH/PHRIC logo copied into `frontend/public/images/phric-logo.png`.
+- **Every "Sign in with Google" trigger in the prototype was design-only** (the handoff's own
+  README says so — no real OAuth, just a `isLoggedIn` boolean flip) — replaced with a
+  "Staff Sign In" pill that routes to `/login`; the real JWT login flow is completely unchanged,
+  it just moved off the site root.
+- **`App.jsx` rewired**: `/` → `Landing`, `/login` → the existing `Login` page,
+  `ProtectedRoute`/`PermissionRoute` redirect to `/login` (was `/`), catch-all redirects to `/`
+  (was `/home`). `services/api.js`'s 401 interceptor and `Navbar`'s logout also updated to
+  `/login`. All existing protected/admin routes under `/home` untouched.
+- **Verified:** ESLint clean (0 errors project-wide — 9 pre-existing warnings in unrelated old
+  files, none in new code), production build compiles clean, all 5 new routes + the logo asset
+  return 200 on the running dev server. **Not done: a live browser click-through** — the Claude
+  Chrome extension wasn't connected this session. Joseph reviewed the pages himself in his own
+  browser afterward and confirmed they look right ("checked the pages, all good for me").
+- **Committed and pushed this session** — asked Joseph how to handle the pending code per the
+  halt-and-ask rule; he chose to commit it together with docs/memory. See Git section below.
+
 ## Session 7 (2026-07-09, OFFICE) — Infectious Disease (HIV/HepB/Syphilis) build started
 - **Started the next program per the build-priority order**: HIV-Syphilis-HepaB antenatal
   screening, the recommended-first sub-group of `INFECTIOUS_DISEASE` (smallest clean group,
@@ -280,7 +317,7 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   finished result for his UI check. Not yet built; would need `adding_templates.md` updated
   with a "definition of done" template when he's ready to try it. See [[working-agreement]].
 
-## Current focus (as of 2026-07-09, end of session 7)
+## Current focus (as of 2026-07-10, end of session 8)
 Three tracks now, running in parallel:
 1. **Go-live (v1.0.0).** `memory-bank/deployment-checklist.md` is the working checklist.
    Steps 1 (hardening) + 2 (deploy infra) DONE and verified end-to-end. **Domain purchased and
@@ -299,13 +336,14 @@ Three tracks now, running in parallel:
    Recipe: `.claude/skills/add-template` (formalizes what was `memory-bank/adding_templates.md`).
    This is the demo content for the health-professional higher-ups; deployment is only the
    delivery vehicle.
-3. **PHRIC site + ESR reporting (new, Session 6).** Full ROADMAP.md entry under "PHRIC site +
-   ESR reporting." **ESR Verification Form built end-to-end** (`/esr/new`) — Epidemiology's
-   immediate ask, a form that mirrors submissions into a Google Sheets line list. Google Sheets
-   credentials parked at Joseph's request (RUNBOOK.md has the one-time setup); the rest of the
-   PHRIC public site (landing page, gated portals, other cluster pages) and a Google OAuth +
-   granular-permissions overhaul (Joseph asked about this mid-scoping) are both explicitly
-   deferred, not started.
+3. **PHRIC site + ESR reporting (Session 6, expanded Session 8).** Full ROADMAP.md entry under
+   "PHRIC site + ESR reporting." ESR Verification Form built end-to-end (`/esr/new`, Session 6).
+   **Session 8 pivot: the public site is no longer parked** — landing page + all 4 cluster pages
+   (Health Statistics, Epidemiology Surveillance, Research, Laboratory) built public-state-only,
+   pixel-close to the design handoff (ADR-022), committed and pushed. Still open: the auth-gated
+   ("logged-in") variant of the 4 cluster pages, wiring real backend data into them, Google
+   Sheets credentials for ESR (parked), and the Google OAuth + granular-permissions overhaul
+   (deferred to its own initiative).
 
 ## Shipped 2026-07-04 (HOME machine) — deployment infrastructure
 - **Step 1 hardening** (`da851f9`): fail-fast secrets (`app/core/env.py`; also killed a third
@@ -345,6 +383,9 @@ Three tracks now, running in parallel:
   login. CI: pytest (33) + ruff + eslint on every push; GHCR images on version tags.
 - **ESR Verification Form** (Session 6): `/esr/new`, `esr_reports` table (JSONB), best-effort
   Google Sheets mirror on submit (ADR-020). Google Sheets credentials parked — see RUNBOOK.md.
+- **PHRIC public site — landing + 4 cluster pages** (Session 8, committed): `/`,
+  `/health-statistics`, `/epidemiology-surveillance`, `/research`, `/laboratory`, public-state
+  only (ADR-022). Login moved to `/login`.
 
 ## Open work (priority order)
 1. **Google Sheets setup for ESR reports** (parked by Joseph, self-serve when ready): create the
@@ -367,14 +408,23 @@ Three tracks now, running in parallel:
    decisions (D3–D8, D10 — D9 sensitive-indicator ladder resolved via ADR-021): split-configs for
    multi-sheet workbooks (D3), a new DQC "reconciliation" rule type (D4), per-column rollup
    override (D5), row-stacked-period parsing (D6), Morbidity's disease-as-row schema (D7/D10).
-6. **Parked decisions** (Joseph, when ready): Google OAuth + granular per-user permissions
-   (needs its own design pass, see ROADMAP.md); rest of the PHRIC public site (no priority order
-   set); stash@{0} Overview Card — finish or drop (HOME machine only); small-cell suppression
-   cutoff (<5 or <10); data-dictionary draft greenlight; whether one `is_sensitive` bit is
-   granular enough or a tiered RBAC scheme is needed (open question left by ADR-021).
-7. Remaining CHILD_CARE Immunization files 5–8 when real data arrives.
-8. Deferred refactors: split `backend/main.py` (~1300 lines) + oversized frontend pages;
-   9 cosmetic ESLint warnings.
+6. **PHRIC public site follow-ups**: the auth-gated ("logged-in") variant of the 4 cluster pages
+   (unblurred tables, working downloads); wiring real backend data into the public pages
+   (currently static placeholder figures from the design prototype); Google OAuth + granular
+   per-user permissions (needs its own design pass, see ROADMAP.md — unrelated to the "Staff
+   Sign In" pill added this session, which just routes to the existing JWT `/login`).
+7. **Other parked decisions** (Joseph, when ready): stash@{0} Overview Card — finish or drop
+   (HOME machine only); small-cell suppression cutoff (<5 or <10); data-dictionary draft
+   greenlight; whether one `is_sensitive` bit is granular enough or a tiered RBAC scheme is
+   needed (open question left by ADR-021).
+8. Remaining CHILD_CARE Immunization files 5–8 when real data arrives.
+9. Deferred refactors: split `backend/main.py` (~1300 lines) + oversized frontend pages;
+    9 cosmetic ESLint warnings.
+
+## Done this session (session 8), closed out
+- ✅ PHRIC public site landing + 4 cluster pages built, Joseph-reviewed live, committed and
+  pushed together with this docs/memory sync (his choice, per the halt-and-ask rule) — see
+  Session 8 log above and Git section below.
 
 ## Done this session (session 7), closed out
 - ✅ Infectious Disease (HIV/HepB/Syphilis) — 38 indicators seeded + 3 configs written +
@@ -404,6 +454,11 @@ NOTE: admin's password hash is argon2 on both machines (upgraded live during tes
 
 ## Git
 - Work goes **directly on `main`** (sole developer). Push when done.
+- **2026-07-10 session 8 (HOME, hostname `_hansell_`):** per the shutdown protocol's halt-and-ask
+  rule, Joseph was asked how to handle the pending PHRIC public site frontend code (5 new page
+  files, 4 new shared component files, 4 modified files — `App.jsx`, `index.html`, `Navbar.jsx`,
+  `services/api.js`) — he chose to commit it together with this docs/memory sync. See
+  `session-handoff.md` for the verified pushed commit hash.
 - **2026-07-09 session 7 (OFFICE):** Joseph asked to commit + push the Infectious Disease code
   immediately, then run full shutdown protocols. Code committed as `87950a4`; docs/memory
   shutdown sync committed and pushed separately (see `session-handoff.md` for the verified hash).

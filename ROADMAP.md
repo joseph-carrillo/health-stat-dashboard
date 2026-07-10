@@ -140,9 +140,6 @@ Recipe: `memory-bank/adding_templates.md`.
 Joseph shared two design handoffs for a future **PHRIC public site** (landing page + gated
 Health Statistics portal + Epidemiology Surveillance/Research/Laboratory cluster pages) —
 `design_handoff_phric_site/` and a more precise, dedicated `design_handoff_esr_verification_form/`.
-The full public site is a future/parked initiative; **only the ESR Verification Form was built
-this session**, prompted by an immediate ask from Epidemiology (a form that auto-populates a
-Google Sheets line list they already use to digest events).
 - [x] **ESR Verification Form** (`/esr/new`) — full 5-section form (Detection, Filter and
       Verification, Assessment, Response, Report Generation) recreating the dedicated handoff
       pixel-close, incl. native date/time pickers and Yes/No-as-radio-buttons over the
@@ -155,8 +152,28 @@ Google Sheets line list they already use to digest events).
 - [ ] **Google Sheets credentials** — parked at Joseph's request. One-time setup (service
       account + Sheet sharing + `ESR_SHEET_ID`) documented in `RUNBOOK.md`. Until done,
       submissions save fine but sit at `sheet_sync_status='failed'`.
-- [ ] Rest of the PHRIC site (landing page, gated Health Statistics portal, Epidemiology
-      Surveillance/Research/Laboratory cluster pages) — not started, no priority order set yet.
+- [x] **PHRIC public site pivot decided 2026-07-10**: the plan changed from "park the site" to
+      "build the skeleton now" — Joseph wants public-facing pages live and linkable to internal
+      clients (pre-higher-up-approval) even though only the Health Statistics dashboard has real
+      data behind it. Locked decisions (ADR-022): same React app, not a separate frontend;
+      landing page becomes the site root (`/`); the existing login moves to `/login`; the 4
+      cluster pages (Health Statistics, Epidemiology Surveillance, Research, Laboratory) ship
+      **public-state only** (blurred/locked data tables, no real auth-gated variant yet); the
+      Epi Surveillance page's "+ Submit ESR Report" button links straight to the existing
+      `/esr/new` form.
+- [x] **Landing + 4 cluster pages built 2026-07-10** — recreated pixel-close from
+      `design_handoff_phric_site/`: `frontend/src/pages/public/` (Landing, HealthStatistics,
+      EpidemiologySurveillance, Research, Laboratory) + a shared scaffold
+      (`frontend/src/components/public/ClusterPage.jsx`, `PublicChrome.jsx`, `publicTheme.js`,
+      `public.css`) so the 4 structurally-identical cluster pages stay in sync via per-page
+      config objects instead of 4 copies of the same markup. The prototype's simulated "Sign in
+      with Google" was design-only (real auth is JWT) — every sign-in trigger is now a "Staff
+      Sign In" pill routing to `/login`; logging in there still lands in the existing internal
+      dashboard unchanged. `App.jsx` rewired: `/` → Landing, `/login` → the existing Login page,
+      unknown routes redirect to `/` instead of `/home`. ESLint clean (0 errors on the new
+      files), production build compiles. **Not yet done:** a visual click-through in a real
+      browser (the Chrome extension wasn't connected this session) — Joseph reviewed the pages
+      himself and confirmed they look right.
 - [ ] **Google OAuth login + granular per-user permissions** — Joseph asked for this during ESR
       scoping (real "Sign in with Google" + an admin UI to set what an individual user can do,
       not just pick one of 5 fixed roles). Explicitly deferred to its own initiative — today's
@@ -164,6 +181,9 @@ Google Sheets line list they already use to digest events).
       per-role dict (`backend/app/core/auth.py` `ROLES`); no per-user override exists in the
       schema. Needs its own design pass (OAuth client setup, consent flow, a `users.permissions`
       or similar model) before building, not bundled into the ESR form.
+- [ ] **Auth-gated ("logged-in") variant of the 4 cluster pages** — the design handoff specs a
+      second render state (unblurred tables, working PDF/XLSX download pills, welcome-back
+      hero) driven by an `isLoggedIn` boolean; only the public state shipped this session.
 
 ## Phase 2 — Web form input (future)
 - [ ] Web form mirroring the FHSIS template → PostgreSQL (replaces Excel upload)
