@@ -1,0 +1,78 @@
+{
+  "template_id": "INFEC_CDR_FILARIASIS",
+  "template_version": "2026",
+  "program_code": "INFECTIOUS_DISEASE",
+  "source_file_pattern": "infec_cdr_filariasis_nir",
+  "frequency": "annual",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "Infectious Disease — Filariasis Case Detection Rate (annual)",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City" }
+    ]
+  },
+
+  "upload": { "sub_program": "Filariasis", "file_number": 1 },
+
+  "sheet_map": { "annual": "Annual" },
+
+  "columns": [
+    { "index": 3, "indicator_code": "FILA_NBE_EXAM_M", "is_computed": false },
+    { "index": 4, "indicator_code": "FILA_NBE_EXAM_F", "is_computed": false },
+    { "index": 5, "indicator_code": "FILA_NBE_EXAM_TOTAL", "is_computed": true,
+      "formula": "FILA_NBE_EXAM_M + FILA_NBE_EXAM_F" },
+    { "index": 6, "indicator_code": "FILA_RDT_EXAM_M", "is_computed": false },
+    { "index": 7, "indicator_code": "FILA_RDT_EXAM_F", "is_computed": false },
+    { "index": 8, "indicator_code": "FILA_RDT_EXAM_TOTAL", "is_computed": true,
+      "formula": "FILA_RDT_EXAM_M + FILA_RDT_EXAM_F" },
+    { "index": 9, "indicator_code": "FILA_BOTH_EXAM_M", "is_computed": true,
+      "formula": "FILA_NBE_EXAM_M + FILA_RDT_EXAM_M" },
+    { "index": 10, "indicator_code": "FILA_BOTH_EXAM_F", "is_computed": true,
+      "formula": "FILA_NBE_EXAM_F + FILA_RDT_EXAM_F" },
+    { "index": 11, "indicator_code": "FILA_BOTH_EXAM_TOTAL", "is_computed": true,
+      "formula": "FILA_BOTH_EXAM_M + FILA_BOTH_EXAM_F" },
+
+    { "index": 13, "indicator_code": "FILA_NBE_POS_M", "is_computed": false },
+    { "index": 14, "indicator_code": "FILA_NBE_POS_F", "is_computed": false },
+    { "index": 15, "indicator_code": "FILA_NBE_POS_TOTAL", "is_computed": true,
+      "formula": "FILA_NBE_POS_M + FILA_NBE_POS_F" },
+    { "index": 16, "indicator_code": "FILA_RDT_POS_M", "is_computed": false },
+    { "index": 17, "indicator_code": "FILA_RDT_POS_F", "is_computed": false },
+    { "index": 18, "indicator_code": "FILA_RDT_POS_TOTAL", "is_computed": true,
+      "formula": "FILA_RDT_POS_M + FILA_RDT_POS_F" },
+    { "index": 19, "indicator_code": "FILA_BOTH_POS_M", "is_computed": true,
+      "formula": "FILA_NBE_POS_M + FILA_RDT_POS_M" },
+    { "index": 20, "indicator_code": "FILA_BOTH_POS_F", "is_computed": true,
+      "formula": "FILA_NBE_POS_F + FILA_RDT_POS_F" },
+    { "index": 21, "indicator_code": "FILA_BOTH_POS_TOTAL", "is_computed": true,
+      "formula": "FILA_BOTH_POS_M + FILA_BOTH_POS_F" },
+
+    { "index": 23, "indicator_code": "FILA_NBE_CDR_PCT", "is_computed": true,
+      "formula": "FILA_NBE_POS_TOTAL / FILA_NBE_EXAM_TOTAL" },
+    { "index": 24, "indicator_code": "FILA_RDT_CDR_PCT", "is_computed": true,
+      "formula": "FILA_RDT_POS_TOTAL / FILA_RDT_EXAM_TOTAL" },
+    { "index": 25, "indicator_code": "FILA_BOTH_CDR_PCT", "is_computed": true,
+      "formula": "FILA_BOTH_POS_TOTAL / FILA_BOTH_EXAM_TOTAL" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "FILA_BOTH_CDR_PCT", "threshold": 1.0,
+      "numerator_code": "FILA_BOTH_POS_TOTAL", "denominator_code": "FILA_BOTH_EXAM_TOTAL",
+      "message": "Filariasis positives exceed examined (CDR over 100%)",
+      "hint": "You cannot have more positive results than people examined. Over 100% means a value is wrong: check the source file (examined entered too low, or positives too high) and re-upload." }
+  ],
+
+  "notes": "Filariasis Case Detection Rate — annual, province/HUC only (4 rows); NIR rollup skipped; location_column:2 ('NIRA'). CDR columns are positivity = positive/examined per test modality (NBE, RDT, combined); the source headers 'A/E','B/R','C/U' are stale label notation (FLAG F1-1) — config keys off the verified formula (positive/examined), not the header. Self-referential denominator (examined is its own base — no population sheet). The MDA sibling file is EXCLUDED (non-NIR data + broken 15+/2+ formulas — DOH-blocked, see analysis F2)."
+}

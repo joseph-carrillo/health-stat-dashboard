@@ -29,6 +29,7 @@ PROGRAMS = [
         "sub_programs": [
             {"name": "Infectious Disease"},
             {"name": "Leprosy"},
+            {"name": "Filariasis"},
         ],
     },
     {

@@ -1,0 +1,80 @@
+{
+  "template_id": "INFEC_LYMPH_ELEPH_HYDRO",
+  "template_version": "2026",
+  "program_code": "INFECTIOUS_DISEASE",
+  "source_file_pattern": "infec_lymph_eleph_hydro_nir",
+  "frequency": "annual",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "Infectious Disease — Filariasis Morbidity (Lymphedema / Elephantiasis / Hydrocele, annual)",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City" }
+    ]
+  },
+
+  "upload": { "sub_program": "Filariasis", "file_number": 2 },
+
+  "sheet_map": { "annual": "Annual" },
+
+  "columns": [
+    { "index": 3, "indicator_code": "FILA_LYMPH_2_4_M", "is_computed": false },
+    { "index": 4, "indicator_code": "FILA_LYMPH_2_4_F", "is_computed": false },
+    { "index": 5, "indicator_code": "FILA_LYMPH_2_4_TOTAL", "is_computed": true,
+      "formula": "FILA_LYMPH_2_4_M + FILA_LYMPH_2_4_F" },
+    { "index": 6, "indicator_code": "FILA_LYMPH_5_14_M", "is_computed": false },
+    { "index": 7, "indicator_code": "FILA_LYMPH_5_14_F", "is_computed": false },
+    { "index": 8, "indicator_code": "FILA_LYMPH_5_14_TOTAL", "is_computed": true,
+      "formula": "FILA_LYMPH_5_14_M + FILA_LYMPH_5_14_F" },
+    { "index": 9, "indicator_code": "FILA_LYMPH_15_M", "is_computed": false },
+    { "index": 10, "indicator_code": "FILA_LYMPH_15_F", "is_computed": false },
+    { "index": 11, "indicator_code": "FILA_LYMPH_15_TOTAL", "is_computed": true,
+      "formula": "FILA_LYMPH_15_M + FILA_LYMPH_15_F" },
+    { "index": 12, "indicator_code": "FILA_LYMPH_2PLUS_M", "is_computed": true,
+      "formula": "FILA_LYMPH_2_4_M + FILA_LYMPH_5_14_M + FILA_LYMPH_15_M" },
+    { "index": 13, "indicator_code": "FILA_LYMPH_2PLUS_F", "is_computed": true,
+      "formula": "FILA_LYMPH_2_4_F + FILA_LYMPH_5_14_F + FILA_LYMPH_15_F" },
+    { "index": 14, "indicator_code": "FILA_LYMPH_2PLUS_TOTAL", "is_computed": true,
+      "formula": "FILA_LYMPH_2PLUS_M + FILA_LYMPH_2PLUS_F" },
+
+    { "index": 16, "indicator_code": "FILA_ELEPH_2_4_M", "is_computed": false },
+    { "index": 17, "indicator_code": "FILA_ELEPH_2_4_F", "is_computed": false },
+    { "index": 18, "indicator_code": "FILA_ELEPH_2_4_TOTAL", "is_computed": true,
+      "formula": "FILA_ELEPH_2_4_M + FILA_ELEPH_2_4_F" },
+    { "index": 19, "indicator_code": "FILA_ELEPH_5_14_M", "is_computed": false },
+    { "index": 20, "indicator_code": "FILA_ELEPH_5_14_F", "is_computed": false },
+    { "index": 21, "indicator_code": "FILA_ELEPH_5_14_TOTAL", "is_computed": true,
+      "formula": "FILA_ELEPH_5_14_M + FILA_ELEPH_5_14_F" },
+    { "index": 22, "indicator_code": "FILA_ELEPH_15_M", "is_computed": false },
+    { "index": 23, "indicator_code": "FILA_ELEPH_15_F", "is_computed": false },
+    { "index": 24, "indicator_code": "FILA_ELEPH_15_TOTAL", "is_computed": true,
+      "formula": "FILA_ELEPH_15_M + FILA_ELEPH_15_F" },
+    { "index": 25, "indicator_code": "FILA_ELEPH_2PLUS_M", "is_computed": true,
+      "formula": "FILA_ELEPH_2_4_M + FILA_ELEPH_5_14_M + FILA_ELEPH_15_M" },
+    { "index": 26, "indicator_code": "FILA_ELEPH_2PLUS_F", "is_computed": true,
+      "formula": "FILA_ELEPH_2_4_F + FILA_ELEPH_5_14_F + FILA_ELEPH_15_F" },
+    { "index": 27, "indicator_code": "FILA_ELEPH_2PLUS_TOTAL", "is_computed": true,
+      "formula": "FILA_ELEPH_2PLUS_M + FILA_ELEPH_2PLUS_F" },
+
+    { "index": 29, "indicator_code": "FILA_HYDRO_2_4_M", "is_computed": false },
+    { "index": 30, "indicator_code": "FILA_HYDRO_5_14_M", "is_computed": false },
+    { "index": 31, "indicator_code": "FILA_HYDRO_15_M", "is_computed": false },
+    { "index": 32, "indicator_code": "FILA_HYDRO_TOTAL", "is_computed": true,
+      "formula": "FILA_HYDRO_2_4_M + FILA_HYDRO_5_14_M + FILA_HYDRO_15_M" }
+  ],
+
+  "dqc_rules": [],
+
+  "notes": "Filariasis chronic morbidity — Lymphedema, Elephantiasis (M/F x 2-4/5-14/15+/2+) and Hydrocele (Male-only by clinical definition, FLAG F3-3). Annual, province/HUC only (4 rows); NIR rollup skipped; location_column:2. Pure case counts, no rates/denominators. '2+' totals sum all three age bands (this file's are formulaically correct, unlike the excluded MDA file's). Reused header letters/labels ('C. Total' twice) are cosmetic — config keys off column index. Second Filariasis file (file_number 2), shares the Filariasis sub-program with the CDR config."
+}

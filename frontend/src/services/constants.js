@@ -71,6 +71,16 @@ export const TEMPLATES = [
     program_code: "INFECTIOUS_DISEASE",
   },
   {
+    id: "infec_cdr_filariasis",
+    label: "Filariasis — Case Detection Rate (NBE / RDT, annual)",
+    program_code: "INFECTIOUS_DISEASE",
+  },
+  {
+    id: "infec_lymph_eleph_hydro",
+    label: "Filariasis — Morbidity (Lymphedema / Elephantiasis / Hydrocele, annual)",
+    program_code: "INFECTIOUS_DISEASE",
+  },
+  {
     id: "envi_water",
     label: "Water Supply — Household Coverage (BSWS & Safely Managed)",
     program_code: "WASH",
