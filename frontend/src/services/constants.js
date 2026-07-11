@@ -195,6 +195,11 @@ export const TEMPLATES = [
     label: "Vital Stats — Infant Mortality (IMR)",
     program_code: "VITAL_STATS",
   },
+  {
+    id: "nata_lb_abr_rabr",
+    label: "Vital Stats — Natality (Live Births / ABR / RABR)",
+    program_code: "VITAL_STATS",
+  },
 ];
 
 export const MONTHS = [

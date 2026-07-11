@@ -67,6 +67,7 @@ PROGRAMS = [
         "name": "Vital Statistics",
         "sub_programs": [
             {"name": "Mortality"},
+            {"name": "Natality"},
         ],
     },
 ]

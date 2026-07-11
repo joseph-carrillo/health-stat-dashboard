@@ -2282,6 +2282,52 @@ INDICATORS = {
          "count", "quarterly", "count", 100, None, False, False, None, None),
         ("MORTA_IMR_RATE", "Infant Mortality Rate (IMR) per 1,000 LB",
          "rate", "quarterly", "rate", 1000, "MORTA_LB_TOTAL", True, False, None, None),
+
+        # =========================================================
+        # NATALITY (nata_lb_abr_rabr_nir.xlsx) — Live Births, ABR, RABR.
+        # Province/HUC granularity only (4 real rows). Q1-only data;
+        # Q2 EXCLUDED from config (structurally missing the ABR<10 col,
+        # DOH-blocked — FLAG 1). Rates per 1,000 (ADR-023: stored
+        # already-multiplied, rate_multiplier is the display-unit label).
+        # =========================================================
+
+        # --- Live Births (raw M/F, computed total) ---
+        ("NATA_LB_MALE", "Livebirths (Male)",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("NATA_LB_FEMALE", "Livebirths (Female)",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("NATA_LB_TOTAL", "Total Livebirths",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+
+        # --- Reference populations (raw, denominators for ABR rates) ---
+        ("NATA_POP_10_14", "Estimated Population 10-14",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("NATA_POP_15_19", "Estimated Population 15-19",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+
+        # --- Adolescent Birth counts + rates per 1,000 ---
+        ("NATA_ABR_LT10", "Adolescent Births <10 years (count)",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("NATA_ABR_10_14", "Adolescent Births 10-14 (count)",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("NATA_ABR_10_14_RATE", "Adolescent Birth Rate 10-14 per 1,000",
+         "rate", "quarterly", "rate", 1000, "NATA_POP_10_14", True, False, None, None),
+        ("NATA_ABR_15_19", "Adolescent Births 15-19 (count)",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("NATA_ABR_15_19_RATE", "Adolescent Birth Rate 15-19 per 1,000",
+         "rate", "quarterly", "rate", 1000, "NATA_POP_15_19", True, False, None, None),
+
+        # --- Repeat Adolescent Births (10-14 is a bare count — no
+        #     denominator exists in the template, FLAG 3) ---
+        ("NATA_RABR_10_14", "Repeat Adolescent Births 10-14 (count)",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("NATA_DELIVERIES_15_19", "Deliveries 15-19 (RABR denominator)",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("NATA_RABR_15_19", "Repeat Adolescent Births 15-19 (count)",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("NATA_RABR_15_19_PCT", "Repeat Adolescent Birth Rate 15-19 (%)",
+         "percentage", "quarterly", "percentage", 100, "NATA_DELIVERIES_15_19",
+         True, False, None, None),
     ],
 }
 

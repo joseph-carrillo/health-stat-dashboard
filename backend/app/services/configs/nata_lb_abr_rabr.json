@@ -1,0 +1,59 @@
+{
+  "template_id": "NATA_LB_ABR_RABR",
+  "template_version": "2026",
+  "program_code": "VITAL_STATS",
+  "source_file_pattern": "nata_lb_abr_rabr_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "Vital Stats — Natality (Live Births / ABR / RABR)",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City" }
+    ]
+  },
+
+  "upload": { "sub_program": "Natality", "file_number": 1 },
+
+  "sheet_map": { "1": "Q1", "3": "Q3", "4": "Q4" },
+
+  "columns": [
+    { "index": 3, "indicator_code": "NATA_LB_MALE", "is_computed": false },
+    { "index": 4, "indicator_code": "NATA_LB_FEMALE", "is_computed": false },
+    { "index": 5, "indicator_code": "NATA_LB_TOTAL", "is_computed": true,
+      "formula": "NATA_LB_MALE + NATA_LB_FEMALE" },
+
+    { "index": 6, "indicator_code": "NATA_ABR_LT10", "is_computed": false },
+    { "index": 7, "indicator_code": "NATA_POP_10_14", "is_computed": false },
+    { "index": 8, "indicator_code": "NATA_POP_15_19", "is_computed": false },
+
+    { "index": 9, "indicator_code": "NATA_ABR_10_14", "is_computed": false },
+    { "index": 10, "indicator_code": "NATA_ABR_10_14_RATE", "is_computed": true,
+      "formula": "NATA_ABR_10_14 / NATA_POP_10_14 * 1000" },
+
+    { "index": 11, "indicator_code": "NATA_ABR_15_19", "is_computed": false },
+    { "index": 12, "indicator_code": "NATA_ABR_15_19_RATE", "is_computed": true,
+      "formula": "NATA_ABR_15_19 / NATA_POP_15_19 * 1000" },
+
+    { "index": 13, "indicator_code": "NATA_RABR_10_14", "is_computed": false },
+    { "index": 14, "indicator_code": "NATA_DELIVERIES_15_19", "is_computed": false },
+    { "index": 15, "indicator_code": "NATA_RABR_15_19", "is_computed": false },
+    { "index": 16, "indicator_code": "NATA_RABR_15_19_PCT", "is_computed": true,
+      "formula": "NATA_RABR_15_19 / NATA_DELIVERIES_15_19" }
+  ],
+
+  "dqc_rules": [],
+
+  "notes": "Vital Stats Natality. Province/HUC granularity only — 4 real rows (Negros Occidental, Negros Oriental, Siquijor, City of Bacolod HUC); NIR region rollup (row 2) skipped via data_start_row:1. location_column:2 — col 1 ('Region') is a constant 'NIR' literal, the real name is col 2 (FLAG 5). Only Q1 carries data (Q3/Q4 blank but same 17-col layout, safe to map). Q2 EXCLUDED: it is structurally missing the ABR<10 column (16 cols vs 17), shifting every field left — the parser uses one shared columns array so mapping Q2 here would silently mis-read; DOH-blocked pending the missing-column fix (FLAG 1). Annual sheet is a #REF!-broken SUM rollup — NOT ingested; annual/quarterly views aggregate stored data. ABR 10-14 / 15-19 rate columns are 'per 1,000' (headers wrongly say '%', FLAG 2) — stored already-multiplied (ADR-023). RABR 15-19 is a true percentage (count/deliveries, no x1000). RABR 10-14 has no denominator in the template (FLAG 3) — stored as a bare count. LB_TOTAL is the shared MMR denominator per the file's own change_log (FLAG 4). Deferred DQC (need D4 sum-of-parts rule): ABR_10_14+ABR_15_19 <= LB_TOTAL; RABR_15_19 <= DELIVERIES_15_19. Minor-privacy sensitivity of adolescent-birth data is an open policy question for Joseph (not in current Tier-1 sensitive list)."
+}
