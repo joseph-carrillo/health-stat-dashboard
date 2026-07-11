@@ -5,8 +5,8 @@
 Joseph pre-approved building ALL remaining programs autonomously ("I'll inspect once all
 programs done"), I built the D1/D2 rate uplift + Vital Stats Mortality, then he **stopped the
 build ~30 min in to conserve his usage limit** and ordered this detailed shutdown. Code + docs
-committed TOGETHER (his explicit choice when asked per the pending-code rule). **Commit hash:
-see `git log -1` — verified pushed at shutdown (status showed no "ahead").**
+committed TOGETHER (his explicit choice when asked per the pending-code rule). **Session-10
+commit: `b9f87b5`** (+ this hash-recording docs commit on top) — push verified at shutdown.
 
 ## ⚠️ STANDING INSTRUCTIONS FROM JOSEPH (Session 10 — carry to EVERY future session)
 1. **Model policy (also in root CLAUDE.md "Model & Token Policy"):** main/orchestrator session
