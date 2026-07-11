@@ -1,34 +1,45 @@
 # activeContext.md
 
 ## Current Session Goal (next session)
-Four tracks, in whichever order inputs arrive:
-1. **Go-live Step 3** — domain purchased + IT has handed over server IP/SSH as of 2026-07-06;
-   only ports 80/443 confirmation is still pending. **Joseph is targeting live within ~2 weeks.**
-   Start server prep (`RUNBOOK.md → Production — server deployment → One-time server prep`)
-   as soon as the domain name + server IP are shared in chat — this doesn't need to wait on
-   ports. Then: DNS A record, deploy, smoke test, rotate admin password, tag `v1.0.0`.
-2. **Finish HIV-Syphilis-HepaB (Infectious Disease), started Session 7.** 38 indicators + 3
-   configs (`infec_hiv`/`infec_hepatitisb`/`infec_syphilis`) are built, committed (`87950a4`),
-   and seeded live in the office machine's DB — but `/api/validate-config` and dry-run parse
-   against the real `infec_*_nir.xlsx` files are still pending. **First step: locate the real
-   files** — not confirmed on either machine yet (office `backend/data/INFECTIOUS_DISEASE/` only
-   has the placeholder `.txt`; unlike Demographics this was never confirmed HOME-only, just
-   unconfirmed — check there first).
-3. **Finish Demographics.** Indicators + config are built, committed (`b07ac1f`), and
-   config-validated (Session 5), but dry-run testing against the real `Demographics_nir.xlsx` is
-   blocked on this being the HOME machine — this machine.
-4. **ESR Verification Form (Session 6, done) — Google Sheets setup is the only thing left.**
-   Joseph explicitly parked it: create the Google Cloud service account + Sheet, share the
-   Sheet with the service account's email, drop the key at
-   `./secrets/google-service-account.json`, set `ESR_SHEET_ID` in `.env` — steps in
-   `RUNBOOK.md`. Not a blocker, just needs Joseph to do it whenever. The auth-gated variant of
-   the PHRIC cluster pages and the Google OAuth + granular-permissions overhaul are both future,
-   not yet scoped.
+**The #1 thing: Joseph inspects the pending schema/parser DECISIONS and decides — especially
+D1/D2 (rates + unbounded ratios).** After Session 9 built out every *unblocked* program, that
+decision is now the gate on all remaining program work. The full inspectable list is in
+`ROADMAP.md` ("DECISIONS FOR JOSEPH TO INSPECT & DECIDE") with per-decision context in
+`template_analysis/00_CONSOLIDATED_SUMMARY.md`. Short version of what each unblocks:
+- **D1 (non-% rates ×1k/10k/100k)** → Vital Stats Mortality + Natality, Leprosy, Filariasis. Biggest lever.
+- **D2 (unbounded-ratio display)** → Demographics display (data still empty at DOH).
+- **D4 (sum-of-parts reconciliation DQC)** → deferred DQC in Intra Partum DT/DO, NCD Risk Factors, STH, Rabies.
+- **D5 (per-column `rollup:"last"`)** → NCD Meds (also needs DOH Dec-block fix).
+- **D6 (row-stacked dimension)** → NCD Eye Health, Oral Health, Family Planning.
+- **D7/D10 (disease-as-row schema)** → Morbidity (its own mini-phase, last).
+- **Rabies extra_sheets parser change** → Rabies.
 
-Once both HIV-Syphilis-HepaB and Demographics are signed off, move to the remaining
-`INFECTIOUS_DISEASE` sub-groups (Schistosomiasis, Filariasis, Rabies, STH, Leprosy — all
-analyzed, none built) or the next program per
-`memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md`'s build order.
+**Also open, not decision-gated:**
+1. **UI golden-path check of Session 9's work** — all dry-run only, nothing in the live DB yet.
+   Walk the new programs through Upload → Coverage/Rankings/Indicator Reports; when Joseph is
+   happy, run the REAL (non-dry-run) uploads. (Connect the Chrome extension for a live click-through.)
+2. **Go-live Step 3** — domain + server SSH in hand since 2026-07-06; only ports 80/443 pending.
+   Server prep (`RUNBOOK.md`) can start once domain/IP are shared in chat. ~2-week target from 07-06.
+3. **ESR Google Sheets one-time setup** (parked) — service account + Sheet + `ESR_SHEET_ID`, steps
+   in `RUNBOOK.md`. Not a blocker; submissions save fine without it.
+
+**Blocked on DOH (not Joseph):** WASH sanitation (Q3/Q4 stray col), Natality Q2 col, NCD Meds Dec
+block, Schistosomiasis/STH clarifications; and DATA ENTRY for Demographics facility/workforce +
+Geriatric SC Immunization (both files shipped nearly/entirely empty).
+
+## 2026-07-11 session 9 (HOME machine `_hansell_`) — program build-out blitz
+Joseph: "continue with the rest of the programs and have it checked once I get back," then at the
+end: "run shutdown protocols, update foundation docs + handoff so I can inspect and decide next
+session." Built every unblocked program/file in one pass (8 feature commits + this docs sync),
+each validated + dry-run parsed against its real `.xlsx` + spot-checked against the sheets' own
+computed cells — **dry-run only, nothing in the live DB**. Shipped: HIV/HepB/Syphilis sign-off
+(+ a real parser bug fix, `is_annotation_row`, for sheet footer text mis-read as location errors),
+WASH water, Geriatric screening, **all of Maternal Care (13 files → 17 configs, incl. same-bracket
+recomputes for the 8ANC/4PNC shift bugs)**, NCD Mental Health (sensitive) + Cancer + Risk Factors.
+~24 configs, ~520 indicators, ~800 cell values hand-verified, zero mismatches. Everything left is
+blocked on a Joseph D-decision or a DOH action (see "Current Session Goal" above). Full commit
+list + blocker breakdown in `project_state.md` Session 9. Did NOT do: live browser UI check
+(Chrome extension not connected), real uploads (held for Joseph's review).
 
 ## 2026-07-10 session 8 (HOME machine, hostname `_hansell_`) — PHRIC public site built
 Joseph pivoted the PHRIC site from "parked, future initiative" to "build the skeleton now" — he
@@ -180,24 +191,20 @@ before the next. Never dump many files at once. Flag any new dependency and ask 
 See `working-agreement.md` (burnout → "manage, don't grind").
 
 ## First moves next session (after `startup protocols`)
-1. **Locate the real `infec_hiv_nir.xlsx`/`infec_hepatitisb_nir.xlsx`/`infec_syphilis_nir.xlsx`
-   files** — check `backend/data/INFECTIOUS_DISEASE/` on whichever machine this is. Office
-   machine only has the placeholder `.txt` as of Session 7. If found, run `/api/validate-config`
-   then dry-run parse + spot-check ≥3 cell values per `.claude/skills/add-template`'s definition
-   of done, to sign off the HIV-Syphilis-HepaB sub-group.
-2. If on the HOME machine: also finish Demographics — dry-run parse `demographics_annual` against
-   the real `Demographics_nir.xlsx` and spot-check at least 3 cell values.
-3. Ask Joseph: has IT confirmed ports 80/443 yet? If domain name + server IP haven't been
-   shared in chat yet, ask for them — server prep can start without waiting on ports.
-4. Ask Joseph: ready to do the Google Sheets one-time setup for ESR reports yet (RUNBOOK.md)?
-   Not urgent — submissions work fine without it, just don't sync to a Sheet yet.
-5. Once HIV-Syphilis-HepaB and Demographics are both fully signed off: move to the remaining
-   `INFECTIOUS_DISEASE` sub-groups (Schistosomiasis, Filariasis, Rabies, STH, Leprosy) or the
-   next program per `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` §5.
-6. Parked, needing Joseph when ready: stash@{0} fate (HOME machine), small-cell suppression
-   cutoff, data-dictionary draft greenlight, whether one `is_sensitive` bit is granular enough
-   or a tiered RBAC scheme is needed (open question left by ADR-021), the Google OAuth +
-   granular-permissions overhaul, and the auth-gated variant of the PHRIC cluster pages.
+1. **Walk Joseph through the DECISIONS list** (`ROADMAP.md` → "DECISIONS FOR JOSEPH TO INSPECT
+   & DECIDE"). Lead with **D1/D2** — it unblocks the most (Vital Stats, Leprosy, Filariasis,
+   Demographics display). Get a decision, then build the newly-unblocked programs the same way
+   Session 9 did (seed → config → validate → dry-run → verify vs sheet cells).
+2. **Offer the UI golden-path check of Session 9's work** — it's all dry-run, nothing in the
+   live DB. If he's happy after reviewing Upload → Coverage/Rankings/Indicator Reports, run the
+   REAL uploads (dry_run off) for the new programs. Connect the Chrome extension for a live
+   click-through if he wants screenshots.
+3. Ask: has IT confirmed ports 80/443? If domain name + server IP aren't in chat yet, ask —
+   server prep can start without waiting on ports.
+4. Ask: ready for the ESR Google Sheets one-time setup (RUNBOOK.md)? Not urgent.
+5. Parked, needing Joseph when ready: `stash@{0}` fate (HOME machine), small-cell suppression
+   cutoff, data-dictionary greenlight, one-`is_sensitive`-bit vs tiered RBAC (ADR-021), Google
+   OAuth + granular permissions, the auth-gated PHRIC cluster-page variant.
 
 ## Watch out for
 - **This machine's hostname is `RESUDesktop2` = the OFFICE desktop** (confirmed 2026-07-09,

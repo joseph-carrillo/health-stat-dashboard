@@ -1,35 +1,56 @@
 # session-handoff.md
 
 ## Last Updated
-2026-07-10, session 8 (HOME machine, hostname `_hansell_` — PHRIC public site landing + 4
-cluster pages built). Per the shutdown protocol's halt-and-ask rule, Joseph was asked whether to
-commit the pending PHRIC frontend code together with this docs/memory sync or hold it back —
-**he chose to commit everything together** (matching the Session 5/6 precedent). **Pushed commit: `f14f099`** (verified — `git status -sb` shows local and origin match exactly,
-no "ahead").
+2026-07-11, **session 9** (HOME machine, hostname `_hansell_` — program build-out blitz + this
+shutdown). Built every *unblocked* program/file (8 feature commits, all dry-run only, nothing in
+the live DB), then Joseph asked to run shutdown protocols and update the foundation docs + handoff
+so he can **inspect the pending schema decisions and decide next session**. Feature commits (all
+pushed & verified): `8a2788f` `a505662` `4d2115e` `83bf708` `7f22aa9` `3230975` `0d3447c`
+`354f3a1`, plus docs `b56fc5f`. **This shutdown docs/memory commit is the follow-up** (verified
+hash recorded in the shutdown report).
 
 ## Current Objective
-Five tracks:
-1. **Go-live (v1.0.0)** — Steps 1+2 done and verified. **As of 2026-07-06: domain purchased,
-   IT has handed over server IP + SSH.** Only remaining blocker: IT confirming inbound ports
-   80/443. **Joseph is targeting live within ~2 weeks of 2026-07-06.** Server prep
-   (`RUNBOOK.md → Production — server deployment → One-time server prep`) can start as soon as
-   the domain name + server IP are shared in chat — doesn't need to wait on ports.
-2. **Build out the 10 non-Child-Care programs** — analysis phase complete (18/18) and
-   **consolidated** into `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` (decisions
-   D1–D10, sensitive-indicator ladder, DOH fix list, 11-step build-priority order). Demographics
-   built (indicators + config done, dry-run test pending — needs the HOME machine's real file).
-   **HIV-Syphilis-HepaB started Session 7** (see below) — indicators + configs done, seeded
-   live in the office machine's DB, dry-run test pending (real source files not located yet).
-3. **PHRIC site + ESR reporting (Session 6, expanded Session 8)** — ESR Verification Form
-   (`/esr/new`) built end-to-end and verified live in the browser (Session 6). **Session 8: the
-   rest of the public site is no longer parked** — landing page + all 4 cluster pages (Health
-   Statistics, Epidemiology Surveillance, Research, Laboratory) built public-state-only,
-   pixel-close to the design handoff (ADR-022), Joseph-reviewed and approved live
-   ("checked the pages, all good for me"), committed and pushed this session (see commit hash
-   above). Google Sheets credentials for ESR still intentionally parked by Joseph (RUNBOOK.md
-   has the one-time setup). The auth-gated variant of the 4 cluster pages, real backend data
-   wiring for them, and a Google OAuth + granular-permissions overhaul (Joseph asked about this
-   mid-ESR-scoping) are all future, unscoped.
+**The gating item now: Joseph inspects the schema/parser DECISIONS and decides — lead with D1/D2.**
+Session 9 built everything buildable without a decision, so all remaining program work is
+decision-gated. The inspectable list is in `ROADMAP.md` ("DECISIONS FOR JOSEPH TO INSPECT &
+DECIDE"): D1 (non-% rates → Vital Stats, Leprosy, Filariasis), D2 (unbounded-ratio display →
+Demographics), D4 (reconciliation DQC), D5 (per-column cumulative rollup → NCD Meds), D6
+(row-stacked dimension → NCD Eye/Oral Health/Family Planning), D7/D10 (Morbidity), Rabies parser
+change. Other live tracks:
+1. **UI golden-path check + real uploads for Session 9's work** — all dry-run so far, nothing in
+   the live DB. When Joseph's happy after reviewing Upload → Coverage/Rankings/Indicator Reports,
+   run the real (non-dry-run) uploads.
+2. **Go-live (v1.0.0)** — Steps 1+2 done. Domain + server SSH in hand since 2026-07-06; only ports
+   80/443 pending. Server prep can start once domain/IP are shared in chat. ~2-week target.
+3. **ESR Google Sheets one-time setup** — parked; steps in `RUNBOOK.md`. Not a blocker.
+4. PHRIC follow-ups (auth-gated cluster-page variant, real data wiring, Google OAuth + granular
+   permissions) — all future, unscoped.
+
+## Done This Session — Session 9 (2026-07-11, HOME machine `_hansell_`)
+- **Built every unblocked program/file in one pass** (Joseph: "continue with the rest of the
+  programs and have it checked once I get back"), each validated + dry-run parsed against its real
+  `.xlsx` and spot-checked against the sheets' own computed cells (~800 cell values verified, zero
+  mismatches). **All dry-run — nothing written to the live DB, awaiting Joseph's UI check.**
+- **HIV/HepB/Syphilis signed off** (`8a2788f`) — real files found on this machine; validated, 69
+  values verified. **Fixed a real parser bug**: `is_annotation_row()` in `parser.py` (+ `test_
+  annotation_rows.py`) — sheet footer text ("Source: DOH-FHSIS", "Legend:") in the PSGC column was
+  being reported as location errors. Confirmed the sensitive-data RBAC masking (`can_view_sensitive`)
+  is genuinely built and enforced.
+- **New programs/files** (one commit each): WASH water (`envi_water`, `a505662`, first
+  municipality-level new program); Geriatric screening (`ger_screening`, 49 ind, `4d2115e`; DQC
+  re-derived, catches the real GER-1 data bug); **Maternal Care COMPLETE** — Prenatal 9 configs
+  (`83bf708`), Post Partum + Intra BW (`7f22aa9`), Intra Partum SHP/DT/DO (`3230975`) = 13 files,
+  17 templates, incl. same-bracket recomputes for the 8ANC/4PNC shift bugs and D3 split-configs for
+  a/b/c sheet-groups; NCD Mental Health (`0d3447c`, 13 ind **all is_sensitive=TRUE** per ADR-021);
+  NCD Cancer + Risk Factors (`354f3a1`, cervical/breast + adults/SC behavioral risk factors).
+- ~24 new configs, ~520 new indicators. `bootstrap_db.py` idempotent — run it on any machine that
+  needs these seeded. 38 backend tests still pass, ruff clean throughout.
+- **Everything remaining is blocked** on a Joseph D-decision (see Current Objective) or a DOH
+  action (WASH sanitation Q3/Q4 fix, Natality Q2 fix, NCD Meds Dec-block fix, Schisto/STH
+  clarifications; and DATA ENTRY for Demographics facility/workforce + Geriatric SC Immunization —
+  both files shipped nearly/entirely empty).
+- **Not done:** live browser UI click-through (Chrome extension not connected — same as Session 8);
+  real (non-dry-run) uploads (held for Joseph's golden-path review).
 
 ## Done This Session — Session 8 (2026-07-10, HOME machine, hostname `_hansell_`)
 - **Joseph pivoted the PHRIC site from "parked" to "build the skeleton now."** He wants the
@@ -283,29 +304,27 @@ Five tracks:
    question left by ADR-021).
 
 ## Machine-local state (things GitHub does NOT sync — required section per shutdown protocol)
-As of shutdown 2026-07-10, session 8 (HOME machine, hostname `_hansell_`):
-- **This machine (HOME): clean, everything committed and pushed.** Joseph chose to commit the
-  PHRIC public site code together with this docs/memory sync (per the halt-and-ask rule) —
-  see the commit hash at the top of this file. Committed files: modified
-  `frontend/index.html`, `frontend/src/App.jsx`, `frontend/src/components/Navbar.jsx`,
-  `frontend/src/services/api.js`; new `frontend/public/images/phric-logo.png`,
-  `frontend/src/components/public/` (4 files), `frontend/src/pages/public/` (5 files).
-- **`design_handoff_phric_site/` removed from the repo root** (was untracked, 12 files) — verified
-  identical to `PHRIC site.zip` already in Joseph's Downloads, so moved out (not deleted, not
-  committed) into this session's job temp directory. `git status` no longer shows it.
-- **Both stashes confirmed still present on this machine** (`stash@{0}` = untested Overview Card
-  feature, parked; `stash@{1}` = older "indicator-reports-area-filter", provenance unknown) —
-  this is what confirmed hostname `_hansell_` = the HOME/laptop machine (see
-  `activeContext.md`'s "Watch out for"). Unchanged from prior sessions.
-- **The real `Demographics_nir.xlsx` (and 45 other program `.xlsx` files) exist on this (HOME)
-  machine** — unchanged from Session 5/6, Demographics' dry-run step can happen here whenever
-  picked back up.
-- **The real `infec_hiv_nir.xlsx`/`infec_hepatitisb_nir.xlsx`/`infec_syphilis_nir.xlsx` files**
-  were not checked for on this machine this session (frontend-only session) — still needs
-  confirming here or on the office machine, per Session 7's open item.
-- **`secrets/` folder** (created Session 6, `./secrets/.gitkeep` tracked) — not touched this
-  session; assume still empty except the placeholder unless confirmed otherwise.
-- `.env` (per-machine, HOME): not touched this session.
+As of shutdown 2026-07-11, session 9 (HOME machine, hostname `_hansell_`):
+- **This machine (HOME): clean, everything committed and pushed** (`git status -sb` = up to date,
+  no "ahead"). All 8 feature commits + docs were code+config that DO sync via git — see the commit
+  list at the top of this file.
+- **The real program `.xlsx` source files live on this (HOME) machine** — this is why every
+  Session 9 dry-run/verify ran here: `backend/data/INFECTIOUS_DISEASE/HIV-Syphilis-HepaB/` (the 3
+  `infec_*_nir.xlsx` files — **confirmed present this session**, resolving Session 7's open
+  question), `WASH/envi_water_nir.xlsx`, `GERIATRIC/`, all of `MATERNAL_CARE/`, `NCD/`,
+  `DEMOGRAPHICS/`, etc. These are **gitignored** — the OFFICE machine does NOT have them, so the
+  dry-run/verify steps can only be re-run on this HOME machine (or after copying files over).
+- **DB state (per-machine, not synced):** Session 9 wrote **nothing** to this machine's DB — all
+  uploads were `dry_run=true`. The ~520 new indicators WERE seeded here via `bootstrap_db.py`
+  (idempotent). On the OFFICE machine, run `docker compose exec backend python backend/bootstrap_db.py`
+  to seed the new indicators there too (safe to re-run).
+- **Both stashes still present on this machine** (`stash@{0}` = untested Overview Card feature,
+  parked; `stash@{1}` = older "indicator-reports-area-filter", provenance unknown) — unchanged.
+- **`secrets/` folder** (`./secrets/.gitkeep` tracked) — not touched; still empty except the
+  placeholder. `.env` (per-machine, HOME): not touched this session.
+- **Two source files confirmed nearly/entirely empty at DOH** (not a parser issue — flagged for
+  DOH data entry): `DEMOGRAPHICS/Demographics_nir.xlsx` (only the population column filled; every
+  facility/workforce count blank) and `GERIATRIC/ncd_scimmunization_nir.xlsx` (entirely zero/blank).
 
 ## Notes / Gotchas
 - **The public cluster pages (`ClusterPage.jsx`) intentionally render public-state only** — no

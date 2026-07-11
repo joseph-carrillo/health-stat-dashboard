@@ -39,11 +39,14 @@
 - [x] SBI (Annual) — Td (#9), MR (#10), HPV (#11) configs + 27 indicators
 - [ ] Remaining Immunization files (5–8) — when real data arrives
 
-### Build out the other 10 programs (← active focus, 2026-07-01)
-Only CHILD_CARE has indicators seeded (247); the other 10 programs have 0. Per-program build
-loop (analyze → seed indicators → write configs → validate → dry-run → Joseph tests), **one
-program end-to-end at a time**. Files land in `backend/data/<PROGRAM_CODE>/` (folders scaffolded).
-Recipe: `memory-bank/adding_templates.md`.
+### Build out the other 10 programs (← active focus)
+**Session 9 (2026-07-11) built every UNBLOCKED program/file in one pass** — all validated +
+dry-run parsed against real files + spot-checked against the sheets' own cells (dry-run only,
+nothing in the live DB, awaiting Joseph's UI golden-path check). Indicator counts now:
+CHILD_CARE 247, MATERNAL_CARE 319, NCD 143, DEMOGRAPHICS 50, GERIATRIC 49, INFECTIOUS_DISEASE 38,
+WASH 11. **Everything still `[ ]` below is genuinely blocked on a Joseph decision (D-items in the
+"Schema/parser decisions" block — this is what to inspect and decide next session) or a DOH
+action.** Recipe: `.claude/skills/add-template`.
 - [x] Scaffold `backend/data/<PROGRAM_CODE>/` intake folders (10 programs)
 - [x] All 10 programs' `.xlsx` files dropped 2026-07-05 (46 files, 18 natural sub-groups)
 - [x] **Analysis phase complete: 18/18 sub-groups documented** in
@@ -57,64 +60,73 @@ Recipe: `memory-bank/adding_templates.md`.
 - [x] **New skills added to formalize the per-program loop**: `.claude/skills/analyze-template`
       (read-only inspection recipe) and `.claude/skills/add-template` (seed → config → validate →
       dry-run loop with a machine-checkable definition of done). _Done 2026-07-06._
-- [~] **Demographics — first program built under the new priority order (pilot of the
-      add-template skill).** Indicators seeded (50 `DEMO_*` codes), config written
-      (`demographics_annual.json`, single combined config using `sheet_map` + `extra_sheets`,
-      not two separate configs as the raw analysis first suggested), config-validated clean via
-      `/api/validate-config`, registered in the Upload catalog (`upload_catalog.py` needed a
-      `PROGRAMS` entry too — `constants.js` alone wasn't enough, that only feeds Indicator
-      Reports) and confirmed live in the browser. **Introduces the dashboard's first
-      `formula_type="ratio"` indicators** (population/households-per-resource, no coverage %
-      ceiling) — schema already allowed the value, this is the first real use.
-      **Not yet done:** dry-run parse + spot-check against the real `Demographics_nir.xlsx` file,
-      which exists only on the HOME machine — needs to happen there (or after copying the file
-      over) before this program is fully signed off. _Built 2026-07-06, office machine;
-      uncommitted pending Joseph's call on when to commit._
-- [ ] Maternal Care and Services (all 3 sub-groups analyzed — Prenatal, Post Partum, Intra Partum)
-- [ ] Family Planning Services (analyzed — quarters stacked as row-blocks in one tab, not one tab
-      per quarter; needs a `sheet_map` schema decision before config work)
-- [ ] Vital Statistics (Mortality + Natality analyzed; indicators/config not yet built)
-- [ ] Morbidity (analyzed — disease-as-row matrix, not location-as-row; needs ~10,400
-      auto-generated indicator codes or a `diseases` reference table, see below)
-- [~] **Infectious Disease Prevention and Control — HIV/HepB/Syphilis sub-group started
-      2026-07-09 (next per the build-priority order, recommended first for the sensitive-RBAC
-      exercise).** 38 indicators seeded, 3 configs written (`infec_hiv.json`,
-      `infec_hepatitisb.json`, `infec_syphilis.json`), registered in `upload_catalog.py` +
-      `constants.js`. **Not yet done:** `/api/validate-config` check and dry-run parse + cell
-      spot-check against the real `infec_*_nir.xlsx` files (office machine has no source files
-      yet — need to confirm which machine has them, see Schistosomiasis/Filariasis/Rabies/STH/
-      Leprosy sub-groups still to follow in the same `INFECTIOUS_DISEASE` program). See ADR-021
-      for the sensitive-indicator ladder decision made alongside this build.
-- [ ] Non-Communicable Disease Prevention and Control (all 5 files analyzed; indicators/config
-      not yet built — `ncd_meds_nir.xlsx` needs a source-file fix, see below)
-- [ ] Oral Health Care and Services (analyzed — needs a parser change first, see below)
-- [ ] Geriatric Health (analyzed — 2 files; seed under existing `GERIATRIC` program code, not NCD)
-- [x] Demographics — built 2026-07-06 (see above); `formula_type="ratio"` now live in schema
-      and seeding, not just planned
-- [ ] Water, Sanitation, and Hygiene (WASH) (analyzed — `envi_sanitation_zod_nir.xlsx` Q3/Q4
-      structure fix still needed from DOH before this template can be built)
+- [x] **Maternal Care and Services — COMPLETE (Session 9).** All 13 files → 17 templates:
+      Prenatal (9 configs: `pre_8anc`, `pre_bmi`, `pre_td`, `pre_supplementation`, `pre_anemia`,
+      `pre_gd`, `pre_deworming`, `pre_bp_measure`, `pre_hpn_mgmt`), Post Partum (4: `post_4pnc`,
+      `post_supplementation`, `post_bp_measure`, `post_hpn_mgmt`), Intra Partum (4: `intra_bw`,
+      `intra_shp`, `intra_dt`, `intra_do`). 319 indicators. Recomputes the 8ANC/4PNC cross-bracket
+      shift bugs same-bracket; split configs (D3) for the a/b/c parallel sheet-groups. 278+
+      cell values verified. **The Intra Partum DT/DO sum-of-parts reconciliation DQC is deferred
+      pending D4.**
+- [x] **Infectious Disease — HIV/HepB/Syphilis signed off (Session 9).** Real files found on the
+      HOME machine; `infec_hiv`/`infec_hepatitisb`/`infec_syphilis` validated + dry-run, 69 cell
+      values verified. Sensitive-data RBAC masking confirmed built. Fixed a real parser bug along
+      the way (`is_annotation_row` — sheet footer text was being read as location errors).
+- [x] **WASH — water file built (Session 9).** `envi_water`, 11 indicators, first
+      municipality-level new program. Sanitation file still blocked (DOH source fix, below).
+- [x] **Geriatric — screening file built (Session 9).** `ger_screening`, 49 indicators; DQC
+      re-derived (catches the real GER-1 data bug). Second file (SC Immunization) blocked — DOH
+      shipped it entirely zero/blank, nothing to verify.
+- [~] **NCD — 3 of 5 files built (Session 9): Mental Health, Cancer, Risk Factors.** `ncd_mh`
+      (13 ind, **all is_sensitive=TRUE** per ADR-021), `ncd_cacx` + `ncd_brca` (cervical + breast),
+      `ncd_ra_adults` + `ncd_ra_sc`. 143 indicators. **Blocked:** Eye Health (age-as-rows → D6),
+      Meds (106-row wrong-region Dec block needs a DOH fix + year-to-date cumulative columns → D5).
+- [~] **Demographics — config done, but source file is nearly empty.** `demographics_annual`
+      validated + dry-run (HOME machine). Only the population column is populated; every facility
+      and health-worker count is blank in the source — **blocked on DOH entering the real data**,
+      and the ratio *display* still needs D2. Introduced `formula_type="ratio"` (live in schema).
+- [ ] **Vital Statistics (Mortality + Natality)** — **blocked on D1** (per-100k/10k rates not
+      supported end-to-end). Natality also needs the Q2 source-column fix (DOH).
+- [ ] **Family Planning** — **blocked on D6** (quarters stacked as row-blocks in one tab).
+- [ ] **Morbidity** — **blocked on D7/D10** (disease-as-row matrix; ~10,400 codes or a `diseases`
+      table; no `psgc_column`).
+- [ ] **Remaining Infectious Disease sub-groups** — Leprosy & Filariasis CDR/Lymph **blocked on
+      D1** (rates); Rabies **blocked on the extra_sheets parser change**; STH **blocked on D4 +
+      an encoder denominator question**; Schistosomiasis **blocked on DOH scope clarifications**;
+      Filariasis MDA out of scope (wrong region).
+- [ ] **Oral Health** — **blocked on D6** (quarters + age-bands stacked as rows).
 
-**Schema/parser decisions surfaced by the analysis, needed before seeding starts:**
+**⇩ DECISIONS FOR JOSEPH TO INSPECT & DECIDE NEXT SESSION ⇩**
+These are the one-way doors that block every remaining program. Deciding them (especially **D1/D2**)
+unblocks the most work. Full context per decision: `template_analysis/00_CONSOLIDATED_SUMMARY.md`.
 - ~~New `formula_type="ratio"` for Demographics~~ — **resolved 2026-07-06**: schema already
-  allowed the value (unused until now), no migration needed; Demographics' 50 indicators use it.
-- New `formula_type` for non-percentage rate multipliers (×1,000 / ×10,000 / ×100,000) — still
-  needed by Leprosy, Rabies, and both Vital Stats files (`rate_multiplier` column exists but is
-  confirmed unused anywhere in the codebase — this would be its first real consumer).
-- Parser change: `extra_sheets` currently assumes a fixed sheet name reused every period: it
-  cannot express Rabies's period-varying sub-templates (`Qtr1a`/`Qtr2a`/… vs a static tab) or
-  Oral Health's row-stacked age-group/quarter dimensions.
-- New DQC rule type for "sum of parts = / ≤ whole" reconciliation checks (Rabies groups b/d) —
-  `run_dqc_rules()` only supports `over_threshold` and `sequence` today.
-- Per-column rollup override (`rollup: "last"` vs default `"sum"`) — `ncd_meds_nir.xlsx`'s
-  risk-assessment columns are year-to-date cumulative, not monthly flow; summing them for
-  quarterly/annual totals would badly overstate.
-- `sheet_map` currently maps one period to one tab; Family Planning's workbook stacks all 4
-  quarters as row-blocks within a single tab, needing either a `data_start_row`/`data_end_row`
-  pair per quarter or a different sheet_map shape entirely.
-- Morbidity is a disease-as-row matrix (indicators on rows, not columns) — needs either ~10,400
-  auto-generated indicator codes (disease × age-bracket × sex) or a dedicated `diseases`
-  reference table; also has no `psgc_column` at all (location is free-text, needs a name→PSGC
-  lookup instead of a column index).
+  allowed the value; Demographics' 50 indicators use it (parse side). Display side is D2 below.
+- **D1 — non-percentage rate support (×1,000 / ×10,000 / ×100,000).** Needs a schema/display
+  uplift (the `rate_multiplier` column exists but is unused end-to-end). **Unblocks: Vital Stats
+  Mortality + Natality, Leprosy, Filariasis CDR/Lymph.** Biggest single lever.
+- **D2 — unbounded-ratio display** (population-per-resource, no 100% ceiling). Parse works;
+  Coverage/Trends pages assume a 0–100% scale. **Unblocks: Demographics display** (once DOH also
+  fills the data).
+- **D3 — split-configs for multi-sheet-group workbooks.** RESOLVED in practice — used this session
+  for every a/b/c file (Prenatal BP, Post Partum BP, Intra Partum SHP/DT/DO, WASH, NCD Cancer/RA).
+  No further decision needed; documented here so it's not re-litigated.
+- **D4 — "sum of parts = / ≤ whole" reconciliation DQC rule type.** `run_dqc_rules()` only does
+  `over_threshold` + `sequence` today. Deferred rules waiting on it: Intra Partum DT/DO
+  (type/outcome should sum to deliveries), NCD Risk-Factors cross-template check (RF risk-assessed
+  must equal Meds risk-assessed), STH cascade, Rabies groups b/d.
+- **D5 — per-column rollup override (`rollup:"last"` vs default `"sum"`).** `ncd_meds_nir.xlsx`'s
+  risk-assessment columns are year-to-date cumulative, not monthly flow — summing them would badly
+  overstate. **Blocks: NCD Meds** (also needs the DOH Dec-block source fix).
+- **D6 — row-stacked dimension parsing.** `sheet_map` maps one period to one tab; several files
+  stack age-groups or quarters as row-blocks within a tab. **Blocks: NCD Eye Health (age-as-rows),
+  Oral Health (quarters+age stacked), Family Planning (quarters stacked).**
+- **D7/D10 — Morbidity disease-as-row schema.** Disease matrix (indicators on rows, not columns);
+  ~10,400 codes (disease × age × sex) or a `diseases` reference table; no `psgc_column` (free-text
+  location → name→PSGC lookup). Its own mini-phase, do last.
+- **Rabies parser change** — `extra_sheets` assumes a fixed sheet name reused every period; can't
+  express Rabies's period-varying sub-templates. **Blocks: Rabies.**
+- **Open (from ADR-021):** whether one `is_sensitive` bit is enough, or a tiered RBAC scheme
+  (age-band detail vs. total) is needed. Not blocking anything yet.
 - Several sample source files have confirmed real bugs that must NOT be replicated in configs
   (not template-owner's fault to wait on — these are parser/config-author decisions): NCD's
   `ncd_meds_nir.xlsx` December sheet has 106 leftover wrong-region `#ERROR!` rows; Post Partum's
