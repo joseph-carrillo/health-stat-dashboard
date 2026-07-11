@@ -1,0 +1,51 @@
+{
+  "template_id": "PRE_BP_MEASURE",
+  "template_version": "2026",
+  "program_code": "MATERNAL_CARE",
+  "source_file_pattern": "pre_bp_measure_hpn_mngt_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "Prenatal — BP Measured During ANC Visits",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City, Municipality" }
+    ]
+  },
+
+  "upload": { "sub_program": "Prenatal", "file_number": 8 },
+
+  "sheet_map": { "1": "Q1a", "2": "Q2a", "3": "Q3a", "4": "Q4a" },
+
+  "columns": [
+    { "index": 3, "indicator_code": "PRE_BP_ANCVISIT_10_14", "is_computed": false },
+    { "index": 4, "indicator_code": "PRE_BP_ANCVISIT_15_19", "is_computed": false },
+    { "index": 5, "indicator_code": "PRE_BP_ANCVISIT_20_49", "is_computed": false },
+    { "index": 6, "indicator_code": "PRE_BP_ANCVISIT_TOTAL", "is_computed": true, "formula": "PRE_BP_ANCVISIT_10_14 + PRE_BP_ANCVISIT_15_19 + PRE_BP_ANCVISIT_20_49" },
+    { "index": 7, "indicator_code": "PRE_BP_MEASURED_10_14", "is_computed": false },
+    { "index": 8, "indicator_code": "PRE_BP_MEASURED_10_14_PCT", "is_computed": true, "formula": "PRE_BP_MEASURED_10_14 / PRE_BP_ANCVISIT_10_14" },
+    { "index": 9, "indicator_code": "PRE_BP_MEASURED_15_19", "is_computed": false },
+    { "index": 10, "indicator_code": "PRE_BP_MEASURED_15_19_PCT", "is_computed": true, "formula": "PRE_BP_MEASURED_15_19 / PRE_BP_ANCVISIT_15_19" },
+    { "index": 11, "indicator_code": "PRE_BP_MEASURED_20_49", "is_computed": false },
+    { "index": 12, "indicator_code": "PRE_BP_MEASURED_20_49_PCT", "is_computed": true, "formula": "PRE_BP_MEASURED_20_49 / PRE_BP_ANCVISIT_20_49" },
+    { "index": 13, "indicator_code": "PRE_BP_MEASURED_TOTAL", "is_computed": true, "formula": "PRE_BP_MEASURED_10_14 + PRE_BP_MEASURED_15_19 + PRE_BP_MEASURED_20_49" },
+    { "index": 14, "indicator_code": "PRE_BP_MEASURED_TOTAL_PCT", "is_computed": true, "formula": "PRE_BP_MEASURED_TOTAL / PRE_BP_ANCVISIT_TOTAL" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "PRE_BP_MEASURED_TOTAL_PCT", "threshold": 1.0, "numerator_code": "PRE_BP_MEASURED_TOTAL", "denominator_code": "PRE_BP_ANCVISIT_TOTAL", "message": "BP-measured count exceeds ANC visits (over 100%)", "hint": "BP-measured women are a subset of those with ANC visits, so this should never exceed 100%. Check the source file." }
+  ],
+
+  "notes": "Prenatal File 8, Group A (BP measured during ANC visits). Split config: this reads the 'a' sheets (Q1a-Q4a); the paired Group B (high-BP identification/referral) is a separate config (pre_hpn_mgmt) reading the 'b' sheets of the same file — the a/b groups have parallel period-varying sheets, so per decision D3 they are two template_ids over one physical file. Municipality level (68 rows; region skipped). Col 1 constant 'NIR' filler; location NAME col 2. Chained same-bracket denominator (measured / ANC visits), no population column. This file's percentages were already fixed & logged (v2, both sub-groups). No DQC columns in the source; the over-100% rule here is our own. Annual sheets are pure rollups, not ingested."
+}

@@ -75,6 +75,51 @@ export const TEMPLATES = [
     label: "Geriatric Screening — Senior Citizen (60+) 9-Domain",
     program_code: "GERIATRIC",
   },
+  {
+    id: "pre_bmi",
+    label: "Prenatal — Nutritional Status (BMI)",
+    program_code: "MATERNAL_CARE",
+  },
+  {
+    id: "pre_td",
+    label: "Prenatal — Td / Td2+ Vaccination",
+    program_code: "MATERNAL_CARE",
+  },
+  {
+    id: "pre_supplementation",
+    label: "Prenatal — Supplementation (IFA / MM / CC)",
+    program_code: "MATERNAL_CARE",
+  },
+  {
+    id: "pre_deworming",
+    label: "Prenatal — Deworming",
+    program_code: "MATERNAL_CARE",
+  },
+  {
+    id: "pre_anemia",
+    label: "Prenatal — Anemia Screening & Diagnosis",
+    program_code: "MATERNAL_CARE",
+  },
+  {
+    id: "pre_gd",
+    label: "Prenatal — Gestational Diabetes Screening",
+    program_code: "MATERNAL_CARE",
+  },
+  {
+    id: "pre_8anc",
+    label: "Prenatal — 8+ ANC Visit Completion",
+    program_code: "MATERNAL_CARE",
+  },
+  {
+    id: "pre_bp_measure",
+    label: "Prenatal — BP Measured During ANC Visits",
+    program_code: "MATERNAL_CARE",
+  },
+  {
+    id: "pre_hpn_mgmt",
+    label: "Prenatal — High BP Identified & Referred",
+    program_code: "MATERNAL_CARE",
+  },
 ];
 
 export const MONTHS = [

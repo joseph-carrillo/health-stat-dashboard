@@ -1,0 +1,57 @@
+{
+  "template_id": "PRE_GD",
+  "template_version": "2026",
+  "program_code": "MATERNAL_CARE",
+  "source_file_pattern": "pre_gd_screening_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "Prenatal — Gestational Diabetes Screening & Positivity",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region/PHIC" }
+    ]
+  },
+
+  "upload": { "sub_program": "Prenatal", "file_number": 6 },
+
+  "sheet_map": { "1": "Q1", "2": "Q2", "3": "Q3", "4": "Q4" },
+
+  "columns": [
+    { "index": 3, "indicator_code": "PRE_GD_POP", "is_computed": false },
+    { "index": 4, "indicator_code": "PRE_GD_SCREENED_10_14", "is_computed": false },
+    { "index": 5, "indicator_code": "PRE_GD_SCREENED_10_14_PCT", "is_computed": true, "formula": "PRE_GD_SCREENED_10_14 / PRE_GD_POP" },
+    { "index": 6, "indicator_code": "PRE_GD_SCREENED_15_19", "is_computed": false },
+    { "index": 7, "indicator_code": "PRE_GD_SCREENED_15_19_PCT", "is_computed": true, "formula": "PRE_GD_SCREENED_15_19 / PRE_GD_POP" },
+    { "index": 8, "indicator_code": "PRE_GD_SCREENED_20_49", "is_computed": false },
+    { "index": 9, "indicator_code": "PRE_GD_SCREENED_20_49_PCT", "is_computed": true, "formula": "PRE_GD_SCREENED_20_49 / PRE_GD_POP" },
+    { "index": 10, "indicator_code": "PRE_GD_SCREENED_TOTAL", "is_computed": true, "formula": "PRE_GD_SCREENED_10_14 + PRE_GD_SCREENED_15_19 + PRE_GD_SCREENED_20_49" },
+    { "index": 11, "indicator_code": "PRE_GD_SCREENED_TOTAL_PCT", "is_computed": true, "formula": "PRE_GD_SCREENED_TOTAL / PRE_GD_POP" },
+    { "index": 12, "indicator_code": "PRE_GD_POSITIVE_10_14", "is_computed": false },
+    { "index": 13, "indicator_code": "PRE_GD_POSITIVE_10_14_PCT", "is_computed": true, "formula": "PRE_GD_POSITIVE_10_14 / PRE_GD_SCREENED_10_14" },
+    { "index": 14, "indicator_code": "PRE_GD_POSITIVE_15_19", "is_computed": false },
+    { "index": 15, "indicator_code": "PRE_GD_POSITIVE_15_19_PCT", "is_computed": true, "formula": "PRE_GD_POSITIVE_15_19 / PRE_GD_SCREENED_15_19" },
+    { "index": 16, "indicator_code": "PRE_GD_POSITIVE_20_49", "is_computed": false },
+    { "index": 17, "indicator_code": "PRE_GD_POSITIVE_20_49_PCT", "is_computed": true, "formula": "PRE_GD_POSITIVE_20_49 / PRE_GD_SCREENED_20_49" },
+    { "index": 18, "indicator_code": "PRE_GD_POSITIVE_TOTAL", "is_computed": true, "formula": "PRE_GD_POSITIVE_10_14 + PRE_GD_POSITIVE_15_19 + PRE_GD_POSITIVE_20_49" },
+    { "index": 19, "indicator_code": "PRE_GD_POSITIVE_TOTAL_PCT", "is_computed": true, "formula": "PRE_GD_POSITIVE_TOTAL / PRE_GD_SCREENED_TOTAL" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "PRE_GD_SCREENED_TOTAL_PCT", "threshold": 1.0, "numerator_code": "PRE_GD_SCREENED_TOTAL", "denominator_code": "PRE_GD_POP", "message": "GD screening coverage exceeds 100% of the population proxy", "hint": "Check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "PRE_GD_POSITIVE_TOTAL_PCT", "threshold": 1.0, "numerator_code": "PRE_GD_POSITIVE_TOTAL", "denominator_code": "PRE_GD_SCREENED_TOTAL", "message": "GD-positive count exceeds screened count (over 100%)", "hint": "Positive cases are a subset of those screened, so this should never exceed 100%. Check the source file." }
+  ],
+
+  "notes": "Prenatal File 6 (GD screening) — KNOWN DENOMINATOR ISSUE (maternal_care_prenatal.md deep dive). SCREENED percentages divide by the population proxy (Flag P). POSITIVE percentages divide by the same-bracket SCREENED count, NOT population: the source file's header text claims population (f/a) but its actual Excel formula divides by screened (f/b), matching the already-corrected sibling Anemia file — this config follows the correct formula, not the mislabeled header. The source file's change_log is empty (the fix was applied without logging); a template header-text fix + retroactive change_log entry should be requested from DOH. Province/HUC rollup (5 rows; region skipped). Col 1 constant 'NIR' filler; location NAME col 2. Annual sheet is a pure rollup, not ingested."
+}

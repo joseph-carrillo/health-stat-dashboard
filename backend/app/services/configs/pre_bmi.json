@@ -1,0 +1,57 @@
+{
+  "template_id": "PRE_BMI",
+  "template_version": "2026",
+  "program_code": "MATERNAL_CARE",
+  "source_file_pattern": "pre_nutritional_status_bmi_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "Prenatal — Nutritional Status (BMI)",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region/PHIC" }
+    ]
+  },
+
+  "upload": { "sub_program": "Prenatal", "file_number": 2 },
+
+  "sheet_map": { "1": "Q1", "2": "Q2", "3": "Q3", "4": "Q4" },
+
+  "columns": [
+    { "index": 3, "indicator_code": "PRE_BMI_POP", "is_computed": false },
+    { "index": 4, "indicator_code": "PRE_BMI_NORMAL_10_14", "is_computed": false },
+    { "index": 5, "indicator_code": "PRE_BMI_NORMAL_15_19", "is_computed": false },
+    { "index": 6, "indicator_code": "PRE_BMI_NORMAL_20_49", "is_computed": false },
+    { "index": 7, "indicator_code": "PRE_BMI_NORMAL_TOTAL", "is_computed": true, "formula": "PRE_BMI_NORMAL_10_14 + PRE_BMI_NORMAL_15_19 + PRE_BMI_NORMAL_20_49" },
+    { "index": 8, "indicator_code": "PRE_BMI_NORMAL_PCT", "is_computed": true, "formula": "PRE_BMI_NORMAL_TOTAL / PRE_BMI_POP" },
+    { "index": 9, "indicator_code": "PRE_BMI_LOW_10_14", "is_computed": false },
+    { "index": 10, "indicator_code": "PRE_BMI_LOW_15_19", "is_computed": false },
+    { "index": 11, "indicator_code": "PRE_BMI_LOW_20_49", "is_computed": false },
+    { "index": 12, "indicator_code": "PRE_BMI_LOW_TOTAL", "is_computed": true, "formula": "PRE_BMI_LOW_10_14 + PRE_BMI_LOW_15_19 + PRE_BMI_LOW_20_49" },
+    { "index": 13, "indicator_code": "PRE_BMI_LOW_PCT", "is_computed": true, "formula": "PRE_BMI_LOW_TOTAL / PRE_BMI_POP" },
+    { "index": 14, "indicator_code": "PRE_BMI_HIGH_10_14", "is_computed": false },
+    { "index": 15, "indicator_code": "PRE_BMI_HIGH_15_19", "is_computed": false },
+    { "index": 16, "indicator_code": "PRE_BMI_HIGH_20_49", "is_computed": false },
+    { "index": 17, "indicator_code": "PRE_BMI_HIGH_TOTAL", "is_computed": true, "formula": "PRE_BMI_HIGH_10_14 + PRE_BMI_HIGH_15_19 + PRE_BMI_HIGH_20_49" },
+    { "index": 18, "indicator_code": "PRE_BMI_HIGH_PCT", "is_computed": true, "formula": "PRE_BMI_HIGH_TOTAL / PRE_BMI_POP" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "PRE_BMI_NORMAL_PCT", "threshold": 1.0, "numerator_code": "PRE_BMI_NORMAL_TOTAL", "denominator_code": "PRE_BMI_POP", "message": "Normal-BMI coverage exceeds 100% of the population proxy", "hint": "Check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "PRE_BMI_LOW_PCT", "threshold": 1.0, "numerator_code": "PRE_BMI_LOW_TOTAL", "denominator_code": "PRE_BMI_POP", "message": "Low-BMI coverage exceeds 100% of the population proxy", "hint": "Check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "PRE_BMI_HIGH_PCT", "threshold": 1.0, "numerator_code": "PRE_BMI_HIGH_TOTAL", "denominator_code": "PRE_BMI_POP", "message": "High-BMI coverage exceeds 100% of the population proxy", "hint": "Check the count or the population figure in the source file and re-upload." }
+  ],
+
+  "notes": "Prenatal File 2 (BMI). Province/HUC rollup (5 sheet rows; region skipped, recomputed). Col 1 is a constant 'NIR' filler (not mapped); location NAME is col 2. Denominator is 'Projected Population (Under 1)' used as a live-cohort proxy for expected pregnancies (per-file column, matching the Immunization precedent — Flag P in maternal_care_prenatal.md; a naming decision, not a blocker). Annual sheet is a pure rollup, not ingested. Source column 21's DQC header mislabels 'High BMI' as 'Low BMI' (label-only, formula correct)."
+}

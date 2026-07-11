@@ -80,6 +80,23 @@ always agree (a future CI check will enforce it).
   (Senior Citizen Immunization) is a later build, blocked: its shipped file is entirely
   zero/blank, so its Influenza-denominator bug can't be verified until DOH sends populated data.
 
+- **Maternal Care — Prenatal sub-program (all 8 files → 9 configs)** — the first flagship
+  multi-file program: 8+ ANC completion (`pre_8anc`), BMI (`pre_bmi`), Td/Td2+ (`pre_td`),
+  supplementation (`pre_supplementation`), anemia (`pre_anemia`), gestational-diabetes screening
+  (`pre_gd`), deworming (`pre_deworming`), and BP-during-ANC + high-BP referral (`pre_bp_measure`
+  + `pre_hpn_mgmt`, split per decision D3 because the two groups live in parallel `Q1a`/`Q1b`
+  sheets). 157 indicators, no sensitive data. Files 2–7 are province rollups (4 ingested rows);
+  Files 1 and 8 are municipality level (66 ingested rows). Validated + dry-run parsed against the
+  real files (all 4 quarters, 0 errors); **278 computed values verified** against the sheets' own
+  cells. Key recomputes (never trust the Excel label): anemia/GD **positive** percentages divide
+  by the same-bracket **screened/tested** count, not population (the GD file's header mislabels
+  this as population); 8ANC per-bracket tracked/completed are same-bracket sums and the total
+  completion % is computed II/I despite the source's inverted `(I/II)` label. DQC over-100% rules
+  caught genuine anomalies in the real data (a Siquijor town at 103% 8ANC completion, Bacolod at
+  247% BP-measured). The shared "Projected Population (Under 1)" denominator is kept per-file
+  (matching the Immunization precedent); whether it should be a single shared indicator is a
+  naming decision left open (Flag P / Q-Pre-1).
+
 ### Fixed
 - **Sheet footer/annotation rows are no longer reported as location errors.** The Infectious
   Disease templates are the first whose sheets carry footer text ("Source: DOH-FHSIS", "Legend:",

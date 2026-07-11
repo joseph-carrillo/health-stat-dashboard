@@ -1,0 +1,51 @@
+{
+  "template_id": "PRE_HPN_MGMT",
+  "template_version": "2026",
+  "program_code": "MATERNAL_CARE",
+  "source_file_pattern": "pre_bp_measure_hpn_mngt_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "Prenatal — High BP Identified & Referred",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City, Municipality" }
+    ]
+  },
+
+  "upload": { "sub_program": "Prenatal", "file_number": 8 },
+
+  "sheet_map": { "1": "Q1b", "2": "Q2b", "3": "Q3b", "4": "Q4b" },
+
+  "columns": [
+    { "index": 3, "indicator_code": "PRE_HPN_IDENTIFIED_10_14", "is_computed": false },
+    { "index": 4, "indicator_code": "PRE_HPN_IDENTIFIED_15_19", "is_computed": false },
+    { "index": 5, "indicator_code": "PRE_HPN_IDENTIFIED_20_49", "is_computed": false },
+    { "index": 6, "indicator_code": "PRE_HPN_IDENTIFIED_TOTAL", "is_computed": true, "formula": "PRE_HPN_IDENTIFIED_10_14 + PRE_HPN_IDENTIFIED_15_19 + PRE_HPN_IDENTIFIED_20_49" },
+    { "index": 7, "indicator_code": "PRE_HPN_REFERRED_10_14", "is_computed": false },
+    { "index": 8, "indicator_code": "PRE_HPN_REFERRED_10_14_PCT", "is_computed": true, "formula": "PRE_HPN_REFERRED_10_14 / PRE_HPN_IDENTIFIED_10_14" },
+    { "index": 9, "indicator_code": "PRE_HPN_REFERRED_15_19", "is_computed": false },
+    { "index": 10, "indicator_code": "PRE_HPN_REFERRED_15_19_PCT", "is_computed": true, "formula": "PRE_HPN_REFERRED_15_19 / PRE_HPN_IDENTIFIED_15_19" },
+    { "index": 11, "indicator_code": "PRE_HPN_REFERRED_20_49", "is_computed": false },
+    { "index": 12, "indicator_code": "PRE_HPN_REFERRED_20_49_PCT", "is_computed": true, "formula": "PRE_HPN_REFERRED_20_49 / PRE_HPN_IDENTIFIED_20_49" },
+    { "index": 13, "indicator_code": "PRE_HPN_REFERRED_TOTAL", "is_computed": true, "formula": "PRE_HPN_REFERRED_10_14 + PRE_HPN_REFERRED_15_19 + PRE_HPN_REFERRED_20_49" },
+    { "index": 14, "indicator_code": "PRE_HPN_REFERRED_TOTAL_PCT", "is_computed": true, "formula": "PRE_HPN_REFERRED_TOTAL / PRE_HPN_IDENTIFIED_TOTAL" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "PRE_HPN_REFERRED_TOTAL_PCT", "threshold": 1.0, "numerator_code": "PRE_HPN_REFERRED_TOTAL", "denominator_code": "PRE_HPN_IDENTIFIED_TOTAL", "message": "Referred count exceeds identified high-BP count (over 100%)", "hint": "Referred women are a subset of those identified, so this should never exceed 100%. Check the source file." }
+  ],
+
+  "notes": "Prenatal File 8, Group B (high-BP identification & referral to a higher-level facility). Split config paired with pre_bp_measure (Group A) over the same physical file — reads the 'b' sheets (Q1b-Q4b). Municipality level (68 rows; region skipped). Col 1 constant 'NIR' filler; location NAME col 2. Chained same-bracket denominator (referred / identified), no population column. Sample data is all-zero in every quarter (Q1-only-data pattern; here even Q1 is zero for this group). Fixed & logged (v2). Annual sheets are pure rollups, not ingested."
+}

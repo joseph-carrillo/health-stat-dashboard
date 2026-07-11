@@ -1,0 +1,71 @@
+{
+  "template_id": "PRE_8ANC",
+  "template_version": "2026",
+  "program_code": "MATERNAL_CARE",
+  "source_file_pattern": "pre_8anc_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 1,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "Prenatal — 8+ ANC Visit Completion",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City, Municipality" }
+    ]
+  },
+
+  "upload": { "sub_program": "Prenatal", "file_number": 1 },
+
+  "sheet_map": { "1": "Q1", "2": "Q2", "3": "Q3", "4": "Q4" },
+
+  "columns": [
+    { "index": 2, "indicator_code": "PRE_8ANC_RESIDENT_10_14", "is_computed": false },
+    { "index": 3, "indicator_code": "PRE_8ANC_RESIDENT_15_19", "is_computed": false },
+    { "index": 4, "indicator_code": "PRE_8ANC_RESIDENT_20_49", "is_computed": false },
+    { "index": 5, "indicator_code": "PRE_8ANC_RESIDENT_TOTAL", "is_computed": true, "formula": "PRE_8ANC_RESIDENT_10_14 + PRE_8ANC_RESIDENT_15_19 + PRE_8ANC_RESIDENT_20_49" },
+    { "index": 6, "indicator_code": "PRE_8ANC_TRANSIN_10_14", "is_computed": false },
+    { "index": 7, "indicator_code": "PRE_8ANC_TRANSIN_15_19", "is_computed": false },
+    { "index": 8, "indicator_code": "PRE_8ANC_TRANSIN_20_49", "is_computed": false },
+    { "index": 9, "indicator_code": "PRE_8ANC_TRANSIN_TOTAL", "is_computed": true, "formula": "PRE_8ANC_TRANSIN_10_14 + PRE_8ANC_TRANSIN_15_19 + PRE_8ANC_TRANSIN_20_49" },
+    { "index": 10, "indicator_code": "PRE_8ANC_TRANSOUT_10_14", "is_computed": false },
+    { "index": 11, "indicator_code": "PRE_8ANC_TRANSOUT_15_19", "is_computed": false },
+    { "index": 12, "indicator_code": "PRE_8ANC_TRANSOUT_20_49", "is_computed": false },
+    { "index": 13, "indicator_code": "PRE_8ANC_TRANSOUT_TOTAL", "is_computed": true, "formula": "PRE_8ANC_TRANSOUT_10_14 + PRE_8ANC_TRANSOUT_15_19 + PRE_8ANC_TRANSOUT_20_49" },
+    { "index": 14, "indicator_code": "PRE_8ANC_TRACKED_10_14", "is_computed": true, "formula": "PRE_8ANC_RESIDENT_10_14 + PRE_8ANC_TRANSIN_10_14" },
+    { "index": 15, "indicator_code": "PRE_8ANC_TRACKED_15_19", "is_computed": true, "formula": "PRE_8ANC_RESIDENT_15_19 + PRE_8ANC_TRANSIN_15_19" },
+    { "index": 16, "indicator_code": "PRE_8ANC_TRACKED_20_49", "is_computed": true, "formula": "PRE_8ANC_RESIDENT_20_49 + PRE_8ANC_TRANSIN_20_49" },
+    { "index": 17, "indicator_code": "PRE_8ANC_TRACKED_TOTAL", "is_computed": true, "formula": "PRE_8ANC_TRACKED_10_14 + PRE_8ANC_TRACKED_15_19 + PRE_8ANC_TRACKED_20_49" },
+    { "index": 18, "indicator_code": "PRE_8ANC_ONSCHED_10_14", "is_computed": false },
+    { "index": 19, "indicator_code": "PRE_8ANC_ONSCHED_15_19", "is_computed": false },
+    { "index": 20, "indicator_code": "PRE_8ANC_ONSCHED_20_49", "is_computed": false },
+    { "index": 21, "indicator_code": "PRE_8ANC_ONSCHED_TOTAL", "is_computed": true, "formula": "PRE_8ANC_ONSCHED_10_14 + PRE_8ANC_ONSCHED_15_19 + PRE_8ANC_ONSCHED_20_49" },
+    { "index": 22, "indicator_code": "PRE_8ANC_TRANSIN_DONE_10_14", "is_computed": false },
+    { "index": 23, "indicator_code": "PRE_8ANC_TRANSIN_DONE_15_19", "is_computed": false },
+    { "index": 24, "indicator_code": "PRE_8ANC_TRANSIN_DONE_20_49", "is_computed": false },
+    { "index": 25, "indicator_code": "PRE_8ANC_TRANSIN_DONE_TOTAL", "is_computed": true, "formula": "PRE_8ANC_TRANSIN_DONE_10_14 + PRE_8ANC_TRANSIN_DONE_15_19 + PRE_8ANC_TRANSIN_DONE_20_49" },
+    { "index": 26, "indicator_code": "PRE_8ANC_COMPLETED_10_14", "is_computed": true, "formula": "PRE_8ANC_ONSCHED_10_14 + PRE_8ANC_TRANSIN_DONE_10_14" },
+    { "index": 27, "indicator_code": "PRE_8ANC_COMPLETED_10_14_PCT", "is_computed": true, "formula": "PRE_8ANC_COMPLETED_10_14 / PRE_8ANC_TRACKED_10_14" },
+    { "index": 28, "indicator_code": "PRE_8ANC_COMPLETED_15_19", "is_computed": true, "formula": "PRE_8ANC_ONSCHED_15_19 + PRE_8ANC_TRANSIN_DONE_15_19" },
+    { "index": 29, "indicator_code": "PRE_8ANC_COMPLETED_15_19_PCT", "is_computed": true, "formula": "PRE_8ANC_COMPLETED_15_19 / PRE_8ANC_TRACKED_15_19" },
+    { "index": 30, "indicator_code": "PRE_8ANC_COMPLETED_20_49", "is_computed": true, "formula": "PRE_8ANC_ONSCHED_20_49 + PRE_8ANC_TRANSIN_DONE_20_49" },
+    { "index": 31, "indicator_code": "PRE_8ANC_COMPLETED_20_49_PCT", "is_computed": true, "formula": "PRE_8ANC_COMPLETED_20_49 / PRE_8ANC_TRACKED_20_49" },
+    { "index": 32, "indicator_code": "PRE_8ANC_COMPLETED_TOTAL", "is_computed": true, "formula": "PRE_8ANC_COMPLETED_10_14 + PRE_8ANC_COMPLETED_15_19 + PRE_8ANC_COMPLETED_20_49" },
+    { "index": 33, "indicator_code": "PRE_8ANC_COMPLETED_TOTAL_PCT", "is_computed": true, "formula": "PRE_8ANC_COMPLETED_TOTAL / PRE_8ANC_TRACKED_TOTAL" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "PRE_8ANC_COMPLETED_TOTAL_PCT", "threshold": 1.0, "numerator_code": "PRE_8ANC_COMPLETED_TOTAL", "denominator_code": "PRE_8ANC_TRACKED_TOTAL", "message": "8ANC completion exceeds the number tracked (over 100%)", "hint": "Completed women are a subset of those tracked, so this should never exceed 100%. Check the source file." }
+  ],
+
+  "notes": "Prenatal File 1 (8+ ANC completion). Municipality level (68 sheet rows; region skipped, recomputed). Only 2 meta columns here (psgc col 0, location NAME col 1 — no 'NIR' filler column, unlike Files 2-8). RECOMPUTE NOTES (maternal_care_prenatal.md): (1) per-bracket 'tracked' = same-bracket Resident + Trans-in (col2+col6 etc.), NOT Group-A-Total + Group-B-Total; (2) per-bracket 'completed' = same-bracket on-schedule + trans-in-completed; (3) the total completion % (source col 33) is labeled '(I/II)*100' but its actual formula and value are II/I = Completed Total / Tracked Total — this config implements the correct II/I direction. Trans-out women are captured but (per the source) not subtracted from the tracked denominator. Cols 34-37 are 'No issue' DQC text, not mapped. Annual sheet is a pure rollup, not ingested."
+}

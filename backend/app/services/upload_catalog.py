@@ -44,6 +44,13 @@ PROGRAMS = [
             {"name": "Geriatric Screening"},
         ],
     },
+    {
+        "code": "MATERNAL_CARE",
+        "name": "Maternal Care and Services",
+        "sub_programs": [
+            {"name": "Prenatal"},
+        ],
+    },
 ]
 
 
