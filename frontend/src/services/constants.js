@@ -160,6 +160,11 @@ export const TEMPLATES = [
     label: "Intra Partum — Delivery Outcome (Full Term / Pre-Term / Fetal Death / Abortion)",
     program_code: "MATERNAL_CARE",
   },
+  {
+    id: "ncd_mh",
+    label: "NCD — Mental Health (mhGAP Assessment)",
+    program_code: "NCD",
+  },
 ];
 
 export const MONTHS = [

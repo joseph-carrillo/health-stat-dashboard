@@ -122,6 +122,13 @@ always agree (a future CI check will enforce it).
   templates. The source's sum-of-parts reconciliation checks (delivery type/outcome should sum to
   deliveries) are deferred pending the D4 reconciliation DQC rule type.
 
+- **NCD — Mental Health (`ncd_mh`)** — first NCD file: mhGAP assessment counts by 4 age brackets
+  (0-9/10-19/20-59/60+) x Male/Female, province/HUC rollup. 13 indicators, **all
+  `is_sensitive=TRUE`** per the sensitive-indicator policy (NCD Mental Health / mhGAP, ADR-021 —
+  stigma rationale, small province-level counts can identify individuals). Pure screening-count
+  file with no percentage/denominator columns, so no DQC beyond the blank check. Validated +
+  dry-run against the real file (0 errors); computed totals verified against the sheet cells.
+
 ### Fixed
 - **Sheet footer/annotation rows are no longer reported as location errors.** The Infectious
   Disease templates are the first whose sheets carry footer text ("Source: DOH-FHSIS", "Legend:",

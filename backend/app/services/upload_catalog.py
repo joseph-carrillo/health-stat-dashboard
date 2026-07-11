@@ -53,6 +53,13 @@ PROGRAMS = [
             {"name": "Intra Partum"},
         ],
     },
+    {
+        "code": "NCD",
+        "name": "Non-Communicable Disease Prevention and Control",
+        "sub_programs": [
+            {"name": "Mental Health"},
+        ],
+    },
 ]
 
 

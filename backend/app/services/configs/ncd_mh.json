@@ -1,0 +1,50 @@
+{
+  "template_id": "NCD_MH",
+  "template_version": "2026",
+  "program_code": "NCD",
+  "source_file_pattern": "ncd_mh_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 1,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "NCD — Mental Health (mhGAP Assessment)",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City" }
+    ]
+  },
+
+  "upload": { "sub_program": "Mental Health", "file_number": 1 },
+
+  "sheet_map": { "1": "Qtr1", "2": "Qtr2", "3": "Qtr3", "4": "Qtr4" },
+
+  "columns": [
+    { "index": 2, "indicator_code": "NCD_MH_MHGAP_0_9_MALE", "is_computed": false },
+    { "index": 3, "indicator_code": "NCD_MH_MHGAP_0_9_FEMALE", "is_computed": false },
+    { "index": 4, "indicator_code": "NCD_MH_MHGAP_0_9_TOTAL", "is_computed": true, "formula": "NCD_MH_MHGAP_0_9_MALE + NCD_MH_MHGAP_0_9_FEMALE" },
+    { "index": 5, "indicator_code": "NCD_MH_MHGAP_10_19_MALE", "is_computed": false },
+    { "index": 6, "indicator_code": "NCD_MH_MHGAP_10_19_FEMALE", "is_computed": false },
+    { "index": 7, "indicator_code": "NCD_MH_MHGAP_10_19_TOTAL", "is_computed": true, "formula": "NCD_MH_MHGAP_10_19_MALE + NCD_MH_MHGAP_10_19_FEMALE" },
+    { "index": 8, "indicator_code": "NCD_MH_MHGAP_20_59_MALE", "is_computed": false },
+    { "index": 9, "indicator_code": "NCD_MH_MHGAP_20_59_FEMALE", "is_computed": false },
+    { "index": 10, "indicator_code": "NCD_MH_MHGAP_20_59_TOTAL", "is_computed": true, "formula": "NCD_MH_MHGAP_20_59_MALE + NCD_MH_MHGAP_20_59_FEMALE" },
+    { "index": 11, "indicator_code": "NCD_MH_MHGAP_60PLUS_MALE", "is_computed": false },
+    { "index": 12, "indicator_code": "NCD_MH_MHGAP_60PLUS_FEMALE", "is_computed": false },
+    { "index": 13, "indicator_code": "NCD_MH_MHGAP_60PLUS_TOTAL", "is_computed": true, "formula": "NCD_MH_MHGAP_60PLUS_MALE + NCD_MH_MHGAP_60PLUS_FEMALE" },
+    { "index": 14, "indicator_code": "NCD_MH_MHGAP_ALLAGES_TOTAL", "is_computed": true, "formula": "NCD_MH_MHGAP_0_9_TOTAL + NCD_MH_MHGAP_10_19_TOTAL + NCD_MH_MHGAP_20_59_TOTAL + NCD_MH_MHGAP_60PLUS_TOTAL" }
+  ],
+
+  "dqc_rules": [],
+
+  "notes": "NCD Mental Health (mhGAP tool assessment counts). Province/HUC rollup (5 rows; region skipped). Only 2 meta cols (psgc 0, location NAME 1 — no filler column). 4 age brackets (0-9/10-19/20-59/60+) x Male/Female, plus per-bracket and all-ages totals. NO percentage/denominator columns exist in this file (pure screening-count file); no meaningful DQC beyond blank-completeness, so none is defined here. ALL indicators are is_sensitive=TRUE per CLAUDE.md's sensitive-indicator policy (NCD Mental Health / mhGAP screening, ADR-021 — same stigma rationale as Leprosy; small province-level counts can identify individuals). Annual sheet is a pure rollup, not ingested."
+}

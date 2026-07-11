@@ -1868,6 +1868,42 @@ INDICATORS = {
         ("INTRA_DO_ABORTION_TOTAL", "Abortion Total",
          "count", "quarterly", "sum", 100, None, True, False, None, None),
     ],
+
+    # =================================================
+    # NCD -- Mental Health (ncd_mh_nir.xlsx)
+    # mhGAP assessment counts, 4 age brackets x Male/Female. Province/HUC
+    # rollup (5 rows). is_sensitive=TRUE per CLAUDE.md sensitive-indicator
+    # policy (NCD Mental Health / mhGAP, ADR-021 — stigma rationale).
+    # No percentage/denominator columns exist in this file.
+    # =================================================
+    "NCD": [
+        ("NCD_MH_MHGAP_0_9_MALE", "mhGAP Assessed 0-9 (Male)",
+         "count", "quarterly", "count", 100, None, False, True, None, None),
+        ("NCD_MH_MHGAP_0_9_FEMALE", "mhGAP Assessed 0-9 (Female)",
+         "count", "quarterly", "count", 100, None, False, True, None, None),
+        ("NCD_MH_MHGAP_0_9_TOTAL", "mhGAP Assessed 0-9 Total",
+         "count", "quarterly", "sum", 100, None, True, True, None, None),
+        ("NCD_MH_MHGAP_10_19_MALE", "mhGAP Assessed 10-19 (Male)",
+         "count", "quarterly", "count", 100, None, False, True, None, None),
+        ("NCD_MH_MHGAP_10_19_FEMALE", "mhGAP Assessed 10-19 (Female)",
+         "count", "quarterly", "count", 100, None, False, True, None, None),
+        ("NCD_MH_MHGAP_10_19_TOTAL", "mhGAP Assessed 10-19 Total",
+         "count", "quarterly", "sum", 100, None, True, True, None, None),
+        ("NCD_MH_MHGAP_20_59_MALE", "mhGAP Assessed 20-59 (Male)",
+         "count", "quarterly", "count", 100, None, False, True, None, None),
+        ("NCD_MH_MHGAP_20_59_FEMALE", "mhGAP Assessed 20-59 (Female)",
+         "count", "quarterly", "count", 100, None, False, True, None, None),
+        ("NCD_MH_MHGAP_20_59_TOTAL", "mhGAP Assessed 20-59 Total",
+         "count", "quarterly", "sum", 100, None, True, True, None, None),
+        ("NCD_MH_MHGAP_60PLUS_MALE", "mhGAP Assessed 60+ (Male)",
+         "count", "quarterly", "count", 100, None, False, True, None, None),
+        ("NCD_MH_MHGAP_60PLUS_FEMALE", "mhGAP Assessed 60+ (Female)",
+         "count", "quarterly", "count", 100, None, False, True, None, None),
+        ("NCD_MH_MHGAP_60PLUS_TOTAL", "mhGAP Assessed 60+ Total",
+         "count", "quarterly", "sum", 100, None, True, True, None, None),
+        ("NCD_MH_MHGAP_ALLAGES_TOTAL", "mhGAP Assessed All Ages Total",
+         "count", "quarterly", "sum", 100, None, True, True, None, None),
+    ],
 }
 
 # =====================================================
