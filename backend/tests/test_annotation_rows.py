@@ -10,7 +10,7 @@ pure classification helper the parser row loop uses for that call.
 
 import pandas as pd
 
-from backend.app.services.parser import is_annotation_row
+from app.services.parser import is_annotation_row
 
 # Mirrors infec_hiv.json's shape: meta cols 0-2, raw data cols 3-6,
 # computed cols excluded from the blank check.

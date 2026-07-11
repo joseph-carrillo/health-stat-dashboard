@@ -395,9 +395,13 @@ As of shutdown 2026-07-11, **session 10** (HOME machine, hostname `_hansell_`):
   `activeContext.md`'s "Watch out for" for the full story. If a new `.slq`/`.sql` file's table
   doesn't show up despite a clean-looking `bootstrap_db.py` run, check this first via manual
   `psql` apply before assuming the DB itself is fine.
-- **This environment's Python fork uses `httpx2`, not `httpx`**, for FastAPI's `TestClient` —
-  pinned in `requirements-dev.txt`. Re-`pip install -r requirements-dev.txt` in the container if
-  a fresh container errors on `TestClient` import.
+- **`requirements-dev.txt` had a typo (`httpx2==2.5.0`) instead of `httpx==0.28.1`** — `httpx2`
+  is a real, separate PyPI package (also by the httpx author) whose top-level module is
+  `httpx2`, not `httpx`, so it silently satisfied `pip install` while leaving
+  `starlette.testclient`'s `import httpx` broken. Fixed 2026-07-11; this masked a second bug
+  (a stray `from backend.app...` import in `test_annotation_rows.py`, which crashed pytest
+  collection before the missing-`httpx` error could even surface). If `TestClient` import
+  errors resurface, check the pin is still `httpx==0.28.1`, not `httpx2`.
 - **Registering a new template needs two places**: `frontend/src/services/constants.js`
   `TEMPLATES` (Indicator Reports) AND `backend/app/services/upload_catalog.py` `PROGRAMS` (the
   Upload page's actual dropdown source) — found the hard way building Demographics, now

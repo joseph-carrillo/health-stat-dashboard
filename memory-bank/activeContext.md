@@ -275,7 +275,8 @@ See `working-agreement.md` (burnout → "manage, don't grind").
   green `#15764a`), a different visual system by design. Don't "fix" this to match the rest of
   the dashboard without checking with Joseph first — the PHRIC site tracks are intentionally a
   separate look from today's internal dashboard.
-- **This environment's Python fork uses `httpx2`, not `httpx`**, for `starlette.testclient`
-  (FastAPI's `TestClient`) — pinned `httpx2==2.5.0` in `requirements-dev.txt`. If a future
-  endpoint test import-errors on `TestClient` needing "httpx2", this is why — it's already a
-  known dependency, just re-`pip install -r requirements-dev.txt` in the container.
+- **`requirements-dev.txt` was pinned to `httpx2==2.5.0` (typo) instead of `httpx==0.28.1`.**
+  `httpx2` is a real, separate PyPI package (own top-level `httpx2` module) so `pip install`
+  succeeded while leaving `starlette.testclient`'s `import httpx` broken — CI never surfaced it
+  because `test_annotation_rows.py`'s bad `from backend.app...` import crashed collection first.
+  Both fixed 2026-07-11. See `session-handoff.md` for detail.

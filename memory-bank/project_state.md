@@ -18,10 +18,13 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
 - **Indicators may be stale.** Fix is idempotent:
   `docker compose exec backend python backend/bootstrap_db.py` → backfills all.
 - **pytest/ruff install per-container**: `docker compose exec backend pip install
-  pytest==9.1.1 ruff==0.15.20 httpx2==2.5.0` (requirements-dev.txt is NOT mounted into the
-  container; `httpx2` — note the name, not `httpx` — is new this session, required by
-  `starlette.testclient`/FastAPI's `TestClient` for the new ESR endpoint tests), then
-  `docker compose exec backend python -m pytest backend/tests/ -q` (33 tests).
+  pytest==9.1.1 ruff==0.15.20 httpx==0.28.1` (requirements-dev.txt is NOT mounted into the
+  container; `httpx` — plain, no "2" — is required by `starlette.testclient`/FastAPI's
+  `TestClient` for the ESR endpoint tests). **`httpx2==2.5.0` was a typo** that sat in
+  `requirements-dev.txt` for several sessions: `httpx2` is a real, separate PyPI package
+  (different top-level module) so `pip install` silently succeeded while `TestClient` stayed
+  broken. Fixed 2026-07-11 — see `session-handoff.md`. Then
+  `docker compose exec backend python -m pytest backend/tests/ -q` (48 tests).
 - **Clean slate for testing:** type `reset db protocols` (truncates `health_data`/
   `staging_health_data` only — **does not touch the new `esr_reports` table**, which has one
   real test row from this session's browser verification, `id=1` "Test Measles Cluster").

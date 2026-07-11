@@ -32,6 +32,12 @@ always agree (a future CI check will enforce it).
   Upload catalog (new Vital Statistics program) and Indicator Reports.
 
 ### Fixed
+- **CI pytest collection was broken** — `test_annotation_rows.py` used `from backend.app...`
+  while every other test (and `conftest.py`'s `sys.path` setup) uses `from app...`, which
+  crashed pytest collection for the whole suite before any test could run. Also fixed a
+  masked second bug: `requirements-dev.txt` was pinned to `httpx2==2.5.0` (a typo — `httpx2`
+  is a real, separate PyPI package with its own `httpx2` module) instead of `httpx==0.28.1`,
+  which `starlette.testclient`/FastAPI's `TestClient` actually imports.
 - **Trends page displayed percentages on the wrong scale** — a stored 0.04 ratio (4% coverage)
   rendered as "0.04%". `/api/trend` now returns display-ready values (percentages ×100) plus
   the proper unit string; the page shows "4.0%".
