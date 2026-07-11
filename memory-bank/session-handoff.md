@@ -1,12 +1,12 @@
 # session-handoff.md
 
 ## Last Updated
-2026-07-11, **session 10** (HOME machine, hostname `_hansell_` — second session this day).
-Joseph pre-approved building ALL remaining programs autonomously ("I'll inspect once all
-programs done"), I built the D1/D2 rate uplift + Vital Stats Mortality, then he **stopped the
-build ~30 min in to conserve his usage limit** and ordered this detailed shutdown. Code + docs
-committed TOGETHER (his explicit choice when asked per the pending-code rule). **Session-10
-commit: `b9f87b5`** (+ this hash-recording docs commit on top) — push verified at shutdown.
+2026-07-11, **session 11** (HOME machine, hostname `_hansell_` — third session this day). Short
+maintenance session: Joseph reported CI failing and asked why the image release was skipped.
+Fixed a pytest-collection-breaking bad import plus a masked `httpx2`/`httpx` typo, spun up the
+local stack, and gave Joseph the test admin login. **No program build-out work happened —
+Session 10's cut-off point (below, "Next Session") is still exactly where to resume.**
+**Session-11 commit: `10b6a7a`** — push verified at shutdown (local/origin match, no "ahead").
 
 ## ⚠️ STANDING INSTRUCTIONS FROM JOSEPH (Session 10 — carry to EVERY future session)
 1. **Model policy (also in root CLAUDE.md "Model & Token Policy"):** main/orchestrator session
@@ -27,6 +27,29 @@ PROPOSED — get Joseph's ratification early next session, since Natality/Lepros
 build on the same convention. Other live tracks unchanged: (1) Joseph's UI golden-path check of
 Sessions 9+10 then real uploads; (2) go-live Step 3 (ports 80/443 pending with IT); (3) ESR
 Google Sheets setup (parked); (4) PHRIC follow-ups (future, unscoped).
+
+## Done This Session — Session 11 (2026-07-11, HOME `_hansell_`) — CI fix only
+Not a resume of the build-out — Joseph opened with a CI failure report. Handled it standalone:
+- **Fixed CI pytest collection crash:** `test_annotation_rows.py` imported
+  `from backend.app.services.parser import ...`; every other test file (and `conftest.py`'s
+  `sys.path` insert) uses `from app...`. The mismatched import crashed collection for the whole
+  suite — CI never ran any of the other 47 tests, it just errored out immediately.
+- **Fixing that exposed a second, masked bug:** `requirements-dev.txt` pinned `httpx2==2.5.0`
+  instead of `httpx==0.28.1`. `httpx2` is a real, separate PyPI package (same author, own
+  top-level `httpx2` module) — `pip install` succeeded silently, but `starlette.testclient`
+  (FastAPI's `TestClient`, used by `test_esr_reports.py`) imports plain `httpx`, so it still
+  broke. CI never reached this error because the annotation_rows crash always aborted collection
+  first. **This file and `activeContext.md` had wrongly documented `httpx2` as expected
+  behavior across several past sessions — corrected both.**
+- Verified locally (pip installed both requirements files, ran pytest + ruff on the host):
+  **48/48 tests pass, ruff clean.** Committed and pushed directly as `10b6a7a` — CHANGELOG
+  `[Unreleased] → Fixed` entry included in the same commit.
+- **"Image release was skipped" — explained, not a bug.** `.github/workflows/ci.yml`'s
+  `release-images` job is gated `if: startsWith(github.ref, 'refs/tags/v')`; it only builds/pushes
+  Docker images on a `v*` tag push, never on a plain push to `main`.
+- Spun up the local stack (`docker compose up -d --build`): db healthy, backend + frontend up,
+  `:8000/docs` and `:5173` both verified 200. Gave Joseph the test admin login (`admin` /
+  `Admin@2026!` — already documented in root `CLAUDE.md`, nothing new to memorize).
 
 ## Done This Session — Session 10 (2026-07-11 later, HOME `_hansell_`) — CUT OFF MID-BUILD
 - **D1/D2 rate/ratio display uplift (ADR-023, PROPOSED):**
@@ -319,7 +342,7 @@ Google Sheets setup (parked); (4) PHRIC follow-ups (future, unscoped).
   state; shutdown requires machine + push verification + "Machine-local state" section.
 - **Permissions allowlist** (`.claude/settings.json`, git-tracked).
 
-## Next Session — first moves (the Session-10 resume plan)
+## Next Session — first moves (the Session-10 resume plan — unchanged by Session 11's CI fix)
 0. `startup protocols` (git sync FIRST). **Check the model is Opus 4.8; use Sonnet 5 for any
    sub-agents; ping Joseph after each finished program** (standing instructions above).
 1. **Ask Joseph to ratify ADR-023** (rates stored already-multiplied) — one yes/no; everything
@@ -352,9 +375,13 @@ Google Sheets setup (parked); (4) PHRIC follow-ups (future, unscoped).
    decisions (stash@{0}, small-cell cutoff, data dictionary, is_sensitive granularity).
 
 ## Machine-local state (things GitHub does NOT sync — required section per shutdown protocol)
-As of shutdown 2026-07-11, **session 10** (HOME machine, hostname `_hansell_`):
-- **This machine (HOME): clean after this shutdown commit** — code + docs committed together
-  and pushed (verified, no "ahead").
+As of shutdown 2026-07-11, **session 11** (HOME machine, hostname `_hansell_`):
+- **This machine (HOME): clean after this shutdown commit** — the CI fix was pushed directly
+  mid-session (`10b6a7a`); this docs/memory sync is a separate commit on top, also pushed
+  (verified, no "ahead"). Docker stack was brought up during the session and will be stopped by
+  this shutdown (step 5) — no lasting local state from that.
+- **Everything below this line is carried over unchanged from Session 10** (Session 11 did not
+  touch the DB, the source `.xlsx` files, or the stashes):
 - **DB deltas this session (per-machine, NOT git-synced):** +38 `MORTA_*` indicators seeded
   here (VITAL_STATS). The OFFICE machine does NOT have them — run
   `docker compose exec backend python backend/bootstrap_db.py` there (idempotent). No

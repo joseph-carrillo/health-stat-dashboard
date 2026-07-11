@@ -29,6 +29,30 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   `staging_health_data` only — **does not touch the new `esr_reports` table**, which has one
   real test row from this session's browser verification, `id=1` "Test Measles Cluster").
 
+## Session 11 (2026-07-11, HOME `_hansell_`) — CI fix only, no build-out work
+Short maintenance session, not a resume of the Session 10 build-out. Joseph reported CI failing
+(pytest collection error) and asked why the tag-triggered image release was skipped.
+- **Fixed CI pytest collection:** `test_annotation_rows.py` used `from backend.app...` instead
+  of the `from app...` style every other test uses (see `conftest.py`'s `sys.path` setup) —
+  this crashed collection for the **entire suite**, so none of the other 47 tests ever ran in
+  CI. Fixing it exposed a second, previously-masked bug: `requirements-dev.txt` was pinned to
+  `httpx2==2.5.0` (typo) instead of `httpx==0.28.1` — `httpx2` is a real, separate PyPI package
+  (own `httpx2` module) that installs fine but doesn't satisfy `starlette.testclient`'s
+  `import httpx`. Verified locally: 48/48 tests pass, ruff clean. Committed + pushed as
+  `10b6a7a`.
+- **Corrected stale memory:** `activeContext.md` and `session-handoff.md` had documented the
+  httpx2 typo as if it were expected environment behavior ("this environment's Python fork uses
+  httpx2, not httpx") across multiple past sessions — fixed both, plus this file's own
+  `## ⚠️ STARTUP REMINDER` block above.
+- **"Image release skipped" was not a bug** — `.github/workflows/ci.yml`'s `release-images` job
+  has `if: startsWith(github.ref, 'refs/tags/v')`; it only runs on a `v*` tag push, not on plain
+  pushes to `main`. Explained to Joseph, no code change needed.
+- Spun up the local stack (`docker compose up -d --build`) — db/backend/frontend all healthy,
+  `:8000/docs` and `:5173` both 200. Gave Joseph the test admin credentials (`admin` /
+  `Admin@2026!`, from root `CLAUDE.md`).
+- **Program build-out is exactly where Session 10 left it** — see "Next Session" in
+  `session-handoff.md`, unchanged by this session.
+
 ## Session 10 (2026-07-11 later, HOME `_hansell_`) — D1/D2 + Mortality built; CUT OFF by usage limit
 Joseph: "continue working on the programs… I'll inspect once all programs done" — then, ~30 min
 in, **stopped the build to conserve his usage limit** and asked for a detailed shutdown + a
@@ -466,7 +490,7 @@ Three tracks now, running in parallel:
   `/health-statistics`, `/epidemiology-surveillance`, `/research`, `/laboratory`, public-state
   only (ADR-022). Login moved to `/login`.
 
-## Open work (priority order — updated at Session 10 shutdown)
+## Open work (priority order — updated at Session 11 shutdown; build-out list unchanged since Session 10)
 1. **Resume the program build-out where Session 10 was cut off** (full per-program plan +
    resume point: `session-handoff.md` "Next Session"). Order: finish the Mortality Excel-face
    render check → Natality → Leprosy → Filariasis CDR/Lymph → Demographics dry-run finish →
@@ -489,6 +513,10 @@ Three tracks now, running in parallel:
 9. **Blocked on DOH (not us):** WASH sanitation Q3/Q4 col, Natality Q2 col, NCD Meds Dec block,
    Schisto/STH clarifications, Filariasis MDA scope; data entry for Demographics
    facility/workforce + Geriatric SC Immunization.
+
+## Done this session (session 11), closed out
+- ✅ CI pytest collection fixed (bad import + `httpx2`→`httpx` typo) — committed + pushed as
+  `10b6a7a`, verified local/origin match. See Session 11 log above for full detail.
 
 ## Done this session (session 8), closed out
 - ✅ PHRIC public site landing + 4 cluster pages built, Joseph-reviewed live, committed and
@@ -523,6 +551,9 @@ NOTE: admin's password hash is argon2 on both machines (upgraded live during tes
 
 ## Git
 - Work goes **directly on `main`** (sole developer). Push when done.
+- **2026-07-11 session 11 (HOME, hostname `_hansell_`):** CI fix (bad import + `httpx2` typo)
+  committed and pushed directly as `10b6a7a` (no pending-code halt-and-ask needed — it was the
+  only change, no docs/code split). Verified local/origin match, no "ahead".
 - **2026-07-10 session 8 (HOME, hostname `_hansell_`):** per the shutdown protocol's halt-and-ask
   rule, Joseph was asked how to handle the pending PHRIC public site frontend code (5 new page
   files, 4 new shared component files, 4 modified files — `App.jsx`, `index.html`, `Navbar.jsx`,

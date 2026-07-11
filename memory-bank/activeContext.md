@@ -1,8 +1,9 @@
 # activeContext.md
 
 ## Current Session Goal (next session)
-**Resume the Session-10 program build-out exactly where it was cut off** (usage limit, ~30 min
-in). Joseph pre-approved building ALL remaining programs with me making the D-decisions
+**Still valid — Session 11 was a standalone CI-fix detour, not a build session** (see its log
+entry below). **Resume the Session-10 program build-out exactly where it was cut off** (usage
+limit, ~30 min in). Joseph pre-approved building ALL remaining programs with me making the D-decisions
 (documented as proposed ADRs he can reverse) — that approval stands. Two standing rules he set:
 1. **Model policy (now in root CLAUDE.md):** main/orchestrator on **Opus 4.8**; any Agent-tool
    sub-agent on **Sonnet 5** (`model: "sonnet"`). Conserve tokens hard (targeted reads, batched
@@ -22,6 +23,17 @@ ratify before building more rate programs on it (Leprosy/Filariasis/Natality all
 1. Joseph's UI golden-path check of Sessions 9+10, then the real (non-dry-run) uploads.
 2. Go-live Step 3 — ports 80/443 still pending with IT; server prep can start anytime.
 3. ESR Google Sheets one-time setup (parked; RUNBOOK.md).
+
+## 2026-07-11 session 11 (HOME `_hansell_`, third session this day) — CI fix only, no build work
+Joseph reported CI failing and asked why the image release was skipped. Fixed a pytest
+collection crash (`test_annotation_rows.py` used `from backend.app...` instead of the repo's
+`from app...` style, aborting collection for all 48 tests) plus a masked second bug it had been
+hiding: `requirements-dev.txt` pinned `httpx2==2.5.0` (typo; a real but unrelated PyPI package)
+instead of `httpx==0.28.1`, which `starlette.testclient`/FastAPI's `TestClient` actually needs.
+48/48 tests pass and ruff is clean locally. Committed + pushed as `10b6a7a`. Also corrected this
+file's and `session-handoff.md`'s prior (wrong) claim that `httpx2` was expected. Explained the
+tag-only `release-images` CI gate (not a bug). Spun up the local stack and gave Joseph the
+already-documented test admin login. Build-out resumes exactly at the Session-10 cut-off point.
 
 ## 2026-07-11 session 10 (HOME `_hansell_`, same day as session 9) — D1/D2 + Mortality; cut off
 Joseph said "continue working on the programs… I want all programs ready for inspection once I
