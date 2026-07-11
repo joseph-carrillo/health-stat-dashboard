@@ -106,6 +106,11 @@ export const TEMPLATES = [
     program_code: "INFECTIOUS_DISEASE",
   },
   {
+    id: "infec_sth_deworm",
+    label: "STH — Deworming (MDA, School / Community-based)",
+    program_code: "INFECTIOUS_DISEASE",
+  },
+  {
     id: "envi_water",
     label: "Water Supply — Household Coverage (BSWS & Safely Managed)",
     program_code: "WASH",

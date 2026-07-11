@@ -1477,6 +1477,63 @@ INDICATORS = {
         ("RABIES_SRC_OTHER_PCT", "Rabies Exposure from Other Animals % (of all exposure)",
          "percentage", "quarterly", "percentage", 100, "RABIES_EXP_ALL_TOTAL",
          True, False, None, None),
+
+        # =========================================================
+        # STH (Soil-Transmitted Helminthiasis) — File 1: Deworming (MDA).
+        # Province/HUC only (4 rows), not sensitive. Semestral (Jan/July
+        # MDA rounds) presented as Qtr tabs — mapped Jan->Q1, July->Q3;
+        # the 4 leftover nationwide 143-row sheets are EXCLUDED. School-
+        # based (SB) has 1-4 & 5-14 only (the 15-19 SB group was removed
+        # per change_log); Community-based (CB) has 1-4/5-14/15-19 with
+        # coverage %. Pop 5-14 is blank at source (F1-2) so CB 5-14 % is
+        # None. File 2 (screening cascade) is NOT built — its Confirmed/
+        # Treated %-denominators are an unresolved encoder question (F2-1).
+        # =========================================================
+        ("STH_DW_POP_1_4", "STH Deworming Projected Population 1-4",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("STH_DW_POP_5_14", "STH Deworming Projected Population 5-14",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("STH_DW_POP_15_19", "STH Deworming Projected Population 15-19",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("STH_DW_SB_1_4_M", "Dewormed 1-4 School-based Male",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("STH_DW_SB_1_4_F", "Dewormed 1-4 School-based Female",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("STH_DW_SB_1_4_TOTAL", "Dewormed 1-4 School-based Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("STH_DW_SB_5_14_M", "Dewormed 5-14 School-based Male",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("STH_DW_SB_5_14_F", "Dewormed 5-14 School-based Female",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("STH_DW_SB_5_14_TOTAL", "Dewormed 5-14 School-based Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("STH_DW_CB_1_4_M", "Dewormed 1-4 Community-based Male",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("STH_DW_CB_1_4_F", "Dewormed 1-4 Community-based Female",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("STH_DW_CB_1_4_TOTAL", "Dewormed 1-4 Community-based Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("STH_DW_CB_1_4_PCT", "Dewormed 1-4 Community-based % (of population)",
+         "percentage", "quarterly", "percentage", 100, "STH_DW_POP_1_4",
+         True, False, None, None),
+        ("STH_DW_CB_5_14_M", "Dewormed 5-14 Community-based Male",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("STH_DW_CB_5_14_F", "Dewormed 5-14 Community-based Female",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("STH_DW_CB_5_14_TOTAL", "Dewormed 5-14 Community-based Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("STH_DW_CB_5_14_PCT", "Dewormed 5-14 Community-based % (of population)",
+         "percentage", "quarterly", "percentage", 100, "STH_DW_POP_5_14",
+         True, False, None, None),
+        ("STH_DW_CB_15_19_M", "Dewormed 15-19 Community-based Male",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("STH_DW_CB_15_19_F", "Dewormed 15-19 Community-based Female",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("STH_DW_CB_15_19_TOTAL", "Dewormed 15-19 Community-based Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("STH_DW_CB_15_19_PCT", "Dewormed 15-19 Community-based % (of population)",
+         "percentage", "quarterly", "percentage", 100, "STH_DW_POP_15_19",
+         True, False, None, None),
     ],
 
     # =================================================

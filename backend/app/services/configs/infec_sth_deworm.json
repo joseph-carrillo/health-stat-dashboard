@@ -1,0 +1,68 @@
+{
+  "template_id": "INFEC_STH_DEWORM",
+  "template_version": "2026",
+  "program_code": "INFECTIOUS_DISEASE",
+  "source_file_pattern": "infec_sth_deworm_services_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "STH — Deworming (MDA, School-based / Community-based)",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City" }
+    ]
+  },
+
+  "upload": { "sub_program": "STH", "file_number": 1 },
+
+  "sheet_map": { "1": "Qtr1", "3": "Qtr3a" },
+
+  "columns": [
+    { "index": 3, "indicator_code": "STH_DW_POP_1_4", "is_computed": false },
+    { "index": 4, "indicator_code": "STH_DW_POP_5_14", "is_computed": false },
+    { "index": 5, "indicator_code": "STH_DW_POP_15_19", "is_computed": false },
+
+    { "index": 7, "indicator_code": "STH_DW_SB_1_4_M", "is_computed": false },
+    { "index": 8, "indicator_code": "STH_DW_SB_1_4_F", "is_computed": false },
+    { "index": 9, "indicator_code": "STH_DW_SB_1_4_TOTAL", "is_computed": true,
+      "formula": "STH_DW_SB_1_4_M + STH_DW_SB_1_4_F" },
+    { "index": 10, "indicator_code": "STH_DW_SB_5_14_M", "is_computed": false },
+    { "index": 11, "indicator_code": "STH_DW_SB_5_14_F", "is_computed": false },
+    { "index": 12, "indicator_code": "STH_DW_SB_5_14_TOTAL", "is_computed": true,
+      "formula": "STH_DW_SB_5_14_M + STH_DW_SB_5_14_F" },
+
+    { "index": 14, "indicator_code": "STH_DW_CB_1_4_M", "is_computed": false },
+    { "index": 15, "indicator_code": "STH_DW_CB_1_4_F", "is_computed": false },
+    { "index": 16, "indicator_code": "STH_DW_CB_1_4_TOTAL", "is_computed": true,
+      "formula": "STH_DW_CB_1_4_M + STH_DW_CB_1_4_F" },
+    { "index": 17, "indicator_code": "STH_DW_CB_1_4_PCT", "is_computed": true,
+      "formula": "STH_DW_CB_1_4_TOTAL / STH_DW_POP_1_4" },
+    { "index": 18, "indicator_code": "STH_DW_CB_5_14_M", "is_computed": false },
+    { "index": 19, "indicator_code": "STH_DW_CB_5_14_F", "is_computed": false },
+    { "index": 20, "indicator_code": "STH_DW_CB_5_14_TOTAL", "is_computed": true,
+      "formula": "STH_DW_CB_5_14_M + STH_DW_CB_5_14_F" },
+    { "index": 21, "indicator_code": "STH_DW_CB_5_14_PCT", "is_computed": true,
+      "formula": "STH_DW_CB_5_14_TOTAL / STH_DW_POP_5_14" },
+    { "index": 22, "indicator_code": "STH_DW_CB_15_19_M", "is_computed": false },
+    { "index": 23, "indicator_code": "STH_DW_CB_15_19_F", "is_computed": false },
+    { "index": 24, "indicator_code": "STH_DW_CB_15_19_TOTAL", "is_computed": true,
+      "formula": "STH_DW_CB_15_19_M + STH_DW_CB_15_19_F" },
+    { "index": 25, "indicator_code": "STH_DW_CB_15_19_PCT", "is_computed": true,
+      "formula": "STH_DW_CB_15_19_TOTAL / STH_DW_POP_15_19" }
+  ],
+
+  "dqc_rules": [],
+
+  "notes": "STH deworming (MDA) — File 1 of the STH group. Province/HUC only (4 rows), NIR rollup skipped. SEMESTRAL in reality (January + July MDA rounds) presented as Qtr tabs; mapped Jan round (Qtr1)->period 1 and July round (Qtr3a)->period 3. The 4 leftover NATIONWIDE 143-row master-template sheets (Qtr3/Qtr4/Qtr1a/Qtr2a) are EXCLUDED from sheet_map (F1-3 — vestigial, zero NIR data). School-based has only 1-4 & 5-14 (the SB 15-19 'Group C' was removed per change_log, hence the A,B->D,E,F letter jump; the Annual tab's #REF! stems from that removal but we don't ingest Annual). Community-based has 1-4/5-14/15-19 with coverage %. Projected Population 5-14 is blank at source (F1-2) so STH_DW_CB_5_14_PCT resolves None (a real DOH data gap, not a parser issue). File 2 (Screened->Suspected->Confirmed->Treated cascade) is deliberately NOT built: its Confirmed/Treated %-denominators are an unresolved encoder question (F2-1 — formula divides by Screened, change_log note says Suspected) and it has no real data — needs Jane Galo's confirmation first."
+}

@@ -31,6 +31,7 @@ PROGRAMS = [
             {"name": "Leprosy"},
             {"name": "Filariasis"},
             {"name": "Rabies"},
+            {"name": "STH"},
         ],
     },
     {
