@@ -29,6 +29,36 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   `staging_health_data` only — **does not touch the new `esr_reports` table**, which has one
   real test row from this session's browser verification, `id=1` "Test Measles Cluster").
 
+## Session 12 (2026-07-12, HOME `_hansell_`) — 5 config-only programs + D4; then paused for decisions
+Joseph: "continue building the programs, do this alone, ping me after each program is done, remember
+my model policy." Ran on Opus 4.8, no sub-agents. Built every remaining **config-only** program,
+one at a time, each validated + dry-run vs its real `.xlsx` + spot-checked against the sheet's own
+cells; committed + pushed per unit (all dry-run, nothing in live DB). **8 of 11 program areas now
+have all currently-buildable content done.**
+
+**Shipped (all pushed, verified):**
+- **Natality** `37c517c` (`nata_lb_abr_rabr`, 14 ind) — Q1/Q3/Q4; **Q2 excluded** (missing ABR<10
+  col, DOH-blocked). Rates per 1,000. 6 cells vs Excel exact.
+- **Leprosy** `8418cc4` (`infec_leprosy`, 100 ind, **ALL is_sensitive**) — 5-tab annual, **3 source
+  bugs fixed in config** (missing ×10k prevalence; E.Total rate-not-sum; #REF! %treated). Cross-sheet
+  treatment %s via `denominator_source`. **DOH file has no case data** — verified via pop + structure.
+- **Filariasis** `3f47e1c` (`infec_cdr_filariasis` + `infec_lymph_eleph_hydro`, 49 ind) — CDR + chronic
+  morbidity. **MDA file excluded** (non-NIR data). NIR non-endemic → source legitimately zero.
+- **Rabies** `4ac8193` (`animal_bites` + 4 split configs, 52 ind) — **real Q1 data**, 8+ cells exact.
+  Split configs avoid the period-varying extra_sheets gap.
+- **STH deworming** `1200aa5` (`infec_sth_deworm`, 21 ind) — real data verified. Cascade (File 2)
+  NOT built (encoder denominator question F2-1).
+- **D4 reconciliation DQC** `98ecc04` (ADR-024 PROPOSED) — new `run_dqc_rules()` rule_type, 8 tests,
+  wired into Rabies b/d where it fires on real data matching the template's own "Check Data" cells.
+- **Mortality** last render-check closed (no commit); **Demographics** dry-run finished (no commit,
+  pre-built Session 5) — population spot-checks vs Excel exact, facility/workforce blank (DOH gap).
+- 56 backend tests pass, ruff + eslint clean. INFECTIOUS_DISEASE 260 ind, VITAL_STATS 52.
+
+**Paused deliberately:** everything remaining needs a Joseph schema/parser decision (**D6** →
+Eye Health/Oral Health/Family Planning; **D5** → NCD Meds; **D7/D10** → Morbidity) or a DOH/encoder
+action (STH cascade, Schistosomiasis, WASH Sanitation). Did not start these — they're one-way doors
+better designed with his review. Two one-liners would help: ratify **ADR-023** (rates) + **ADR-024** (D4).
+
 ## Session 11 (2026-07-11, HOME `_hansell_`) — CI fix only, no build-out work
 Short maintenance session, not a resume of the Session 10 build-out. Joseph reported CI failing
 (pytest collection error) and asked why the tag-triggered image release was skipped.
@@ -490,29 +520,27 @@ Three tracks now, running in parallel:
   `/health-statistics`, `/epidemiology-surveillance`, `/research`, `/laboratory`, public-state
   only (ADR-022). Login moved to `/login`.
 
-## Open work (priority order — updated at Session 11 shutdown; build-out list unchanged since Session 10)
-1. **Resume the program build-out where Session 10 was cut off** (full per-program plan +
-   resume point: `session-handoff.md` "Next Session"). Order: finish the Mortality Excel-face
-   render check → Natality → Leprosy → Filariasis CDR/Lymph → Demographics dry-run finish →
-   D4 reconciliation DQC → Rabies + STH → D6 (Eye Health/Oral Health/Family Planning) →
-   D5 + NCD Meds → Morbidity (own mini-phase, last). **Cadence: ping Joseph after each
-   finished program and ask whether to continue.** ADR-023 (rates) needs his ratification.
-2. **Joseph's UI golden-path check of Sessions 9+10 work, then real uploads** — everything is
-   still dry-run only; nothing in the live DB beyond seeds.
-3. **Go-live Step 3** — domain + SSH in hand (2026-07-06); waiting on IT for ports 80/443.
-   Server prep can start in parallel (RUNBOOK). 2-week target from 07-06 has slipped — re-ask.
-4. **Google Sheets setup for ESR reports** (parked; self-serve steps in RUNBOOK.md).
-5. **PHRIC public site follow-ups**: auth-gated cluster-page variant; real data wiring;
-   Google OAuth + granular permissions (own design pass).
-6. **Parked decisions** (Joseph, when ready): stash@{0} Overview Card (this HOME machine);
-   small-cell suppression cutoff; data-dictionary greenlight; one `is_sensitive` bit vs tiered
-   RBAC (ADR-021 open question).
-7. Remaining CHILD_CARE Immunization files 5–8 when real data arrives.
-8. Deferred refactors: split `backend/main.py` (~1400 lines) + oversized frontend pages;
-   9 cosmetic ESLint warnings.
-9. **Blocked on DOH (not us):** WASH sanitation Q3/Q4 col, Natality Q2 col, NCD Meds Dec block,
-   Schisto/STH clarifications, Filariasis MDA scope; data entry for Demographics
-   facility/workforce + Geriatric SC Immunization.
+## Open work (priority order — updated at Session 12 shutdown)
+**All config-only programs are DONE.** Everything below #1 needs a Joseph decision or a DOH/encoder
+action — do NOT start the schema/parser items without his direction.
+1. **Ratify/reverse ADR-023 (rates) + ADR-024 (D4)** — both PROPOSED; everything built rides on them.
+2. **D6 — row-stacked parsing (Joseph's likely next pick).** One `row_filter` mechanism unblocks
+   THREE programs: NCD Eye Health (age-as-rows), Oral Health (quarters+age), Family Planning
+   (quarters). **Design the mechanism and run the approach past Joseph before wiring configs.**
+3. **D5 — per-column rollup override** → NCD Meds (build Jan–Nov; DOH must fix the 106-row Dec block).
+4. **Morbidity (LAST)** — D7/D10 disease-as-row `diseases` table + name→PSGC lookup. Own mini-phase.
+5. **STH cascade (File 2)** — blocked on encoder (Jane Galo): Confirmed/Treated % ÷ Screened vs
+   Suspected. Build once answered.
+6. **Joseph's UI golden-path check of Sessions 9–12, then REAL uploads** — all dry-run so far.
+7. **Deferred D4 backfills** (mechanism done; add `dqc_rules` entries): Intra Partum DT/DO, NCD RF
+   cross-template, Leprosy Registered≥Confirmed≥Treated≥Completed, STH cascade.
+8. **Go-live Step 3** — waiting on IT for ports 80/443; server prep can start in parallel (RUNBOOK).
+9. **ESR Google Sheets setup** (parked; RUNBOOK). **PHRIC follow-ups** (auth-gated pages, data wiring).
+10. **Parked decisions**: stash@{0} Overview Card (HOME); small-cell cutoff; data dictionary;
+    one `is_sensitive` bit vs tiered RBAC (ADR-021).
+11. **Deferred refactors**: split `backend/main.py` + oversized frontend pages; cosmetic ESLint warns.
+12. **Blocked on DOH (not us):** WASH sanitation Q3/Q4 col, NCD Meds Dec block, Schisto clarifications;
+    data entry for Demographics facility/workforce, Geriatric SC-Immunization, Leprosy cases.
 
 ## Done this session (session 11), closed out
 - ✅ CI pytest collection fixed (bad import + `httpx2`→`httpx` typo) — committed + pushed as

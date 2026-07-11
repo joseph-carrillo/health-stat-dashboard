@@ -1,12 +1,15 @@
 # session-handoff.md
 
 ## Last Updated
-2026-07-11, **session 11** (HOME machine, hostname `_hansell_` — third session this day). Short
-maintenance session: Joseph reported CI failing and asked why the image release was skipped.
-Fixed a pytest-collection-breaking bad import plus a masked `httpx2`/`httpx` typo, spun up the
-local stack, and gave Joseph the test admin login. **No program build-out work happened —
-Session 10's cut-off point (below, "Next Session") is still exactly where to resume.**
-**Session-11 commit: `10b6a7a`** — push verified at shutdown (local/origin match, no "ahead").
+2026-07-12, **session 12** (HOME machine, hostname `_hansell_`). Big autonomous build session:
+Joseph said "continue building the programs, do this alone, ping me after each program is done."
+Built **every remaining config-only program** (Natality, Leprosy, Filariasis, Rabies, STH
+deworming) + the **D4 reconciliation DQC rule type**, closed Mortality's last render-check and
+Demographics' dry-run. 6 feature commits, all pushed & green. Then paused: everything left needs a
+Joseph schema/parser decision (D5/D6/D7) or a DOH/encoder action. Docs + memory synced here.
+**Session-12 feature commits (all pushed, verified):** `37c517c` Natality, `8418cc4` Leprosy,
+`3f47e1c` Filariasis, `4ac8193` Rabies, `1200aa5` STH deworm, `98ecc04` D4. Shutdown docs/memory
+commit follows on top.
 
 ## ⚠️ STANDING INSTRUCTIONS FROM JOSEPH (Session 10 — carry to EVERY future session)
 1. **Model policy (also in root CLAUDE.md "Model & Token Policy"):** main/orchestrator session
@@ -21,12 +24,54 @@ Session 10's cut-off point (below, "Next Session") is still exactly where to res
    as a PROPOSED ADR he can reverse, never ingest known-garbage source data.
 
 ## Current Objective
-**Resume the program build-out at the exact cut-off point** (see "Next Session" below). All
-remaining programs are pre-approved to build. ADR-023 (rates stored already-multiplied) is
-PROPOSED — get Joseph's ratification early next session, since Natality/Leprosy/Filariasis
-build on the same convention. Other live tracks unchanged: (1) Joseph's UI golden-path check of
-Sessions 9+10 then real uploads; (2) go-live Step 3 (ports 80/443 pending with IT); (3) ESR
-Google Sheets setup (parked); (4) PHRIC follow-ups (future, unscoped).
+**All config-only programs are DONE. Everything remaining needs a Joseph decision or a DOH/encoder
+action** — do NOT start these without his direction (they're schema/parser one-way doors):
+- **D6 — row-stacked parsing** → unblocks **NCD Eye Health, Oral Health, Family Planning** (3
+  programs, 3 stacking patterns). Joseph's likely next pick; design the `row_filter` mechanism and
+  run it past him before wiring configs.
+- **D5 — per-column rollup override** → NCD Meds (+ DOH must fix the 106-row Dec block).
+- **D7/D10 — disease-as-row `diseases` table** → Morbidity. Biggest change, its own mini-phase.
+- **STH cascade (File 2)** → blocked on encoder (Jane Galo): does Confirmed/Treated % divide by
+  Screened or Suspected? (formula says Screened, change_log says Suspected).
+- **Schistosomiasis / WASH Sanitation** → DOH source fixes.
+
+Two one-liners from Joseph would unblock a lot: **ratify/reverse ADR-023** (rates) and
+**ADR-024** (D4 reconciliation) — both PROPOSED, everything built rides on them. Other live
+tracks unchanged: (1) Joseph's UI golden-path check of Sessions 9–12 then real uploads;
+(2) go-live Step 3 (ports 80/443 pending with IT); (3) ESR Google Sheets setup (parked).
+
+## Done This Session — Session 12 (2026-07-12, HOME `_hansell_`) — 5 programs + D4
+Joseph: "continue building the programs, do this alone, ping me after each program is done, remember
+my model policy." Built every remaining **config-only** program, one at a time, each validated +
+dry-run parsed against the real `.xlsx` and spot-checked against the sheet's own cells; committed +
+pushed per unit. **All dry-run — nothing in the live DB.** Ran on Opus 4.8, no sub-agents spawned.
+- **Mortality** — closed its last definition-of-done box (the `/api/template-report` Excel-face
+  render check for `morta_mmr`/`morta_imr`: 36/3 cols, 66 rows, structure correct). No commit —
+  verification only. Mortality now fully DONE.
+- **Natality** (`37c517c`, `nata_lb_abr_rabr`, 14 ind) — Q1/Q3/Q4 mapped, **Q2 EXCLUDED**
+  (structurally missing the ABR<10 column — DOH-blocked, FLAG 1). Rates per 1,000 (ADR-023).
+  6 cells spot-checked vs Excel exactly (incl. both ABR rates, RABR %).
+- **Leprosy** (`8418cc4`, `infec_leprosy`, 100 ind, **ALL is_sensitive**) — 5-tab annual via
+  extra_sheets. **3 source bugs fixed in config**: missing ×10,000 prevalence, "E.Total"
+  rate-not-sum, #REF! all-ages %treated (derived via `denominator_source`). Rates ×10k/×100k/×1M.
+  **DOH file has NO case data yet** (pop-only) — verified via populations + structure/alignment.
+- **Filariasis** (`3f47e1c`, `infec_cdr_filariasis` + `infec_lymph_eleph_hydro`, 49 ind) — CDR
+  (positive/examined per NBE/RDT) + morbidity counts. **MDA file EXCLUDED** (non-NIR data + broken
+  15+/2+ formulas). NIR non-endemic so source is legitimately zero — verified structurally.
+- **Rabies** (`4ac8193`, `animal_bites` + 4 split configs, 52 ind) — bites/CFR + exposure by WHO
+  category / ARV completion / ARV+RIG / animal source. **Split configs** (avoids period-varying
+  extra_sheets gap). **Real Q1 data** — 8+ computed cells verified vs Excel exactly.
+- **STH deworming** (`1200aa5`, `infec_sth_deworm`, 21 ind) — MDA coverage SB/CB; semestral rounds
+  mapped Jan→Q1/July→Q3, 4 nationwide leftover sheets excluded. Real data verified vs Excel.
+  **STH cascade (File 2) NOT built** — encoder denominator question (F2-1), no real data.
+- **D4 reconciliation DQC** (`98ecc04`, ADR-024 PROPOSED) — new `run_dqc_rules()` rule_type
+  `"reconciliation"` (equals/at_most), 8 unit tests, wired into Rabies groups b/d where it fires on
+  real data and **matches the source template's own "Check Data" cells** (real DOH data gaps).
+- **Demographics** — finished its previously-blocked dry-run (real file is HOME-only): population
+  spot-checks vs Excel exactly, cross-validates with Leprosy's populations; facility/workforce blank
+  (DOH gap). No code change (pre-built Session 5), now verified.
+- 56 backend tests pass, ruff + eslint clean throughout. **INFECTIOUS_DISEASE now 260 ind,
+  VITAL_STATS 52.** 8 of 11 program areas now have all currently-buildable content done.
 
 ## Done This Session — Session 11 (2026-07-11, HOME `_hansell_`) — CI fix only
 Not a resume of the build-out — Joseph opened with a CI failure report. Handled it standalone:
@@ -342,70 +387,59 @@ Not a resume of the build-out — Joseph opened with a CI failure report. Handle
   state; shutdown requires machine + push verification + "Machine-local state" section.
 - **Permissions allowlist** (`.claude/settings.json`, git-tracked).
 
-## Next Session — first moves (the Session-10 resume plan — unchanged by Session 11's CI fix)
-0. `startup protocols` (git sync FIRST). **Check the model is Opus 4.8; use Sonnet 5 for any
-   sub-agents; ping Joseph after each finished program** (standing instructions above).
-1. **Ask Joseph to ratify ADR-023** (rates stored already-multiplied) — one yes/no; everything
-   rate-based (Natality, Leprosy, Filariasis) builds on it.
-2. **Finish Mortality's last DoD box:** hit `/api/template-report` (endpoint is in
-   `backend/main.py` — find its exact params, that grep is where Session 10 stopped) for
-   `morta_mmr` + `morta_imr`, confirm layout + rows render. Then Mortality is DONE — ping Joseph.
-3. **Build order from there, one program per ping** (per-program notes in the analysis files +
-   consolidated summary §5/§7; per-task breakdown existed as session tasks #3-#15, recreate from
-   this list): **Natality** (try per-quarter split-configs around the structurally-different Q2 —
-   we recompute Annual ourselves so its live `#REF!` doesn't matter; if Q2 can't be expressed,
-   build Q1/Q3/Q4 and document Q2 as DOH-blocked) → **Leprosy** (A-only ×5 tabs, ALL
-   is_sensitive=TRUE per ADR-021, 3 formula bugs to absorb: missing ×10,000, E.Total
-   rate-not-sum, `#REF!`) → **Filariasis CDR + Lymph/Eleph/Hydro** (MDA file EXCLUDED —
-   wrong-region data, DOH-blocked) → **Demographics dry-run finish** (real file is HERE on the
-   HOME machine; expect only the population column populated) → **D4 reconciliation DQC rule
-   type** in `run_dqc_rules()` (+ backfill deferred rules: Intra Partum DT/DO, NCD RF
-   cross-template, Leprosy all-ages, STH Treated≤Confirmed, Mortality deaths-vs-zero-LB) →
-   **Rabies** (4 split configs — the consolidated summary says split-configs REPLACE the old
-   "needs parser change" claim) + **STH** (exclude 4 nationwide leftover sheets; document the
-   stage-denominator assumption, flag for encoder) → **D6 row-stacked parsing** (`row_filter`
-   config key) then **NCD Eye Health, Oral Health, Family Planning** (FP: source CUB_A from Q1
-   not Q4; EXCLUDE the structurally-dead Demand Satisfied KPI; D5 for Beginning/Ending stocks) →
-   **D5 rollup override + NCD Meds** (Dec sheet has the 106-row wrong-region block — build
-   Jan-Nov, flag Dec) → **Morbidity LAST** (own mini-phase: D7 Option B `diseases` table +
-   D10 name→PSGC lookup; HIV/syphilis rows sensitive per ADR-021; store None not 0 for the
-   dead Rate column).
-   **Schisto stays DOH-blocked** (scope clarifications) — do not build.
-4. Standing asks when Joseph surfaces: ports 80/443 status; ESR Google Sheets setup; parked
-   decisions (stash@{0}, small-cell cutoff, data dictionary, is_sensitive granularity).
+## Next Session — first moves (all config-only programs are DONE; everything left needs a decision)
+0. `startup protocols` (git sync FIRST). Model Opus 4.8; Sonnet 5 for any sub-agents; ping after
+   each finished program (standing instructions above).
+1. **Get two one-liners from Joseph:** ratify/reverse **ADR-023** (rates) and **ADR-024** (D4
+   reconciliation). Everything built this session rides on them.
+2. **Pick the next target with Joseph.** Recommended: **D6 (row-stacked parsing)** — one mechanism
+   unblocks THREE programs (NCD Eye Health = age-as-rows, Oral Health = quarters+age stacked,
+   Family Planning = quarters stacked). **Design the `row_filter` config-key mechanism and run the
+   approach past Joseph BEFORE wiring configs** — it's an undecided one-way door. Then build the 3
+   (FP: source CUB_A from Q1 not Q4; EXCLUDE the structurally-dead Demand Satisfied KPI; Beginning/
+   Ending stocks need D5).
+3. **Other buildable-with-a-decision items** (each needs Joseph or an encoder/DOH answer first):
+   - **D5 per-column rollup override** (`rollup:"last"`) → **NCD Meds** (build Jan–Nov, DOH must fix
+     the 106-row wrong-region Dec block).
+   - **Morbidity LAST** — its own mini-phase: D7 `diseases` table + D10 name→PSGC lookup; HIV/
+     syphilis rows sensitive; store None not 0 for the dead Rate column.
+   - **STH cascade (File 2)** — blocked on encoder (Jane Galo): Confirmed/Treated % ÷ Screened or
+     ÷ Suspected? Build once answered (4 split configs, cross-sheet denominators via
+     `denominator_source`, add Treated≤Confirmed reconciliation via D4).
+   - **Schistosomiasis / WASH Sanitation** — DOH source fixes; do not build until fixed.
+4. **Deferred D4 backfills** (mechanism exists, just add `dqc_rules` entries): Intra Partum DT/DO,
+   NCD Risk-Factors cross-template, Leprosy Registered≥Confirmed≥Treated≥Completed, STH cascade.
+5. Standing asks when Joseph surfaces: UI golden-path check of Sessions 9–12 then REAL uploads;
+   ports 80/443 status; ESR Google Sheets setup; parked decisions (stash@{0}, small-cell cutoff,
+   data dictionary, is_sensitive granularity).
 
 ## Machine-local state (things GitHub does NOT sync — required section per shutdown protocol)
-As of shutdown 2026-07-11, **session 11** (HOME machine, hostname `_hansell_`):
-- **This machine (HOME): clean after this shutdown commit** — the CI fix was pushed directly
-  mid-session (`10b6a7a`); this docs/memory sync is a separate commit on top, also pushed
-  (verified, no "ahead"). Docker stack was brought up during the session and will be stopped by
-  this shutdown (step 5) — no lasting local state from that.
-- **Everything below this line is carried over unchanged from Session 10** (Session 11 did not
-  touch the DB, the source `.xlsx` files, or the stashes):
-- **DB deltas this session (per-machine, NOT git-synced):** +38 `MORTA_*` indicators seeded
-  here (VITAL_STATS). The OFFICE machine does NOT have them — run
-  `docker compose exec backend python backend/bootstrap_db.py` there (idempotent). No
-  health_data/staging writes (dry-run only). Startup row counts here for reference:
-  health_data 6,763; staging 19,001; esr_reports 0 on this machine.
-- **Session scratchpad helper (`api.py`) lives in the session temp dir — gone next session**;
-  recreate if needed (notes in the Session 10 section above).
-- **The real program `.xlsx` source files live on this (HOME) machine** — this is why every
-  Session 9 dry-run/verify ran here: `backend/data/INFECTIOUS_DISEASE/HIV-Syphilis-HepaB/` (the 3
-  `infec_*_nir.xlsx` files — **confirmed present this session**, resolving Session 7's open
-  question), `WASH/envi_water_nir.xlsx`, `GERIATRIC/`, all of `MATERNAL_CARE/`, `NCD/`,
-  `DEMOGRAPHICS/`, etc. These are **gitignored** — the OFFICE machine does NOT have them, so the
-  dry-run/verify steps can only be re-run on this HOME machine (or after copying files over).
-- **DB state (per-machine, not synced):** Session 9 wrote **nothing** to this machine's DB — all
-  uploads were `dry_run=true`. The ~520 new indicators WERE seeded here via `bootstrap_db.py`
-  (idempotent). On the OFFICE machine, run `docker compose exec backend python backend/bootstrap_db.py`
-  to seed the new indicators there too (safe to re-run).
+As of shutdown 2026-07-12, **session 12** (HOME machine, hostname `_hansell_`):
+- **This machine (HOME): clean after this shutdown commit** — all 6 feature commits were pushed
+  per-unit mid-session (`37c517c`/`8418cc4`/`3f47e1c`/`4ac8193`/`1200aa5`/`98ecc04`); this docs/
+  memory sync is a separate commit on top, also pushed (verified, no "ahead"). Docker stack was up
+  during the session and is stopped by this shutdown (step 5).
+- **DB deltas this session (per-machine, NOT git-synced):** ~223 new indicators seeded HERE via
+  `bootstrap_db.py` (14 NATA_ + 100 LEP_ + 49 FILA_ + 52 RABIES_ + 21 STH_DW_ ... minus a couple of
+  reused codes). The **OFFICE machine does NOT have them** — run
+  `docker compose exec backend python backend/bootstrap_db.py` there (idempotent). **No
+  health_data/staging writes — all uploads were `dry_run=true`.** Indicator totals now:
+  INFECTIOUS_DISEASE 260, VITAL_STATS 52 (plus the pre-existing CHILD_CARE 247, MATERNAL_CARE 319,
+  NCD 143, DEMOGRAPHICS 50, GERIATRIC 49, WASH 11).
+- **The real program `.xlsx` source files live ONLY on this (HOME) machine** (gitignored) — every
+  dry-run/verify this session ran here. The OFFICE machine does not have them, so re-running
+  dry-runs there needs the files copied over first. Rabies/STH/Natality have real data; Leprosy &
+  Filariasis source files are empty of case data at DOH (Filariasis genuinely — NIR non-endemic;
+  Leprosy a data-entry gap) — same "empty at DOH" bucket as Demographics facility/workforce and
+  Geriatric SC-Immunization.
 - **Both stashes still present on this machine** (`stash@{0}` = untested Overview Card feature,
   parked; `stash@{1}` = older "indicator-reports-area-filter", provenance unknown) — unchanged.
-- **`secrets/` folder** (`./secrets/.gitkeep` tracked) — not touched; still empty except the
-  placeholder. `.env` (per-machine, HOME): not touched this session.
-- **Two source files confirmed nearly/entirely empty at DOH** (not a parser issue — flagged for
-  DOH data entry): `DEMOGRAPHICS/Demographics_nir.xlsx` (only the population column filled; every
-  facility/workforce count blank) and `GERIATRIC/ncd_scimmunization_nir.xlsx` (entirely zero/blank).
+- **`secrets/` folder** — not touched; still empty except the `.gitkeep`. `.env` (per-machine,
+  HOME): not touched this session.
+- **Source files confirmed empty/near-empty at DOH** (flagged for DOH data entry, not parser bugs):
+  `DEMOGRAPHICS/Demographics_nir.xlsx` (population only), `GERIATRIC/ncd_scimmunization_nir.xlsx`
+  (zero/blank), `INFECTIOUS_DISEASE/Leprosy/infec_leprosy_nir.xlsx` (population only), both
+  Filariasis NIR files (legitimately zero — non-endemic).
 
 ## Notes / Gotchas
 - **The public cluster pages (`ClusterPage.jsx`) intentionally render public-state only** — no

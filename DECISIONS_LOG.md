@@ -384,3 +384,43 @@ page working with zero changes (rate columns are just numbers whose headers alre
 **Trade-off:** two storage scales now coexist (percentages 0–1, rates multiplied) — the
 `_PCT`/`_RATE` suffix is the discriminator, documented in the seed-file comments and
 test_rate_display.py. A future migration could unify them if this ever bites.
+
+---
+
+## ADR-024 — D4 implemented: `reconciliation` DQC rule type (2026-07-12) — **PROPOSED, reversible**
+
+**Status:** Proposed (built in Joseph's absence on his "continue building the programs, ping me
+after each" instruction; low-risk, purely additive — a new rule_type, no change to existing rules).
+
+**Context:** Several source templates ship their own "sum of parts = whole" DQC columns (Rabies
+group b's "B+D = E.Total", group d's "SUM(A,B,C) = D", Intra Partum type/outcome vs deliveries,
+STH cascade), but `run_dqc_rules()` only implemented `over_threshold` and `sequence` — neither can
+express "these parts add up to (or don't exceed) this total". So those checks were being dropped.
+
+**Decision:** New `rule_type: "reconciliation"` in `backend/app/services/parser.py`:
+```json
+{ "rule_type": "reconciliation", "parts": ["A","B","C"], "whole": "TOTAL",
+  "mode": "equals" | "at_most", "message": "...", "hint": "..." }
+```
+- `mode: "equals"` (default) flags when `sum(parts) != whole`; `"at_most"` flags when
+  `sum(parts) > whole`.
+- Skips silently when the whole or any part is missing (None) — matches the None-handling of the
+  existing rules, avoids false positives on partially-entered rows.
+- Rounds both sides to DECIMAL(15,4) before comparing, to ignore Excel round-trip / float noise.
+- 8 unit tests in `test_reconciliation_dqc.py`.
+
+**Cross-sheet note:** the rule evaluates against a single row's parsed values (one sheet). Where a
+`whole` lives on a different sheet (Rabies base's category totals vs the a/b/d sub-sheets), the
+sub-config maps that linked total into its own columns under the shared code (dedupes as unchanged
+on upload) so the whole is visible within-sheet. This is the same local-mapping trick used for the
+group-d source percentages.
+
+**Validation:** wired into `infec_rabies_source` (dog+cat+other == all-category) and
+`infec_rabies_cat3` (no-history+with-history == Cat III; ARV+RIG+ARV-only ≤ Cat III). On the real
+Q1 file these fire and **match the source template's own "Check Data" DQC cells** exactly — e.g.
+Negros Occidental classifies only 792 of 2,973 Cat III exposures by ARV history, and
+dog+cat+other (5,164) ≠ all-category (7,565). Genuine DOH data gaps the parser now surfaces.
+
+**Deferred:** backfilling the rule into the other configs that want it (Intra Partum DT/DO, NCD
+Risk-Factors cross-template, Leprosy Registered≥Confirmed≥Treated≥Completed, STH cascade) — the
+mechanism exists; adding the individual `dqc_rules` entries is follow-up config work.

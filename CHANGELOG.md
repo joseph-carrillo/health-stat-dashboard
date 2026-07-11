@@ -30,6 +30,31 @@ always agree (a future CI check will enforce it).
   col 33, whose header label lies ("d4" for what is formula-verified as the Indirect-combined
   g4 ratio, FLAG M1). The NIR region rollup row is skipped (derivable). Registered in the
   Upload catalog (new Vital Statistics program) and Indicator Reports.
+- **Vital Statistics — Natality** (`nata_lb_abr_rabr`, 14 ind): Live Births + Adolescent Birth
+  Rate (per 1,000) + Repeat ABR. Q1/Q3/Q4 mapped; **Q2 excluded** (structurally missing the
+  ABR<10 column — DOH-blocked). 6 cells spot-checked vs Excel exactly (incl. both ABR rates).
+- **Infectious Disease — Leprosy** (`infec_leprosy`, 100 ind, ALL `is_sensitive`): 5-tab annual
+  (Registered / Newly-Detected / Confirmed / Treated / Completed-MDT / Grade-2-Disability). Three
+  source bugs fixed in config not copied (missing ×10,000 prevalence; "E.Total" rate-not-sum;
+  #REF! all-ages %treated). Rates ×10k/×100k/×1M (ADR-023). Cross-sheet treatment %s derived via
+  `denominator_source`. **DOH sample has no case data yet** — verified via populations + structure.
+- **Infectious Disease — Filariasis** (`infec_cdr_filariasis` + `infec_lymph_eleph_hydro`, 49 ind):
+  Case Detection Rate (positive/examined per NBE/RDT) + chronic morbidity counts (Lymphedema /
+  Elephantiasis / Hydrocele). MDA file **excluded** (non-NIR data + broken 15+/2+ formulas). NIR is
+  non-endemic so the source is legitimately zero — configs verified structurally.
+- **Infectious Disease — Rabies** (`animal_bites` + `infec_rabies_base/cat2arv/cat3/source`, 52 ind):
+  bites/deaths + case-fatality rate, and exposure by WHO category / ARV completion / ARV+RIG /
+  animal source, built as **split configs** (avoids the period-varying-`extra_sheets` gap). Real Q1
+  data; 8+ computed cells spot-checked vs Excel exactly.
+- **Infectious Disease — STH deworming** (`infec_sth_deworm`, 21 ind): MDA coverage (School- /
+  Community-based). Semestral rounds mapped Jan→Q1, July→Q3; the 4 nationwide leftover sheets
+  excluded. Real data verified vs Excel. (STH screening cascade deferred — encoder denominator
+  question.)
+- **D4 — reconciliation DQC rule type (ADR-024, proposed).** New `run_dqc_rules()` `"reconciliation"`
+  rule (`mode: equals | at_most`) for "sum of parts == / ≤ whole" checks the older
+  `over_threshold`/`sequence` rules couldn't express. None-skipping + DECIMAL(15,4) rounding; 8 new
+  unit tests. Wired into Rabies groups b/d, where it fires on real data and matches the source
+  template's own "Check Data" cells (surfacing genuine DOH data gaps the parser was blind to).
 
 ### Fixed
 - **CI pytest collection was broken** — `test_annotation_rows.py` used `from backend.app...`

@@ -40,13 +40,15 @@
 - [ ] Remaining Immunization files (5–8) — when real data arrives
 
 ### Build out the other 10 programs (← active focus)
-**Session 9 (2026-07-11) built every UNBLOCKED program/file in one pass** — all validated +
-dry-run parsed against real files + spot-checked against the sheets' own cells (dry-run only,
-nothing in the live DB, awaiting Joseph's UI golden-path check). Indicator counts now:
-CHILD_CARE 247, MATERNAL_CARE 319, NCD 143, DEMOGRAPHICS 50, GERIATRIC 49, INFECTIOUS_DISEASE 38,
-WASH 11. **Everything still `[ ]` below is genuinely blocked on a Joseph decision (D-items in the
-"Schema/parser decisions" block — this is what to inspect and decide next session) or a DOH
-action.** Recipe: `.claude/skills/add-template`.
+**Session 12 (2026-07-12) built every remaining CONFIG-ONLY program** — Natality, Leprosy,
+Filariasis (CDR + morbidity), Rabies (5 split configs), STH deworming — plus the **D4
+reconciliation DQC rule type**, and closed Mortality's last render-check + Demographics' dry-run.
+All validated + dry-run parsed against real files + spot-checked against the sheets' own cells
+(dry-run only, nothing in the live DB, awaiting Joseph's UI golden-path check). Indicator counts
+now: CHILD_CARE 247, MATERNAL_CARE 319, INFECTIOUS_DISEASE 260, NCD 143, DEMOGRAPHICS 50,
+VITAL_STATS 52, GERIATRIC 49, WASH 11. **8 of 11 program areas now have all currently-buildable
+content done.** Everything still `[ ]` below needs a Joseph schema/parser decision (D5/D6/D7) or a
+DOH/encoder action. Recipe: `.claude/skills/add-template`.
 - [x] Scaffold `backend/data/<PROGRAM_CODE>/` intake folders (10 programs)
 - [x] All 10 programs' `.xlsx` files dropped 2026-07-05 (46 files, 18 natural sub-groups)
 - [x] **Analysis phase complete: 18/18 sub-groups documented** in
@@ -85,21 +87,27 @@ action.** Recipe: `.claude/skills/add-template`.
       validated + dry-run (HOME machine). Only the population column is populated; every facility
       and health-worker count is blank in the source — **blocked on DOH entering the real data**,
       and the ratio *display* still needs D2. Introduced `formula_type="ratio"` (live in schema).
-- [~] **Vital Statistics — Mortality BUILT (Session 10, 2026-07-11); Natality still open.**
-      D1/D2 rate-display uplift implemented first (ADR-023, **proposed — Joseph to ratify**),
-      then `morta_mmr` (36 ind) + `morta_imr` (2 ind): both validated, dry-run vs the real file
-      (Q1: 4 rows, 0 errors, 0 DQC), 12 cell values spot-checked matching Excel exactly,
-      48 backend tests green, registered in both catalogs. **Cut off by the usage limit before
-      the Excel-face (`/api/template-report`) render check for the two new templates** — that is
-      the one unfinished definition-of-done box. Natality NOT started (also needs DOH Q2 fix).
+- [x] **Vital Statistics — COMPLETE (Mortality Session 10; Natality Session 12).** Mortality
+      `morta_mmr` + `morta_imr`; Natality `nata_lb_abr_rabr` (14 ind — Q1/Q3/Q4 mapped, Q2
+      EXCLUDED as DOH-blocked; rates per 1,000). 52 indicators. Natality spot-checked 6 cells vs
+      Excel exactly. Both Mortality templates' Excel-face render check now closed. Built on
+      ADR-023 (rates, **still proposed — Joseph to ratify**).
+- [x] **Infectious Disease — Leprosy, Filariasis, Rabies, STH-deworming BUILT (Session 12).**
+      Leprosy `infec_leprosy` (100 ind, ALL sensitive, 5-tab annual, 3 source bugs fixed in
+      config); Filariasis `infec_cdr_filariasis` + `infec_lymph_eleph_hydro` (49 ind; MDA file
+      EXCLUDED — non-NIR data); Rabies `animal_bites` + 4 split configs `infec_rabies_base/
+      cat2arv/cat3/source` (52 ind, real Q1 data, 8+ cells verified); STH `infec_sth_deworm`
+      (21 ind, real data verified). INFECTIOUS_DISEASE now 260 indicators. **NOTE:** Leprosy &
+      Filariasis source files have no case data at DOH yet (Filariasis genuinely zero — NIR
+      non-endemic; Leprosy a data-entry gap) — configs are correct + validated, verified via
+      populations / structure. **Still blocked:** STH cascade (File 2 — encoder denominator
+      question), Schistosomiasis (DOH scope clarifications).
+- [ ] **NCD Eye Health** — **blocked on D6** (age-as-rows). **NCD Meds** — **blocked on D5** +
+      DOH Dec-block fix.
 - [ ] **Family Planning** — **blocked on D6** (quarters stacked as row-blocks in one tab).
-- [ ] **Morbidity** — **blocked on D7/D10** (disease-as-row matrix; ~10,400 codes or a `diseases`
-      table; no `psgc_column`).
-- [ ] **Remaining Infectious Disease sub-groups** — Leprosy & Filariasis CDR/Lymph **blocked on
-      D1** (rates); Rabies **blocked on the extra_sheets parser change**; STH **blocked on D4 +
-      an encoder denominator question**; Schistosomiasis **blocked on DOH scope clarifications**;
-      Filariasis MDA out of scope (wrong region).
 - [ ] **Oral Health** — **blocked on D6** (quarters + age-bands stacked as rows).
+- [ ] **Morbidity** — **blocked on D7/D10** (disease-as-row matrix; ~10,400 codes or a `diseases`
+      table; no `psgc_column`). Its own mini-phase, last.
 
 **⇩ DECISIONS FOR JOSEPH TO INSPECT & DECIDE NEXT SESSION ⇩**
 These are the one-way doors that block every remaining program. Deciding them (especially **D1/D2**)
@@ -110,18 +118,20 @@ unblocks the most work. Full context per decision: `template_analysis/00_CONSOLI
   PROPOSED — ratify or reverse before more rate programs are built on it**: rates stored
   already-multiplied (62.5 = "per 100,000"), `rate_multiplier` is the display-unit label only,
   coverage status bands now percentage-only, `_RATE` codes recomputed (never summed) across
-  period slices. Mortality is built on this; **Leprosy + Filariasis CDR/Lymph are now unblocked
-  but NOT yet built.**
+  period slices. Mortality, **Natality, Leprosy, Filariasis** are all now built on this.
 - ~~**D2 — unbounded-ratio display**~~ — **IMPLEMENTED with D1 (ADR-023)**: ratios render as
   plain numbers, no 100% ceiling, no status colour. Demographics *display* unblocked (its
   source data is still blocked on DOH data entry).
 - **D3 — split-configs for multi-sheet-group workbooks.** RESOLVED in practice — used this session
   for every a/b/c file (Prenatal BP, Post Partum BP, Intra Partum SHP/DT/DO, WASH, NCD Cancer/RA).
   No further decision needed; documented here so it's not re-litigated.
-- **D4 — "sum of parts = / ≤ whole" reconciliation DQC rule type.** `run_dqc_rules()` only does
-  `over_threshold` + `sequence` today. Deferred rules waiting on it: Intra Partum DT/DO
-  (type/outcome should sum to deliveries), NCD Risk-Factors cross-template check (RF risk-assessed
-  must equal Meds risk-assessed), STH cascade, Rabies groups b/d.
+- ~~**D4 — "sum of parts = / ≤ whole" reconciliation DQC rule type.**~~ **IMPLEMENTED Session 12
+  (ADR-024, PROPOSED).** New `run_dqc_rules()` rule_type `"reconciliation"` (`mode: equals|at_most`),
+  None-skipping + DECIMAL(15,4) rounding, 8 unit tests. Wired into Rabies groups b/d, where it fires
+  on real data and matches the source template's own "Check Data" DQC cells. Still-deferred backfills
+  (add the rules to those configs when convenient): Intra Partum DT/DO (type/outcome sum to
+  deliveries), NCD Risk-Factors cross-template check, STH cascade, Leprosy Registered≥Confirmed≥
+  Treated≥Completed.
 - **D5 — per-column rollup override (`rollup:"last"` vs default `"sum"`).** `ncd_meds_nir.xlsx`'s
   risk-assessment columns are year-to-date cumulative, not monthly flow — summing them would badly
   overstate. **Blocks: NCD Meds** (also needs the DOH Dec-block source fix).

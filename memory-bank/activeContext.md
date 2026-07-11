@@ -1,28 +1,34 @@
 # activeContext.md
 
 ## Current Session Goal (next session)
-**Still valid — Session 11 was a standalone CI-fix detour, not a build session** (see its log
-entry below). **Resume the Session-10 program build-out exactly where it was cut off** (usage
-limit, ~30 min in). Joseph pre-approved building ALL remaining programs with me making the D-decisions
-(documented as proposed ADRs he can reverse) — that approval stands. Two standing rules he set:
-1. **Model policy (now in root CLAUDE.md):** main/orchestrator on **Opus 4.8**; any Agent-tool
-   sub-agent on **Sonnet 5** (`model: "sonnet"`). Conserve tokens hard (targeted reads, batched
-   calls, brief narration). This carries EVERY session until he says otherwise.
-2. **Cadence:** commit+push per green unit; **ping him after each finished program** and ask
-   whether to continue (he watches his 5-hr usage window).
+**All config-only programs are DONE (Session 12).** 8 of 11 program areas now have every
+currently-buildable template built + validated + dry-run-verified. **Everything remaining is a
+one-way-door schema/parser decision or a DOH/encoder action — do NOT start these without Joseph's
+direction.** Standing rules still hold: Opus 4.8 orchestrator / Sonnet 5 sub-agents; conserve
+tokens; commit+push per green unit; ping after each finished program.
 
-**Exact resume point:** the Excel-face render check for `morta_mmr`/`morta_imr` via
-`/api/template-report` (I was mid-grep for its param names in `main.py` when stopped).
-Everything else on Mortality's definition-of-done is green and committed. Then continue the
-build order (per-program notes in `session-handoff.md` "Next Session"): Natality → Leprosy →
-Filariasis CDR/Lymph → Demographics dry-run → D4 → Rabies + STH → D6 (Eye/Oral/FP) → D5 +
-NCD Meds → Morbidity last. **ADR-023 (rate storage convention) is PROPOSED — ask Joseph to
-ratify before building more rate programs on it (Leprosy/Filariasis/Natality all depend).**
+**First moves next session:**
+1. **Get two one-liners from Joseph:** ratify/reverse **ADR-023** (rates stored already-multiplied)
+   and **ADR-024** (D4 reconciliation DQC). Everything built rides on them.
+2. **Recommended next target: D6 (row-stacked parsing)** — one `row_filter` mechanism unblocks
+   THREE programs (NCD Eye Health = age-as-rows, Oral Health = quarters+age, Family Planning =
+   quarters). **Design the mechanism and run it past Joseph BEFORE wiring configs.**
+3. Then, each with a decision/answer: **D5 → NCD Meds**; **Morbidity** (D7/D10, last); **STH
+   cascade** (encoder denominator answer); **Schisto / WASH Sanitation** (DOH fixes).
+Full per-item plan: `session-handoff.md` "Next Session"; open-work priority: `project_state.md`.
 
-**Also open, not build-order items:**
-1. Joseph's UI golden-path check of Sessions 9+10, then the real (non-dry-run) uploads.
-2. Go-live Step 3 — ports 80/443 still pending with IT; server prep can start anytime.
-3. ESR Google Sheets one-time setup (parked; RUNBOOK.md).
+**Also open (not build-order):** UI golden-path check of Sessions 9–12 then real uploads; go-live
+Step 3 (ports 80/443 pending with IT); ESR Google Sheets setup (parked).
+
+## 2026-07-12 session 12 (HOME `_hansell_`) — 5 config-only programs + D4, then paused
+Joseph: "continue building the programs, do this alone, ping me after each program is done." Built
+Natality (`37c517c`), Leprosy (`8418cc4`, 100 ind all-sensitive, 3 source bugs fixed), Filariasis
+(`3f47e1c`, MDA excluded), Rabies (`4ac8193`, 5 split configs, real data), STH deworming
+(`1200aa5`); implemented the **D4 reconciliation DQC rule type** (`98ecc04`, ADR-024, 8 tests, fires
+on real Rabies data matching the template's own "Check Data" cells); closed Mortality's last
+render-check + Demographics' dry-run. All dry-run, spot-checked vs Excel, 56 tests green. Then paused
+because everything left needs a Joseph schema/parser decision (D5/D6/D7) or a DOH/encoder action —
+gave him a full done/not-done program inventory. Ran on Opus 4.8, no sub-agents.
 
 ## 2026-07-11 session 11 (HOME `_hansell_`, third session this day) — CI fix only, no build work
 Joseph reported CI failing and asked why the image release was skipped. Fixed a pytest
