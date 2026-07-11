@@ -26,6 +26,48 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   `staging_health_data` only — **does not touch the new `esr_reports` table**, which has one
   real test row from this session's browser verification, `id=1` "Test Measles Cluster").
 
+## Session 9 (2026-07-11, HOME `_hansell_`) — Program build-out blitz (8 commits)
+Joseph: "continue with the rest of the programs and have it checked once I get back." Built every
+program/file that is unblocked (no schema decision, no DOH fix needed), one at a time, each
+validated + dry-run parsed against its real `.xlsx` and spot-checked against the sheets' own cells.
+**Nothing written to the live DB — all dry-run only; awaiting Joseph's UI golden-path check.**
+Commits (all pushed, verified): `8a2788f` (parser fix + HIV/HepB/Syphilis finish), `a505662`
+(WASH water), `4d2115e` (Geriatric screening), `83bf708` (Maternal Care Prenatal, 9 configs),
+`7f22aa9` (MC Post Partum + Intra Partum Birth Weight), `3230975` (MC Intra Partum
+SHP/DT/Outcome — completes Maternal Care), `0d3447c` (NCD Mental Health, sensitive), `354f3a1`
+(NCD Cancer + Risk Factors).
+- **HIV/HepB/Syphilis signed off** — real files found on this machine; validated, 69 cell values
+  verified. **Fixed a real parser bug** (`is_annotation_row` in `parser.py` + `test_annotation_rows.py`):
+  sheet footer text ("Source: DOH-FHSIS", "Legend:") in the PSGC column was being reported as
+  location errors. Confirmed the sensitive-data RBAC masking is genuinely built (`can_view_sensitive`).
+- **New programs/files built (all config-only unless noted):** WASH water (`envi_water`, first
+  municipality-level new program); Geriatric screening (`ger_screening`, 49 ind; re-derived DQC
+  catches the real GER-1 data bug); **Maternal Care COMPLETE** — Prenatal (9 configs), Post Partum
+  (4), Intra Partum (4) = 17 templates, 13 files, incl. same-bracket recomputes for the 8ANC/4PNC
+  shift bugs and split configs (D3) for the a/b/c sheet-groups; NCD Mental Health (`ncd_mh`, 13
+  ind, **all is_sensitive=TRUE** per ADR-021), NCD Cancer (`ncd_cacx` + `ncd_brca`), NCD Risk
+  Factors (`ncd_ra_adults` + `ncd_ra_sc`).
+- ~24 new configs, ~520 new indicators seeded. `bootstrap_db.py` idempotent; run it on any machine
+  that needs these seeded. 38 backend tests still pass, ruff clean throughout.
+- **Everything remaining is genuinely blocked** on a Joseph decision or DOH action (see the
+  updated "Open work" and the consolidated summary §5/§7):
+  - **D1/D2 (non-% rates + unbounded ratios, not supported end-to-end):** Vital Stats (Mortality,
+    Natality), Leprosy, Filariasis CDR/Lymph, Demographics ratio *display*.
+  - **D6 (row-dimension mechanism):** NCD Eye Health (age-as-rows), Oral Health, Family Planning.
+  - **D5 (per-column cumulative rollup) + source fix:** NCD Meds (also has the 106-row wrong-region
+    Dec block).
+  - **D4 (sum-of-parts reconciliation DQC rule type):** deferred sub-rules in WASH water, Intra
+    Partum DT/DO, NCD Risk Factors cross-template check, STH.
+  - **D7/D10 (disease-as-row schema):** Morbidity.
+  - **Parser change (period-varying extra_sheets):** Rabies.
+  - **DOH source fixes / clarifications:** WASH sanitation (stray Q3/Q4 col), Natality Q2 col,
+    Schistosomiasis (scope Qs), Filariasis MDA (wrong region).
+  - **Blocked on DOH entering real data:** Demographics facility/workforce (file has only
+    population), Geriatric SC Immunization (file entirely zero/blank).
+- **Not done:** live browser UI check (Chrome extension not connected this session — same as
+  Session 8); real (non-dry-run) uploads (held for Joseph's golden-path review); full shutdown
+  doc/memory ceremony beyond this entry (run `run shutdown protocols` when ready).
+
 ## Session 8 (2026-07-10, HOME) — PHRIC public site: landing + 4 cluster pages built
 - **Joseph pivoted the PHRIC site from "parked" to "build now."** He wants the public-facing
   skeleton up and linkable to internal clients before higher-up approval for full public access —
