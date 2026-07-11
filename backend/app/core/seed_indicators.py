@@ -984,6 +984,47 @@ INDICATORS = {
          "percentage", "quarterly", "percentage",
          100, "SYPH_REACTIVE_TOTAL", True, True, None, None),
     ],
+
+    # =================================================
+    # WASH -- Water (envi_water_nir.xlsx)
+    # Household-level basic safe water supply (BSWS Levels I/II/III) and
+    # safely managed drinking water services (SMDWS). Municipality-level
+    # (68 rows), quarterly only, no age/sex, no sensitive indicators.
+    # Denominator for every percentage is Projected Number of Households.
+    # =================================================
+    "WASH": [
+        ("WASH_WTR_PROJ_HH", "Projected Number of Households (Water file)",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+
+        # --- 1. With Basic Safe Water Supply (BSWS), by level ---
+        ("WASH_WTR_BSWS_L1", "With BSWS Level I",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("WASH_WTR_BSWS_L1_PCT", "With BSWS Level I Percentage",
+         "percentage", "quarterly", "percentage",
+         100, "WASH_WTR_PROJ_HH", True, False, None, None),
+        ("WASH_WTR_BSWS_L2", "With BSWS Level II",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("WASH_WTR_BSWS_L2_PCT", "With BSWS Level II Percentage",
+         "percentage", "quarterly", "percentage",
+         100, "WASH_WTR_PROJ_HH", True, False, None, None),
+        ("WASH_WTR_BSWS_L3", "With BSWS Level III",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("WASH_WTR_BSWS_L3_PCT", "With BSWS Level III Percentage",
+         "percentage", "quarterly", "percentage",
+         100, "WASH_WTR_PROJ_HH", True, False, None, None),
+        ("WASH_WTR_BSWS_TOTAL", "With BSWS Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("WASH_WTR_BSWS_TOTAL_PCT", "With BSWS Total Percentage",
+         "percentage", "quarterly", "percentage",
+         100, "WASH_WTR_PROJ_HH", True, False, None, None),
+
+        # --- 2. Safely Managed Drinking Water Services ---
+        ("WASH_WTR_SMDWS", "Safely Managed Drinking Water Services",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("WASH_WTR_SMDWS_PCT", "Safely Managed Drinking Water Services Percentage",
+         "percentage", "quarterly", "percentage",
+         100, "WASH_WTR_PROJ_HH", True, False, None, None),
+    ],
 }
 
 # =====================================================

@@ -53,6 +53,19 @@ always agree (a future CI check will enforce it).
   spreadsheets. The blank Syphilis population column is confirmed as a DOH-side data gap (parser
   stores `None`, not a fabricated 0), not a parser bug.
 
+- **WASH — Water Supply program (first file)** — `envi_water` template: 11 indicators covering
+  household Basic Safe Water Supply (BSWS Levels I/II/III + total) and Safely Managed Drinking
+  Water Services, all as a share of Projected Number of Households. First **municipality-level**
+  new program (66 ingested rows: 3 provinces + 63 LGUs; the region row is recomputed, not
+  ingested), so it exercises the maps/rankings drill-down that the 5-row programs can't. Quarterly,
+  no age/sex, no sensitive indicators. Validated + dry-run parsed against the real file (all 4
+  quarters, 0 errors); 18 cell values hand-verified. DQC flags coverage over 100% of projected
+  households on all five percentage columns (7 genuine over-100% rows caught in real Q1 data). The
+  file's secondary "Level I + Level III ≥ Safely Managed" cross-check is deferred — it needs a
+  sum-vs-value reconciliation DQC rule type that doesn't exist yet (consolidated-summary decision
+  D4). The sibling sanitation file is a separate later build (it has a known Qtr3/Qtr4 column-shift
+  needing a DOH-side source fix).
+
 ### Fixed
 - **Sheet footer/annotation rows are no longer reported as location errors.** The Infectious
   Disease templates are the first whose sheets carry footer text ("Source: DOH-FHSIS", "Legend:",

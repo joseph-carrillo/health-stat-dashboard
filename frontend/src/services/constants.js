@@ -65,6 +65,11 @@ export const TEMPLATES = [
     label: "Syphilis — Antenatal Screening, Reactive & Treated",
     program_code: "INFECTIOUS_DISEASE",
   },
+  {
+    id: "envi_water",
+    label: "Water Supply — Household Coverage (BSWS & Safely Managed)",
+    program_code: "WASH",
+  },
 ];
 
 export const MONTHS = [

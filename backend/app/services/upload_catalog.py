@@ -30,6 +30,13 @@ PROGRAMS = [
             {"name": "Infectious Disease"},
         ],
     },
+    {
+        "code": "WASH",
+        "name": "Water, Sanitation, and Hygiene (WASH)",
+        "sub_programs": [
+            {"name": "WASH"},
+        ],
+    },
 ]
 
 
