@@ -129,6 +129,21 @@ always agree (a future CI check will enforce it).
   file with no percentage/denominator columns, so no DQC beyond the blank check. Validated +
   dry-run against the real file (0 errors); computed totals verified against the sheet cells.
 
+- **NCD — Cancer (`ncd_cacx` + `ncd_brca`) and Behavioral Risk Factors (`ncd_ra_adults` +
+  `ncd_ra_sc`)** — cervical cancer screening (VIA/Pap/HPV → suspicious/precancer follow-up),
+  breast cancer early detection (BCEDS 30-69 high-risk + 50-69 targeted pathways), and behavioral
+  risk factors (physical inactivity, diet, overweight/obesity, binge drinking, smoking by
+  tobacco/vape/both + BTI) for adults 20-59 and senior citizens 60+. 130 indicators; 4 split
+  configs over 2 physical files (per D3). Validated + dry-run against the real files (0 errors);
+  198 computed values verified against the sheets' own cells. Chained denominators throughout
+  (each stage divides by the prior stage's total), all matched to the source formulas rather than
+  the labels. Known DOH-side data issue flagged, not fixed: the Risk-Factors "risk assessed"
+  total should equal the meds template's figure but Negros Occidental's is a copy of the
+  population count (RF-1) — an automated cross-template check needs the D4 reconciliation rule
+  type. **This builds out every unblocked NCD file**; Eye Health (age-as-rows, needs D6) and Meds
+  (wrong-region source block + year-to-date cumulative columns, needs a source fix + D5) remain
+  blocked.
+
 ### Fixed
 - **Sheet footer/annotation rows are no longer reported as location errors.** The Infectious
   Disease templates are the first whose sheets carry footer text ("Source: DOH-FHSIS", "Legend:",

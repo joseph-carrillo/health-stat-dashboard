@@ -165,6 +165,26 @@ export const TEMPLATES = [
     label: "NCD — Mental Health (mhGAP Assessment)",
     program_code: "NCD",
   },
+  {
+    id: "ncd_cacx",
+    label: "NCD — Cervical Cancer Screening",
+    program_code: "NCD",
+  },
+  {
+    id: "ncd_brca",
+    label: "NCD — Breast Cancer Early Detection (BCEDS)",
+    program_code: "NCD",
+  },
+  {
+    id: "ncd_ra_adults",
+    label: "NCD — Behavioral Risk Factors (Adults 20-59)",
+    program_code: "NCD",
+  },
+  {
+    id: "ncd_ra_sc",
+    label: "NCD — Behavioral Risk Factors (Senior Citizens 60+)",
+    program_code: "NCD",
+  },
 ];
 
 export const MONTHS = [

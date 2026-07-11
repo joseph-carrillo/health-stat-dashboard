@@ -1,0 +1,60 @@
+{
+  "template_id": "NCD_CACX",
+  "template_version": "2026",
+  "program_code": "NCD",
+  "source_file_pattern": "ncd_cancer_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 1,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "NCD — Cervical Cancer Screening",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City" }
+    ]
+  },
+
+  "upload": { "sub_program": "Cancer", "file_number": 1 },
+
+  "sheet_map": { "1": "Qtr1a", "2": "Qtr2a", "3": "Qtr3a", "4": "Qtr4a" },
+
+  "columns": [
+    { "index": 2, "indicator_code": "NCD_CACX_TARGET_POP", "is_computed": false },
+    { "index": 3, "indicator_code": "NCD_CACX_VIA", "is_computed": false },
+    { "index": 4, "indicator_code": "NCD_CACX_PAP", "is_computed": false },
+    { "index": 5, "indicator_code": "NCD_CACX_HPVDNA", "is_computed": false },
+    { "index": 6, "indicator_code": "NCD_CACX_ASSESSED_ONLY", "is_computed": false },
+    { "index": 7, "indicator_code": "NCD_CACX_SCREENED_TOTAL", "is_computed": true, "formula": "NCD_CACX_VIA + NCD_CACX_PAP + NCD_CACX_HPVDNA" },
+    { "index": 8, "indicator_code": "NCD_CACX_SCREENED_ASSESSED_TOTAL", "is_computed": true, "formula": "NCD_CACX_VIA + NCD_CACX_PAP + NCD_CACX_HPVDNA + NCD_CACX_ASSESSED_ONLY" },
+    { "index": 9, "indicator_code": "NCD_CACX_SCREENED_ASSESSED_PCT", "is_computed": true, "formula": "NCD_CACX_SCREENED_ASSESSED_TOTAL / NCD_CACX_TARGET_POP" },
+    { "index": 10, "indicator_code": "NCD_CACX_SUSPICIOUS", "is_computed": false },
+    { "index": 11, "indicator_code": "NCD_CACX_SUSPICIOUS_PCT", "is_computed": true, "formula": "NCD_CACX_SUSPICIOUS / NCD_CACX_SCREENED_ASSESSED_TOTAL" },
+    { "index": 12, "indicator_code": "NCD_CACX_SUSPICIOUS_REFERRED", "is_computed": false },
+    { "index": 13, "indicator_code": "NCD_CACX_SUSPICIOUS_REFERRED_PCT", "is_computed": true, "formula": "NCD_CACX_SUSPICIOUS_REFERRED / NCD_CACX_SUSPICIOUS" },
+    { "index": 14, "indicator_code": "NCD_CACX_SUSPICIOUS_TREATED", "is_computed": false },
+    { "index": 15, "indicator_code": "NCD_CACX_SUSPICIOUS_TREATED_PCT", "is_computed": true, "formula": "NCD_CACX_SUSPICIOUS_TREATED / NCD_CACX_SUSPICIOUS" },
+    { "index": 16, "indicator_code": "NCD_CACX_PRECANCER_POSITIVE", "is_computed": false },
+    { "index": 17, "indicator_code": "NCD_CACX_PRECANCER_POSITIVE_PCT", "is_computed": true, "formula": "NCD_CACX_PRECANCER_POSITIVE / NCD_CACX_SCREENED_TOTAL" },
+    { "index": 18, "indicator_code": "NCD_CACX_PRECANCER_REFERRED", "is_computed": false },
+    { "index": 19, "indicator_code": "NCD_CACX_PRECANCER_REFERRED_PCT", "is_computed": true, "formula": "NCD_CACX_PRECANCER_REFERRED / NCD_CACX_PRECANCER_POSITIVE" },
+    { "index": 20, "indicator_code": "NCD_CACX_PRECANCER_TREATED", "is_computed": false },
+    { "index": 21, "indicator_code": "NCD_CACX_PRECANCER_TREATED_PCT", "is_computed": true, "formula": "NCD_CACX_PRECANCER_TREATED / NCD_CACX_PRECANCER_POSITIVE" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "NCD_CACX_SUSPICIOUS_REFERRED_PCT", "threshold": 1.0, "numerator_code": "NCD_CACX_SUSPICIOUS_REFERRED", "denominator_code": "NCD_CACX_SUSPICIOUS", "message": "Suspicious-referred exceeds suspicious count (over 100%)", "hint": "Referred cases are a subset of suspicious cases. Check the source file." },
+    { "rule_type": "over_threshold", "indicator_code": "NCD_CACX_PRECANCER_REFERRED_PCT", "threshold": 1.0, "numerator_code": "NCD_CACX_PRECANCER_REFERRED", "denominator_code": "NCD_CACX_PRECANCER_POSITIVE", "message": "Precancer-referred exceeds precancer-positive count (over 100%)", "hint": "Referred cases are a subset of positive cases. Check the source file." }
+  ],
+
+  "notes": "NCD Cervical Cancer screening (ncd_cancer_nir.xlsx 'a' sheets). Split config; the breast-cancer 'b' sheets are a separate config (ncd_brca). Province/HUC rollup (5 rows; region skipped). 2 meta cols; location NAME col 1. Two deliberately distinct denominators coexist: Suspicious% divides by Screened+Assessed (includes Assessed-Only); Precancer-Positive% divides by Screened Total (VIA+Pap+HPV only, excludes Assessed-Only) — verified via formula, both implemented as written. The source file's own DQC conditional-formatting is dead (anchored one row past the data — NCD Flag X-1); these rules are re-derived and anchored to the real data. Annual sheet is a pure rollup, not ingested."
+}

@@ -1,0 +1,68 @@
+{
+  "template_id": "NCD_BRCA",
+  "template_version": "2026",
+  "program_code": "NCD",
+  "source_file_pattern": "ncd_cancer_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 1,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "NCD — Breast Cancer Early Detection (BCEDS)",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City" }
+    ]
+  },
+
+  "upload": { "sub_program": "Cancer", "file_number": 2 },
+
+  "sheet_map": { "1": "Qtr1b", "2": "Qtr2b", "3": "Qtr3b", "4": "Qtr4b" },
+
+  "columns": [
+    { "index": 2, "indicator_code": "NCD_BRCA_WOMENSEEN", "is_computed": false },
+    { "index": 3, "indicator_code": "NCD_BRCA_HIGHRISK", "is_computed": false },
+    { "index": 4, "indicator_code": "NCD_BRCA_HIGHRISK_PCT", "is_computed": true, "formula": "NCD_BRCA_HIGHRISK / NCD_BRCA_WOMENSEEN" },
+    { "index": 5, "indicator_code": "NCD_BRCA_BCEDS_CBE", "is_computed": false },
+    { "index": 6, "indicator_code": "NCD_BRCA_BCEDS_MAMMO", "is_computed": false },
+    { "index": 7, "indicator_code": "NCD_BRCA_BCEDS_TOTAL", "is_computed": true, "formula": "NCD_BRCA_BCEDS_CBE + NCD_BRCA_BCEDS_MAMMO" },
+    { "index": 8, "indicator_code": "NCD_BRCA_BCEDS_PCT", "is_computed": true, "formula": "NCD_BRCA_BCEDS_TOTAL / NCD_BRCA_HIGHRISK" },
+    { "index": 9, "indicator_code": "NCD_BRCA_BCEDS_SIG_CBE", "is_computed": false },
+    { "index": 10, "indicator_code": "NCD_BRCA_BCEDS_SIG_MAMMO", "is_computed": false },
+    { "index": 11, "indicator_code": "NCD_BRCA_BCEDS_SIG_TOTAL", "is_computed": true, "formula": "NCD_BRCA_BCEDS_SIG_CBE + NCD_BRCA_BCEDS_SIG_MAMMO" },
+    { "index": 12, "indicator_code": "NCD_BRCA_BCEDS_SIG_PCT", "is_computed": true, "formula": "NCD_BRCA_BCEDS_SIG_TOTAL / NCD_BRCA_BCEDS_TOTAL" },
+    { "index": 13, "indicator_code": "NCD_BRCA_SIG_LINKED_CBE", "is_computed": false },
+    { "index": 14, "indicator_code": "NCD_BRCA_SIG_LINKED_MAMMO", "is_computed": false },
+    { "index": 15, "indicator_code": "NCD_BRCA_SIG_LINKED_TOTAL", "is_computed": true, "formula": "NCD_BRCA_SIG_LINKED_CBE + NCD_BRCA_SIG_LINKED_MAMMO" },
+    { "index": 16, "indicator_code": "NCD_BRCA_SIG_LINKED_PCT", "is_computed": true, "formula": "NCD_BRCA_SIG_LINKED_TOTAL / NCD_BRCA_BCEDS_SIG_TOTAL" },
+    { "index": 17, "indicator_code": "NCD_BRCA_TARGET_POP", "is_computed": false },
+    { "index": 18, "indicator_code": "NCD_BRCA_SCREENED_CBE", "is_computed": false },
+    { "index": 19, "indicator_code": "NCD_BRCA_SCREENED_MAMMO", "is_computed": false },
+    { "index": 20, "indicator_code": "NCD_BRCA_SCREENED_TOTAL", "is_computed": true, "formula": "NCD_BRCA_SCREENED_CBE + NCD_BRCA_SCREENED_MAMMO" },
+    { "index": 21, "indicator_code": "NCD_BRCA_SCREENED_PCT", "is_computed": true, "formula": "NCD_BRCA_SCREENED_TOTAL / NCD_BRCA_TARGET_POP" },
+    { "index": 22, "indicator_code": "NCD_BRCA_SCREENED_SIG_CBE", "is_computed": false },
+    { "index": 23, "indicator_code": "NCD_BRCA_SCREENED_SIG_MAMMO", "is_computed": false },
+    { "index": 24, "indicator_code": "NCD_BRCA_SCREENED_SIG_TOTAL", "is_computed": true, "formula": "NCD_BRCA_SCREENED_SIG_CBE + NCD_BRCA_SCREENED_SIG_MAMMO" },
+    { "index": 25, "indicator_code": "NCD_BRCA_SCREENED_SIG_PCT", "is_computed": true, "formula": "NCD_BRCA_SCREENED_SIG_TOTAL / NCD_BRCA_SCREENED_TOTAL" },
+    { "index": 26, "indicator_code": "NCD_BRCA_SIG_LINKED2_CBE", "is_computed": false },
+    { "index": 27, "indicator_code": "NCD_BRCA_SIG_LINKED2_MAMMO", "is_computed": false },
+    { "index": 28, "indicator_code": "NCD_BRCA_SIG_LINKED2_TOTAL", "is_computed": true, "formula": "NCD_BRCA_SIG_LINKED2_CBE + NCD_BRCA_SIG_LINKED2_MAMMO" },
+    { "index": 29, "indicator_code": "NCD_BRCA_SIG_LINKED2_PCT", "is_computed": true, "formula": "NCD_BRCA_SIG_LINKED2_TOTAL / NCD_BRCA_SCREENED_SIG_TOTAL" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "NCD_BRCA_HIGHRISK_PCT", "threshold": 1.0, "numerator_code": "NCD_BRCA_HIGHRISK", "denominator_code": "NCD_BRCA_WOMENSEEN", "message": "High-risk women exceed women seen (over 100%)", "hint": "High-risk women are a subset of women seen. Check the source file." },
+    { "rule_type": "over_threshold", "indicator_code": "NCD_BRCA_SCREENED_PCT", "threshold": 1.0, "numerator_code": "NCD_BRCA_SCREENED_TOTAL", "denominator_code": "NCD_BRCA_TARGET_POP", "message": "50-69 screened exceeds target population (over 100%)", "hint": "Check the count or the target population in the source file." }
+  ],
+
+  "notes": "NCD Breast Cancer Early Detection (ncd_cancer_nir.xlsx 'b' sheets). Split config paired with ncd_cacx over the same file. Province/HUC rollup (5 rows; region skipped). 2 meta cols; location NAME col 1. Two population cohorts in one sheet: the 30-69 high-risk pathway (BCEDS%, denominator = High-Risk women) and the 50-69 targeted pathway (Screened%, denominator = Target Population 50-69). Chained denominators throughout (each stage divides by the prior stage's total) — all verified against the sheet's own formulas. The breast half of this workbook ships with NO DQC (NCD Flag CA-2); the over-100% rules here are ours. Annual sheet is a pure rollup, not ingested."
+}

@@ -58,6 +58,8 @@ PROGRAMS = [
         "name": "Non-Communicable Disease Prevention and Control",
         "sub_programs": [
             {"name": "Mental Health"},
+            {"name": "Cancer"},
+            {"name": "Risk Factors"},
         ],
     },
 ]

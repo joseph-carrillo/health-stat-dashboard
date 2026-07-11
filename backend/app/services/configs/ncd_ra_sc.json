@@ -1,0 +1,273 @@
+{
+  "template_id": "NCD_RA_SC",
+  "template_version": "2026",
+  "program_code": "NCD",
+  "source_file_pattern": "ncd_ra_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 1,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+  "location_aliases": {
+    "NIR": "1800000000",
+    "NIRA": "1800000000",
+    "Negros Island Region": "1800000000",
+    "Negros Island Region (NIR)": "1800000000"
+  },
+  "display": {
+    "label": "NCD — Behavioral Risk Factors (Senior Citizens 60+)",
+    "dqc_highlight": true,
+    "id_columns": [
+      {
+        "key": "psgc",
+        "label": "PSGC"
+      },
+      {
+        "key": "location",
+        "label": "Region, Province/City"
+      }
+    ]
+  },
+  "upload": {
+    "sub_program": "Risk Factors",
+    "file_number": 2
+  },
+  "sheet_map": {
+    "1": "Qtr1b",
+    "2": "Qtr2b",
+    "3": "Qtr3b",
+    "4": "Qtr4b"
+  },
+  "columns": [
+    {
+      "index": 2,
+      "indicator_code": "NCD_RF_SC_RISKASSESSED",
+      "is_computed": false
+    },
+    {
+      "index": 3,
+      "indicator_code": "NCD_RF_SC_PHYSINACTIVE_MALE",
+      "is_computed": false
+    },
+    {
+      "index": 4,
+      "indicator_code": "NCD_RF_SC_PHYSINACTIVE_FEMALE",
+      "is_computed": false
+    },
+    {
+      "index": 5,
+      "indicator_code": "NCD_RF_SC_PHYSINACTIVE_TOTAL",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_PHYSINACTIVE_MALE + NCD_RF_SC_PHYSINACTIVE_FEMALE"
+    },
+    {
+      "index": 6,
+      "indicator_code": "NCD_RF_SC_PHYSINACTIVE_PCT",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_PHYSINACTIVE_TOTAL / NCD_RF_SC_RISKASSESSED"
+    },
+    {
+      "index": 7,
+      "indicator_code": "NCD_RF_SC_UNHEALTHYDIET_MALE",
+      "is_computed": false
+    },
+    {
+      "index": 8,
+      "indicator_code": "NCD_RF_SC_UNHEALTHYDIET_FEMALE",
+      "is_computed": false
+    },
+    {
+      "index": 9,
+      "indicator_code": "NCD_RF_SC_UNHEALTHYDIET_TOTAL",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_UNHEALTHYDIET_MALE + NCD_RF_SC_UNHEALTHYDIET_FEMALE"
+    },
+    {
+      "index": 10,
+      "indicator_code": "NCD_RF_SC_UNHEALTHYDIET_PCT",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_UNHEALTHYDIET_TOTAL / NCD_RF_SC_RISKASSESSED"
+    },
+    {
+      "index": 11,
+      "indicator_code": "NCD_RF_SC_OVERWEIGHT_MALE",
+      "is_computed": false
+    },
+    {
+      "index": 12,
+      "indicator_code": "NCD_RF_SC_OVERWEIGHT_FEMALE",
+      "is_computed": false
+    },
+    {
+      "index": 13,
+      "indicator_code": "NCD_RF_SC_OVERWEIGHT_TOTAL",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_OVERWEIGHT_MALE + NCD_RF_SC_OVERWEIGHT_FEMALE"
+    },
+    {
+      "index": 14,
+      "indicator_code": "NCD_RF_SC_OVERWEIGHT_PCT",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_OVERWEIGHT_TOTAL / NCD_RF_SC_RISKASSESSED"
+    },
+    {
+      "index": 15,
+      "indicator_code": "NCD_RF_SC_OBESE_MALE",
+      "is_computed": false
+    },
+    {
+      "index": 16,
+      "indicator_code": "NCD_RF_SC_OBESE_FEMALE",
+      "is_computed": false
+    },
+    {
+      "index": 17,
+      "indicator_code": "NCD_RF_SC_OBESE_TOTAL",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_OBESE_MALE + NCD_RF_SC_OBESE_FEMALE"
+    },
+    {
+      "index": 18,
+      "indicator_code": "NCD_RF_SC_OBESE_PCT",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_OBESE_TOTAL / NCD_RF_SC_RISKASSESSED"
+    },
+    {
+      "index": 19,
+      "indicator_code": "NCD_RF_SC_BINGEDRINK_MALE",
+      "is_computed": false
+    },
+    {
+      "index": 20,
+      "indicator_code": "NCD_RF_SC_BINGEDRINK_FEMALE",
+      "is_computed": false
+    },
+    {
+      "index": 21,
+      "indicator_code": "NCD_RF_SC_BINGEDRINK_TOTAL",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_BINGEDRINK_MALE + NCD_RF_SC_BINGEDRINK_FEMALE"
+    },
+    {
+      "index": 22,
+      "indicator_code": "NCD_RF_SC_BINGEDRINK_PCT",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_BINGEDRINK_TOTAL / NCD_RF_SC_RISKASSESSED"
+    },
+    {
+      "index": 23,
+      "indicator_code": "NCD_RF_SC_SMOKER_TOBACCO_MALE",
+      "is_computed": false
+    },
+    {
+      "index": 24,
+      "indicator_code": "NCD_RF_SC_SMOKER_TOBACCO_FEMALE",
+      "is_computed": false
+    },
+    {
+      "index": 25,
+      "indicator_code": "NCD_RF_SC_SMOKER_TOBACCO_TOTAL",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_SMOKER_TOBACCO_MALE + NCD_RF_SC_SMOKER_TOBACCO_FEMALE"
+    },
+    {
+      "index": 26,
+      "indicator_code": "NCD_RF_SC_SMOKER_TOBACCO_PCT",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_SMOKER_TOBACCO_TOTAL / NCD_RF_SC_RISKASSESSED"
+    },
+    {
+      "index": 27,
+      "indicator_code": "NCD_RF_SC_SMOKER_VAPE_MALE",
+      "is_computed": false
+    },
+    {
+      "index": 28,
+      "indicator_code": "NCD_RF_SC_SMOKER_VAPE_FEMALE",
+      "is_computed": false
+    },
+    {
+      "index": 29,
+      "indicator_code": "NCD_RF_SC_SMOKER_VAPE_TOTAL",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_SMOKER_VAPE_MALE + NCD_RF_SC_SMOKER_VAPE_FEMALE"
+    },
+    {
+      "index": 30,
+      "indicator_code": "NCD_RF_SC_SMOKER_VAPE_PCT",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_SMOKER_VAPE_TOTAL / NCD_RF_SC_RISKASSESSED"
+    },
+    {
+      "index": 31,
+      "indicator_code": "NCD_RF_SC_SMOKER_BOTH_MALE",
+      "is_computed": false
+    },
+    {
+      "index": 32,
+      "indicator_code": "NCD_RF_SC_SMOKER_BOTH_FEMALE",
+      "is_computed": false
+    },
+    {
+      "index": 33,
+      "indicator_code": "NCD_RF_SC_SMOKER_BOTH_TOTAL",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_SMOKER_BOTH_MALE + NCD_RF_SC_SMOKER_BOTH_FEMALE"
+    },
+    {
+      "index": 34,
+      "indicator_code": "NCD_RF_SC_SMOKER_BOTH_PCT",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_SMOKER_BOTH_TOTAL / NCD_RF_SC_RISKASSESSED"
+    },
+    {
+      "index": 35,
+      "indicator_code": "NCD_RF_SC_SMOKER_ALL_MALE",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_SMOKER_TOBACCO_MALE + NCD_RF_SC_SMOKER_VAPE_MALE + NCD_RF_SC_SMOKER_BOTH_MALE"
+    },
+    {
+      "index": 36,
+      "indicator_code": "NCD_RF_SC_SMOKER_ALL_FEMALE",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_SMOKER_TOBACCO_FEMALE + NCD_RF_SC_SMOKER_VAPE_FEMALE + NCD_RF_SC_SMOKER_BOTH_FEMALE"
+    },
+    {
+      "index": 37,
+      "indicator_code": "NCD_RF_SC_SMOKER_ALL_TOTAL",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_SMOKER_ALL_MALE + NCD_RF_SC_SMOKER_ALL_FEMALE"
+    },
+    {
+      "index": 38,
+      "indicator_code": "NCD_RF_SC_SMOKER_ALL_PCT",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_SMOKER_ALL_TOTAL / NCD_RF_SC_RISKASSESSED"
+    },
+    {
+      "index": 39,
+      "indicator_code": "NCD_RF_SC_BTI_MALE",
+      "is_computed": false
+    },
+    {
+      "index": 40,
+      "indicator_code": "NCD_RF_SC_BTI_FEMALE",
+      "is_computed": false
+    },
+    {
+      "index": 41,
+      "indicator_code": "NCD_RF_SC_BTI_TOTAL",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_BTI_MALE + NCD_RF_SC_BTI_FEMALE"
+    },
+    {
+      "index": 42,
+      "indicator_code": "NCD_RF_SC_BTI_PCT",
+      "is_computed": true,
+      "formula": "NCD_RF_SC_BTI_TOTAL / NCD_RF_SC_SMOKER_ALL_TOTAL"
+    }
+  ],
+  "dqc_rules": [],
+  "notes": "NCD Behavioral Risk Factors, Senior Citizens 60+ (ncd_ra_nir.xlsx 'b' sheets). Split config; Adults ('a' sheets) is a separate config (ncd_ra_adults). Province/HUC rollup (5 rows; region skipped). 2 meta cols; location NAME col 1. All risk-factor percentages divide by the Risk-Assessed count (col 2); BTI% divides by All-Smokers Total (clinically correct — BTI is offered to smokers, not the whole cohort). Smoker-All is the union of the three smoker types (tobacco+vape+both), summed per sex from the raw columns. KNOWN DATA ISSUE (RF-1, flag to DOH, not fixed here): the source header states this Risk-Assessed total 'must equal Risk Assessed in the ncd_meds template', but in the sample data An automated cross-template DQC (compare against NCD_MEDS_ADULT_RISKASSESSED) needs the D4 reconciliation rule type and is deferred. The source's single over-100% DQC is dead (off-by-one anchor, NCD Flag X-1). Annual sheet is a pure rollup, not ingested."
+}
