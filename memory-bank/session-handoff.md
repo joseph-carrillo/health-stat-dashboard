@@ -6,8 +6,8 @@ shutdown). Built every *unblocked* program/file (8 feature commits, all dry-run 
 the live DB), then Joseph asked to run shutdown protocols and update the foundation docs + handoff
 so he can **inspect the pending schema decisions and decide next session**. Feature commits (all
 pushed & verified): `8a2788f` `a505662` `4d2115e` `83bf708` `7f22aa9` `3230975` `0d3447c`
-`354f3a1`, plus docs `b56fc5f`. **This shutdown docs/memory commit is the follow-up** (verified
-hash recorded in the shutdown report).
+`354f3a1`, plus docs `b56fc5f`. **This shutdown docs/memory commit: `67f7570`** (verified —
+`git status -sb` shows local and origin match, no "ahead").
 
 ## Current Objective
 **The gating item now: Joseph inspects the schema/parser DECISIONS and decides — lead with D1/D2.**
