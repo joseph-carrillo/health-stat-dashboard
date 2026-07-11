@@ -16,6 +16,27 @@ always agree (a future CI check will enforce it).
 ## [Unreleased]
 
 ### Added
+- **Rate & ratio indicators are now first-class (D1/D2, ADR-023 — proposed).** New
+  `display_unit()` helper; `/api/trend`, `/api/coverage`, and `/api/indicators` expose
+  `rate_multiplier`/`unit`; rates are stored already-multiplied (62.5 = "62.5 per 100,000")
+  with the multiplication explicit in each config formula; unbounded ratios (Demographics)
+  display as plain numbers. Coverage status bands (on/near/below) now apply to percentage
+  indicators only — a mortality rate has no coverage target. New `test_rate_display.py`
+  (10 tests) locks the conventions in.
+- **Vital Statistics — Mortality program** (first program built on the rate uplift): 38
+  indicators (`MORTA_*`), split configs `morta_mmr` (MMR family, 'a' sheets, 13 raw inputs +
+  23 recomputed totals/ratios ×100,000) + `morta_imr` (IMR family, 'b' sheets, ×1,000) over
+  the one physical workbook. All Total/Ratio columns recomputed from raw counts — including
+  col 33, whose header label lies ("d4" for what is formula-verified as the Indirect-combined
+  g4 ratio, FLAG M1). The NIR region rollup row is skipped (derivable). Registered in the
+  Upload catalog (new Vital Statistics program) and Indicator Reports.
+
+### Fixed
+- **Trends page displayed percentages on the wrong scale** — a stored 0.04 ratio (4% coverage)
+  rendered as "0.04%". `/api/trend` now returns display-ready values (percentages ×100) plus
+  the proper unit string; the page shows "4.0%".
+
+### Added (earlier)
 - **PHRIC public site — landing page + 4 cluster pages** (`/`, `/health-statistics`,
   `/epidemiology-surveillance`, `/research`, `/laboratory`). Recreated pixel-close from the
   `design_handoff_phric_site/` design handoff, public (logged-out) state only: hero sections,

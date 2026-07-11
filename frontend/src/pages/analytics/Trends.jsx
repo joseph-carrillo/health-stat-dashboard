@@ -45,7 +45,10 @@ export default function Trends() {
   }, [indicatorCode, year, psgc]);
 
   const series = trend?.series || [];
-  const unit = trend?.is_rate ? "%" : "";
+  // Backend sends display-ready values plus their unit: "%" for percentages
+  // (already scaled 0-100), "per 1,000"-style for rates, "" for counts/ratios.
+  const unit = trend?.unit ?? (trend?.is_rate ? "%" : "");
+  const unitSuffix = unit === "%" ? "%" : unit ? ` ${unit}` : "";
   const withData = series.filter((p) => p.value !== null && p.value !== undefined);
   const avg = withData.length
     ? (withData.reduce((s, p) => s + p.value, 0) / withData.length).toFixed(1)
@@ -79,9 +82,9 @@ export default function Trends() {
         </div>
 
         <div style={styles.statRow}>
-          <Stat label="Latest" value={latest !== null ? `${latest}${unit}` : "—"} />
-          <Stat label="Average" value={avg !== null ? `${avg}${unit}` : "—"} />
-          <Stat label="Peak" value={peak !== null ? `${peak}${unit}` : "—"} />
+          <Stat label="Latest" value={latest !== null ? `${latest}${unitSuffix}` : "—"} />
+          <Stat label="Average" value={avg !== null ? `${avg}${unitSuffix}` : "—"} />
+          <Stat label="Peak" value={peak !== null ? `${peak}${unitSuffix}` : "—"} />
           <Stat label="Months Reported" value={withData.length} />
         </div>
 
@@ -92,7 +95,7 @@ export default function Trends() {
           {withData.length === 0 ? (
             <p style={styles.empty}>No data for this selection.</p>
           ) : (
-            <LineChart series={series} unit={unit} maxOverride={trend?.is_rate ? null : null} />
+            <LineChart series={series} unit={unitSuffix} />
           )}
         </div>
       </div>

@@ -26,7 +26,41 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   `staging_health_data` only — **does not touch the new `esr_reports` table**, which has one
   real test row from this session's browser verification, `id=1` "Test Measles Cluster").
 
-## Session 9 (2026-07-11, HOME `_hansell_`) — Program build-out blitz (8 commits)
+## Session 10 (2026-07-11 later, HOME `_hansell_`) — D1/D2 + Mortality built; CUT OFF by usage limit
+Joseph: "continue working on the programs… I'll inspect once all programs done" — then, ~30 min
+in, **stopped the build to conserve his usage limit** and asked for a detailed shutdown + a
+standing model policy (see below). He also set a cadence mid-session: **after each finished
+program, ping him and ask whether to continue** — that cadence stands next session.
+
+**DONE this session (all committed together with this docs sync, per his choice):**
+- **D1/D2 rate/ratio display uplift — ADR-023, PROPOSED (needs his ratification):** rates stored
+  already-multiplied (config formulas do `… * 100000` explicitly; `rate_multiplier` is only the
+  display-unit label); new `display_unit()`; `/api/trend` now display-ready (fixes a real
+  pre-existing bug: Trends showed "0.04%" for 4% coverage); `/api/coverage` + `/api/indicators`
+  expose `rate_multiplier`/`unit`; status bands (on/near/below) now percentage-only; `_RATE`
+  codes never summed across slices (recomputed like `_PCT`). Files: `analytics.py`,
+  `Trends.jsx`, `test_rate_display.py` (10 new tests).
+- **Vital Stats Mortality built:** 38 `MORTA_*` indicators seeded (live in THIS machine's DB);
+  split configs `morta_mmr` + `morta_imr` over the one workbook (per the analysis' option a);
+  NIR rollup row skipped (`data_start_row: 1`, sibling convention); col-33 mapped by index as
+  Indirect-combined (label lies, FLAG M1); registered in `upload_catalog.py` (new VITAL_STATS
+  program) + `constants.js`. Validated clean; dry-run Q1 green (MMR 4 rows/144 staged/0 errors;
+  IMR 4 rows/12/0); **12 cell values spot-checked = Excel's own cached values exactly**
+  (NegOr: 98.28009828, 49.14004914, 147.4201474; IMR: 2.618…, 13.2678…). 48 backend tests pass,
+  ruff clean, eslint clean on touched files.
+
+**NOT done / cut off mid-step (the exact resume point):**
+- **The Excel-face render check for the 2 new templates** (`/api/template-report?template_id=
+  morta_mmr|morta_imr`) — I was grepping main.py for the endpoint's exact param names when
+  Joseph stopped the build. Everything else in add-template's definition of done is checked.
+- No live browser click-through (Chrome extension not connected, third session running).
+- Tasks NOT started: Natality, Leprosy, Filariasis, Demographics dry-run finish, D4, Rabies,
+  STH, D6 (Eye/Oral/FP), D5 (NCD Meds), Morbidity — the full per-task plan with per-program
+  notes is in `session-handoff.md` "Next Session".
+
+**Standing policy added to root CLAUDE.md ("Model & Token Policy"), carry it EVERY session:**
+Opus 4.8 as main/orchestrator; sub-agents via Agent tool ALWAYS `model: "sonnet"` (Sonnet 5);
+token-conservation habits; commit+push per green unit; ping-per-program cadence.
 Joseph: "continue with the rest of the programs and have it checked once I get back." Built every
 program/file that is unblocked (no schema decision, no DOH fix needed), one at a time, each
 validated + dry-run parsed against its real `.xlsx` and spot-checked against the sheets' own cells.
@@ -429,39 +463,29 @@ Three tracks now, running in parallel:
   `/health-statistics`, `/epidemiology-surveillance`, `/research`, `/laboratory`, public-state
   only (ADR-022). Login moved to `/login`.
 
-## Open work (priority order)
-1. **Google Sheets setup for ESR reports** (parked by Joseph, self-serve when ready): create the
-   Google Cloud service account + Sheet, share the Sheet with the service account's `client_email`,
-   drop the key at `./secrets/google-service-account.json`, set `ESR_SHEET_ID` in `.env`. Steps
-   in `RUNBOOK.md`. Until then, ESR submissions save fine with `sheet_sync_status='failed'`.
-2. **Finish HIV-Syphilis-HepaB (Infectious Disease)** — locate the real `infec_hiv_nir.xlsx`/
-   `infec_hepatitisb_nir.xlsx`/`infec_syphilis_nir.xlsx` files (not confirmed on either machine
-   yet), then run `/api/validate-config` + dry-run parse + spot-check per the `add-template`
-   skill's definition of done.
-3. **Finish Demographics** — dry-run parse + spot-check the real `Demographics_nir.xlsx`
-   (HOME machine only — the file doesn't exist on the office machine).
-4. **Go-live Step 3** — domain + SSH already in hand (2026-07-06); waiting on IT to confirm
-   ports 80/443. Server prep can start in parallel: RUNBOOK "One-time server prep" → DNS A
-   record → deploy → smoke test → rotate admin password → tag v1.0.0. **2-week target.**
-5. **Remaining Infectious Disease sub-groups + next programs per the consolidated summary's
-   build order**: Schistosomiasis, Filariasis, Rabies, STH, Leprosy (all analyzed, none built),
-   then WASH water file, then Maternal Care. Full 11-step order + per-group blockers/decisions:
-   `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` §5. Remaining schema/parser
-   decisions (D3–D8, D10 — D9 sensitive-indicator ladder resolved via ADR-021): split-configs for
-   multi-sheet workbooks (D3), a new DQC "reconciliation" rule type (D4), per-column rollup
-   override (D5), row-stacked-period parsing (D6), Morbidity's disease-as-row schema (D7/D10).
-6. **PHRIC public site follow-ups**: the auth-gated ("logged-in") variant of the 4 cluster pages
-   (unblurred tables, working downloads); wiring real backend data into the public pages
-   (currently static placeholder figures from the design prototype); Google OAuth + granular
-   per-user permissions (needs its own design pass, see ROADMAP.md — unrelated to the "Staff
-   Sign In" pill added this session, which just routes to the existing JWT `/login`).
-7. **Other parked decisions** (Joseph, when ready): stash@{0} Overview Card — finish or drop
-   (HOME machine only); small-cell suppression cutoff (<5 or <10); data-dictionary draft
-   greenlight; whether one `is_sensitive` bit is granular enough or a tiered RBAC scheme is
-   needed (open question left by ADR-021).
-8. Remaining CHILD_CARE Immunization files 5–8 when real data arrives.
-9. Deferred refactors: split `backend/main.py` (~1300 lines) + oversized frontend pages;
-    9 cosmetic ESLint warnings.
+## Open work (priority order — updated at Session 10 shutdown)
+1. **Resume the program build-out where Session 10 was cut off** (full per-program plan +
+   resume point: `session-handoff.md` "Next Session"). Order: finish the Mortality Excel-face
+   render check → Natality → Leprosy → Filariasis CDR/Lymph → Demographics dry-run finish →
+   D4 reconciliation DQC → Rabies + STH → D6 (Eye Health/Oral Health/Family Planning) →
+   D5 + NCD Meds → Morbidity (own mini-phase, last). **Cadence: ping Joseph after each
+   finished program and ask whether to continue.** ADR-023 (rates) needs his ratification.
+2. **Joseph's UI golden-path check of Sessions 9+10 work, then real uploads** — everything is
+   still dry-run only; nothing in the live DB beyond seeds.
+3. **Go-live Step 3** — domain + SSH in hand (2026-07-06); waiting on IT for ports 80/443.
+   Server prep can start in parallel (RUNBOOK). 2-week target from 07-06 has slipped — re-ask.
+4. **Google Sheets setup for ESR reports** (parked; self-serve steps in RUNBOOK.md).
+5. **PHRIC public site follow-ups**: auth-gated cluster-page variant; real data wiring;
+   Google OAuth + granular permissions (own design pass).
+6. **Parked decisions** (Joseph, when ready): stash@{0} Overview Card (this HOME machine);
+   small-cell suppression cutoff; data-dictionary greenlight; one `is_sensitive` bit vs tiered
+   RBAC (ADR-021 open question).
+7. Remaining CHILD_CARE Immunization files 5–8 when real data arrives.
+8. Deferred refactors: split `backend/main.py` (~1400 lines) + oversized frontend pages;
+   9 cosmetic ESLint warnings.
+9. **Blocked on DOH (not us):** WASH sanitation Q3/Q4 col, Natality Q2 col, NCD Meds Dec block,
+   Schisto/STH clarifications, Filariasis MDA scope; data entry for Demographics
+   facility/workforce + Geriatric SC Immunization.
 
 ## Done this session (session 8), closed out
 - ✅ PHRIC public site landing + 4 cluster pages built, Joseph-reviewed live, committed and

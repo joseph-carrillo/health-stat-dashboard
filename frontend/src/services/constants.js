@@ -185,6 +185,16 @@ export const TEMPLATES = [
     label: "NCD — Behavioral Risk Factors (Senior Citizens 60+)",
     program_code: "NCD",
   },
+  {
+    id: "morta_mmr",
+    label: "Vital Stats — Maternal Mortality (MMR)",
+    program_code: "VITAL_STATS",
+  },
+  {
+    id: "morta_imr",
+    label: "Vital Stats — Infant Mortality (IMR)",
+    program_code: "VITAL_STATS",
+  },
 ];
 
 export const MONTHS = [

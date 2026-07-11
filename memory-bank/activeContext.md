@@ -1,27 +1,40 @@
 # activeContext.md
 
 ## Current Session Goal (next session)
-**The #1 thing: Joseph inspects the pending schema/parser DECISIONS and decides — especially
-D1/D2 (rates + unbounded ratios).** After Session 9 built out every *unblocked* program, that
-decision is now the gate on all remaining program work. The full inspectable list is in
-`ROADMAP.md` ("DECISIONS FOR JOSEPH TO INSPECT & DECIDE") with per-decision context in
-`template_analysis/00_CONSOLIDATED_SUMMARY.md`. Short version of what each unblocks:
-- **D1 (non-% rates ×1k/10k/100k)** → Vital Stats Mortality + Natality, Leprosy, Filariasis. Biggest lever.
-- **D2 (unbounded-ratio display)** → Demographics display (data still empty at DOH).
-- **D4 (sum-of-parts reconciliation DQC)** → deferred DQC in Intra Partum DT/DO, NCD Risk Factors, STH, Rabies.
-- **D5 (per-column `rollup:"last"`)** → NCD Meds (also needs DOH Dec-block fix).
-- **D6 (row-stacked dimension)** → NCD Eye Health, Oral Health, Family Planning.
-- **D7/D10 (disease-as-row schema)** → Morbidity (its own mini-phase, last).
-- **Rabies extra_sheets parser change** → Rabies.
+**Resume the Session-10 program build-out exactly where it was cut off** (usage limit, ~30 min
+in). Joseph pre-approved building ALL remaining programs with me making the D-decisions
+(documented as proposed ADRs he can reverse) — that approval stands. Two standing rules he set:
+1. **Model policy (now in root CLAUDE.md):** main/orchestrator on **Opus 4.8**; any Agent-tool
+   sub-agent on **Sonnet 5** (`model: "sonnet"`). Conserve tokens hard (targeted reads, batched
+   calls, brief narration). This carries EVERY session until he says otherwise.
+2. **Cadence:** commit+push per green unit; **ping him after each finished program** and ask
+   whether to continue (he watches his 5-hr usage window).
 
-**Also open, not decision-gated:**
-1. **UI golden-path check of Session 9's work** — all dry-run only, nothing in the live DB yet.
-   Walk the new programs through Upload → Coverage/Rankings/Indicator Reports; when Joseph is
-   happy, run the REAL (non-dry-run) uploads. (Connect the Chrome extension for a live click-through.)
-2. **Go-live Step 3** — domain + server SSH in hand since 2026-07-06; only ports 80/443 pending.
-   Server prep (`RUNBOOK.md`) can start once domain/IP are shared in chat. ~2-week target from 07-06.
-3. **ESR Google Sheets one-time setup** (parked) — service account + Sheet + `ESR_SHEET_ID`, steps
-   in `RUNBOOK.md`. Not a blocker; submissions save fine without it.
+**Exact resume point:** the Excel-face render check for `morta_mmr`/`morta_imr` via
+`/api/template-report` (I was mid-grep for its param names in `main.py` when stopped).
+Everything else on Mortality's definition-of-done is green and committed. Then continue the
+build order (per-program notes in `session-handoff.md` "Next Session"): Natality → Leprosy →
+Filariasis CDR/Lymph → Demographics dry-run → D4 → Rabies + STH → D6 (Eye/Oral/FP) → D5 +
+NCD Meds → Morbidity last. **ADR-023 (rate storage convention) is PROPOSED — ask Joseph to
+ratify before building more rate programs on it (Leprosy/Filariasis/Natality all depend).**
+
+**Also open, not build-order items:**
+1. Joseph's UI golden-path check of Sessions 9+10, then the real (non-dry-run) uploads.
+2. Go-live Step 3 — ports 80/443 still pending with IT; server prep can start anytime.
+3. ESR Google Sheets one-time setup (parked; RUNBOOK.md).
+
+## 2026-07-11 session 10 (HOME `_hansell_`, same day as session 9) — D1/D2 + Mortality; cut off
+Joseph said "continue working on the programs… I want all programs ready for inspection once I
+get back", left, then stopped the build ~30 min later over token burn. Shipped before the stop
+(committed together with this shutdown, his explicit choice via the pending-code question):
+the D1/D2 rate/ratio display uplift (ADR-023, PROPOSED — rates stored already-multiplied,
+`display_unit()`, trend-API display-scale fix for a real pre-existing "0.04%" bug, status bands
+percentage-only, `_RATE` never summed across slices, `test_rate_display.py`) and the full
+**Vital Stats Mortality** program (38 `MORTA_*` indicators seeded on this machine, `morta_mmr` +
+`morta_imr` split configs, both validated, Q1 dry-runs 0 errors, 12 spot-checked cells match
+Excel exactly, 48 tests green, both catalogs registered). NOT done: the template-report render
+check (exact resume point), live browser check, and every program after Mortality. Full detail:
+`project_state.md` Session 10.
 
 **Blocked on DOH (not Joseph):** WASH sanitation (Q3/Q4 stray col), Natality Q2 col, NCD Meds Dec
 block, Schistosomiasis/STH clarifications; and DATA ENTRY for Demographics facility/workforce +

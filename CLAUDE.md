@@ -31,6 +31,24 @@ backend reads the same `.env`.
 - `admin` / `Admin@2026!` — full admin access
 - `jsmith` / `Test@2026!` — program_manager, CHILD_CARE program
 
+## Model & Token Policy (standing instruction, 2026-07-11)
+
+Joseph's usage limit burns fast (a Session-10 build burned heavily in ~30 min). Rules,
+every session, until he says otherwise:
+
+- **Main/orchestrator session: Opus 4.8** (Joseph sets it via `/model`; if the session is
+  running on something else, remind him at startup).
+- **Sub-agents spawned via the Agent tool: always pass `model: "sonnet"` (Sonnet 5).**
+  Never spawn sub-agents on Opus, and never spawn them at all unless the task genuinely
+  needs one — inline work costs less than a cold agent re-deriving context.
+- **Conserve tokens:** read only the file ranges needed (no full re-reads of large files),
+  batch independent tool calls, keep narration brief, prefer container-side one-liners over
+  multi-step exploration. When a build has many similar units (e.g. many template configs),
+  reuse the established pattern instead of re-investigating each one.
+- **Commit + push as soon as a unit of work is green** so nothing is stranded if the limit
+  hits mid-build; pause and ask before starting the next unit when Joseph has asked for
+  check-ins (he did in Session 10: "ping me after each program").
+
 ## Session Protocols
 
 Short commands Joseph uses to drive a session. When he types one, follow it exactly.

@@ -24,6 +24,20 @@ QUARTER_MONTHS = {
 RATE_FORMULAS = ("percentage", "rate", "ratio")
 
 
+def display_unit(formula_type: str, rate_multiplier) -> str:
+    """Unit suffix for charts/stat cards.
+
+    percentage -> "%"; rate -> "per 1,000" / "per 100,000" (the stored value
+    is already multiplied — rate_multiplier is display metadata only, see
+    ADR-023); ratio/count/sum -> no suffix.
+    """
+    if formula_type == "percentage":
+        return "%"
+    if formula_type == "rate":
+        return f"per {int(rate_multiplier or 100000):,}"
+    return ""
+
+
 # =====================================================
 # PERIOD RESOLUTION
 # =====================================================
@@ -99,7 +113,7 @@ def _combine_slice_values(
         return None
     if col_def and col_def.get("is_computed"):
         return None
-    if code.endswith("_PCT"):
+    if code.endswith("_PCT") or code.endswith("_RATE"):
         return None
     if _is_pop_indicator(code):
         return max(non_null)
@@ -204,7 +218,7 @@ def list_indicators(program_code: str = None,
         SELECT i.id, i.code, i.name, i.unit, i.frequency_type,
                i.formula_type, i.is_computed, i.is_sensitive,
                i.target_value, i.target_year, p.code AS program_code,
-               p.name AS program_name
+               p.name AS program_name, i.rate_multiplier
         FROM indicators i
         JOIN programs p ON p.id = i.program_id
         WHERE i.is_active = TRUE
@@ -234,6 +248,7 @@ def list_indicators(program_code: str = None,
             "target_year": r[9],
             "program_code": r[10],
             "program_name": r[11],
+            "rate_multiplier": r[12],
         }
         for r in rows
     ]
@@ -304,7 +319,8 @@ def get_indicator_meta(code: str) -> dict:
     cur = conn.cursor()
     cur.execute(
         """SELECT i.id, i.code, i.name, i.formula_type, i.is_sensitive,
-                  p.code AS program_code, i.denominator_source
+                  p.code AS program_code, i.denominator_source,
+                  i.rate_multiplier, i.unit
            FROM indicators i
            JOIN programs p ON p.id = i.program_id
            WHERE i.code = %s""",
@@ -323,6 +339,8 @@ def get_indicator_meta(code: str) -> dict:
         "is_sensitive": row[4],
         "program_code": row[5],
         "denominator_source": row[6],
+        "rate_multiplier": row[7],
+        "unit": row[8],
     }
 
 
@@ -409,6 +427,9 @@ def get_coverage(indicator_code: str, year: int,
     conn.close()
 
     is_rate = meta["formula_type"] in RATE_FORMULAS
+    # Coverage status bands (on/near/below) only make sense for percentages —
+    # a mortality rate has no "target coverage", and lower is better.
+    is_pct = meta["formula_type"] == "percentage"
     data = []
     for r in rows:
         value = round(float(r[4]), 2) if r[4] is not None else None
@@ -418,7 +439,7 @@ def get_coverage(indicator_code: str, year: int,
             "level": r[2],
             "is_huc": r[3],
             "value": value,
-            "status": status_for(value) if is_rate else None,
+            "status": status_for(value) if is_pct else None,
             "data_points": r[5],
         })
     return {
@@ -426,6 +447,7 @@ def get_coverage(indicator_code: str, year: int,
         "indicator_name": meta["name"],
         "formula_type": meta["formula_type"],
         "is_rate": is_rate,
+        "unit": display_unit(meta["formula_type"], meta.get("rate_multiplier")),
         "data": data,
     }
 
@@ -537,13 +559,21 @@ def get_trend(indicator_code: str, year: int, location_psgc: str = None) -> dict
     cur.close()
     conn.close()
 
-    by_month = {int(r[0]): round(float(r[1]), 2) if r[1] is not None else None
-                for r in rows}
+    # Percentages are stored as 0–1 ratios; scale to 0–100 so the chart and
+    # stat cards can show "77.1%" directly. Rates are stored already
+    # multiplied (per ADR-023) and ratios/counts are plain numbers — as-is.
+    scale = 100.0 if meta["formula_type"] == "percentage" else 1.0
+    by_month = {
+        int(r[0]): round(float(r[1]) * scale, 2) if r[1] is not None else None
+        for r in rows
+    }
     series = [{"month": m, "value": by_month.get(m)} for m in range(1, 13)]
     return {
         "indicator_code": meta["code"],
         "indicator_name": meta["name"],
         "is_rate": meta["formula_type"] in RATE_FORMULAS,
+        "formula_type": meta["formula_type"],
+        "unit": display_unit(meta["formula_type"], meta.get("rate_multiplier")),
         "year": year,
         "series": series,
     }

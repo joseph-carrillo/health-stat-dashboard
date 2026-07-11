@@ -345,3 +345,42 @@ once he decides how much of it he wants before the public launch.
 only Health Statistics' *internal* dashboard (a separate, pre-existing page) has real queries
 behind it. Anyone reaching these public pages sees illustrative, not real, figures until the
 logged-in variant and real data wiring are built.
+
+## ADR-023 — D1/D2 implemented: rates stored already-multiplied; ratio display; status bands percentage-only (2026-07-11) — **PROPOSED, needs Joseph's ratification**
+
+**Status:** Proposed (built in Joseph's absence on his "continue working on the programs, do it
+as I'll have to leave" instruction; reversible — flag at next session if the convention should
+change before more rate programs are built on top of it).
+
+**Context:** D1 (non-percentage rates ×1,000/×100,000) and D2 (unbounded-ratio display) gated
+Vital Stats, Leprosy, Filariasis, and Demographics display. The `rate_multiplier` column existed
+but no code path read it, and `formula_type='rate'` was schema-legal but unused.
+
+**Decision:**
+1. **Rates are stored ALREADY MULTIPLIED** (an MMR of 62.5 is stored as 62.5, meaning
+   "per 100,000") — mirroring what the Excel rate cells themselves hold. Config formulas do the
+   multiplication explicitly (`DEATHS / LIVEBIRTHS * 100000`), so the math is visible in the
+   config. `rate_multiplier` is display metadata only — it labels the unit ("per 100,000"),
+   never rescales. This diverges deliberately from the percentage convention (stored as 0–1
+   ratios) because Excel's % cells are natively 0–1 while its rate cells are natively multiplied.
+2. New `display_unit()` in analytics.py: percentage → "%", rate → "per 1,000"-style label from
+   rate_multiplier, ratio/count/sum → no suffix. `/api/trend` now returns display-ready values
+   (percentages scaled ×100 — this also fixes a real pre-existing Trends-page bug where 4%
+   coverage displayed as "0.04%") plus the unit string; `/api/coverage` and `/api/indicators`
+   expose `rate_multiplier`/`unit`.
+3. **Coverage status bands (on/near/below) now apply to percentages only.** A mortality rate has
+   no coverage target and lower-is-better — colour-coding it with the ≥95% "on target" scheme
+   would lie. Rate/ratio indicators return `status: null`.
+4. `_RATE`-suffixed codes follow the `_PCT` aggregation rule: never summed across period slices,
+   always recomputed from raw counts via the config formula (annual = deaths_year/LB_year×mult,
+   not SUM of quarterly rates).
+5. Unbounded ratios (Demographics, `formula_type='ratio'`) display as plain numbers (the
+   Excel-face view already renders them correctly via toLocaleString); no % ceiling, no status.
+
+**Why:** smallest end-to-end change that makes rates first-class; keeps the Excel-face report
+page working with zero changes (rate columns are just numbers whose headers already say
+"per 100,000"); keeps config formulas self-documenting.
+
+**Trade-off:** two storage scales now coexist (percentages 0–1, rates multiplied) — the
+`_PCT`/`_RATE` suffix is the discriminator, documented in the seed-file comments and
+test_rate_display.py. A future migration could unify them if this ever bites.

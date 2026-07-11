@@ -1,30 +1,70 @@
 # session-handoff.md
 
 ## Last Updated
-2026-07-11, **session 9** (HOME machine, hostname `_hansell_` — program build-out blitz + this
-shutdown). Built every *unblocked* program/file (8 feature commits, all dry-run only, nothing in
-the live DB), then Joseph asked to run shutdown protocols and update the foundation docs + handoff
-so he can **inspect the pending schema decisions and decide next session**. Feature commits (all
-pushed & verified): `8a2788f` `a505662` `4d2115e` `83bf708` `7f22aa9` `3230975` `0d3447c`
-`354f3a1`, plus docs `b56fc5f`. **This shutdown docs/memory commit: `67f7570`** (verified —
-`git status -sb` shows local and origin match, no "ahead").
+2026-07-11, **session 10** (HOME machine, hostname `_hansell_` — second session this day).
+Joseph pre-approved building ALL remaining programs autonomously ("I'll inspect once all
+programs done"), I built the D1/D2 rate uplift + Vital Stats Mortality, then he **stopped the
+build ~30 min in to conserve his usage limit** and ordered this detailed shutdown. Code + docs
+committed TOGETHER (his explicit choice when asked per the pending-code rule). **Commit hash:
+see `git log -1` — verified pushed at shutdown (status showed no "ahead").**
+
+## ⚠️ STANDING INSTRUCTIONS FROM JOSEPH (Session 10 — carry to EVERY future session)
+1. **Model policy (also in root CLAUDE.md "Model & Token Policy"):** main/orchestrator session
+   runs **Opus 4.8**; every Agent-tool sub-agent runs **Sonnet 5** (`model: "sonnet"`). Remind
+   him at startup if the session isn't on Opus 4.8.
+2. **Token conservation:** targeted file reads only, batch independent calls, brief narration,
+   reuse established patterns instead of re-investigating. The Session-10 build burned heavily
+   in ~30 min — that's the ceiling to stay under.
+3. **Cadence:** commit + push each unit of work as soon as it's green; **after each finished
+   program, STOP and ping Joseph — ask whether to continue** (he manages a 5-hour usage window).
+4. His build pre-approval stands: make the remaining D-decisions pragmatically, document each
+   as a PROPOSED ADR he can reverse, never ingest known-garbage source data.
 
 ## Current Objective
-**The gating item now: Joseph inspects the schema/parser DECISIONS and decides — lead with D1/D2.**
-Session 9 built everything buildable without a decision, so all remaining program work is
-decision-gated. The inspectable list is in `ROADMAP.md` ("DECISIONS FOR JOSEPH TO INSPECT &
-DECIDE"): D1 (non-% rates → Vital Stats, Leprosy, Filariasis), D2 (unbounded-ratio display →
-Demographics), D4 (reconciliation DQC), D5 (per-column cumulative rollup → NCD Meds), D6
-(row-stacked dimension → NCD Eye/Oral Health/Family Planning), D7/D10 (Morbidity), Rabies parser
-change. Other live tracks:
-1. **UI golden-path check + real uploads for Session 9's work** — all dry-run so far, nothing in
-   the live DB. When Joseph's happy after reviewing Upload → Coverage/Rankings/Indicator Reports,
-   run the real (non-dry-run) uploads.
-2. **Go-live (v1.0.0)** — Steps 1+2 done. Domain + server SSH in hand since 2026-07-06; only ports
-   80/443 pending. Server prep can start once domain/IP are shared in chat. ~2-week target.
-3. **ESR Google Sheets one-time setup** — parked; steps in `RUNBOOK.md`. Not a blocker.
-4. PHRIC follow-ups (auth-gated cluster-page variant, real data wiring, Google OAuth + granular
-   permissions) — all future, unscoped.
+**Resume the program build-out at the exact cut-off point** (see "Next Session" below). All
+remaining programs are pre-approved to build. ADR-023 (rates stored already-multiplied) is
+PROPOSED — get Joseph's ratification early next session, since Natality/Leprosy/Filariasis
+build on the same convention. Other live tracks unchanged: (1) Joseph's UI golden-path check of
+Sessions 9+10 then real uploads; (2) go-live Step 3 (ports 80/443 pending with IT); (3) ESR
+Google Sheets setup (parked); (4) PHRIC follow-ups (future, unscoped).
+
+## Done This Session — Session 10 (2026-07-11 later, HOME `_hansell_`) — CUT OFF MID-BUILD
+- **D1/D2 rate/ratio display uplift (ADR-023, PROPOSED):**
+  - `backend/app/services/analytics.py`: new `display_unit()`; `list_indicators` +
+    `get_indicator_meta` expose `rate_multiplier`/`unit`; `get_coverage` returns `unit` and
+    gives status bands to percentages ONLY (rate/ratio → `status: null`); `get_trend` returns
+    display-ready values (percentage ×100 — **fixes a real pre-existing bug**: Trends showed
+    "0.04%" for 4% coverage) + `unit`; `_combine_slice_values` treats `_RATE` like `_PCT`
+    (never summed across slices, recomputed from raw via config formula).
+  - `frontend/src/pages/analytics/Trends.jsx`: uses the API's `unit` (space-separated for
+    "per 1,000"-style), dead `maxOverride` removed.
+  - `backend/tests/test_rate_display.py`: 10 new tests (display_unit, rate-slice aggregation,
+    status bands). **48 tests total pass; ruff clean; eslint clean on touched files.**
+  - Storage convention (THE key decision to ratify): rates stored ALREADY MULTIPLIED
+    (62.5 = "per 100,000"); config formulas multiply explicitly; `rate_multiplier` is only the
+    unit label. Excel-face report page needed zero changes (rate columns are plain numbers).
+- **Vital Stats Mortality (first program on the uplift):**
+  - 38 `MORTA_*` indicators seeded (`seed_indicators.py` new VITAL_STATS section; **seeded live
+    in THIS machine's DB** — run `bootstrap_db.py` on the office machine to get them there).
+  - `configs/morta_mmr.json` (MMR 'a' sheets Q1a-Q4a: 13 raw + 23 computed; NIR rollup row
+    skipped via `data_start_row: 1`; col 33 mapped by index as Indirect-combined — its header
+    label lies, FLAG M1) + `configs/morta_imr.json` (IMR 'b' sheets; shared `MORTA_LB_TOTAL`
+    code with MMR so the second upload's livebirths dedupe as unchanged). Annual sheets are
+    rollups — not ingested.
+  - Both `/api/validate-config` clean. Dry-run Q1 vs the real file: MMR 4 rows/144 staged/
+    0 errors/0 DQC; IMR 4 rows/12/0/0. **12 spot-checked values match Excel's cached cells
+    exactly** (NegOr MMR chain 98.28009828 → 49.14004914 → 147.4201474; IMR 2.618/13.268).
+    Q2-Q4 sheets are empty in the source (known Q1-only pattern, not a bug).
+  - Registered in `upload_catalog.py` (new VITAL_STATS program, Mortality sub-program —
+    verified live via `/api/upload-catalog`) and `constants.js` TEMPLATES.
+- **Root CLAUDE.md**: new "Model & Token Policy" section (see standing instructions above).
+- **NOT done — the exact cut-off:** (1) the Excel-face render check
+  (`/api/template-report` for `morta_mmr`/`morta_imr`) — I was grepping `backend/main.py` for
+  that endpoint's exact params when stopped; it's the ONLY unchecked definition-of-done box for
+  Mortality. (2) Live browser click-through (extension not connected). (3) Every program after
+  Mortality — see "Next Session". A scratchpad helper (`api.py`, session temp dir — will NOT
+  survive) did auth'd API calls; recreate trivially if needed (login is OAuth2 FORM data, not
+  JSON; MSYS path-mangling: use query strings or `MSYS2_ARG_CONV_EXCL="*"`).
 
 ## Done This Session — Session 9 (2026-07-11, HOME machine `_hansell_`)
 - **Built every unblocked program/file in one pass** (Joseph: "continue with the rest of the
@@ -279,35 +319,49 @@ change. Other live tracks:
   state; shutdown requires machine + push verification + "Machine-local state" section.
 - **Permissions allowlist** (`.claude/settings.json`, git-tracked).
 
-## Next Session — first moves
-1. `startup protocols` (git sync FIRST, then memory; check machine-local state).
-2. **Locate the real `infec_hiv_nir.xlsx`/`infec_hepatitisb_nir.xlsx`/`infec_syphilis_nir.xlsx`
-   files** — check `backend/data/INFECTIOUS_DISEASE/` on whichever machine this is (not
-   confirmed on either as of Session 7). If found: run `/api/validate-config`, then dry-run
-   parse + spot-check ≥3 cell values per `.claude/skills/add-template`'s definition of done, to
-   sign off HIV-Syphilis-HepaB. The indicators + configs are already committed/pushed (`87950a4`)
-   and seeded live in the office machine's DB (`bootstrap_db.py` — idempotent, safe to re-run on
-   any machine that needs it).
-3. **If this is the HOME machine:** also finish Demographics — dry-run parse
-   `demographics_annual` against the real `Demographics_nir.xlsx`, spot-check ≥3 cell values.
-4. Ask Joseph: has IT confirmed ports 80/443 yet? If domain name + server IP haven't been shared
-   in chat, ask for them so server prep can start (doesn't need ports confirmed first).
-5. Ask Joseph: ready to do the Google Sheets one-time setup for ESR reports (RUNBOOK.md)? Not
-   urgent — just a self-serve pickup whenever he wants it live.
-6. Once HIV-Syphilis-HepaB and Demographics are both signed off: move to the remaining
-   `INFECTIOUS_DISEASE` sub-groups (Schistosomiasis, Filariasis, Rabies, STH, Leprosy) or the
-   next program per `memory-bank/template_analysis/00_CONSOLIDATED_SUMMARY.md` §5.
-7. Parked decisions when Joseph's ready: Google OAuth + granular per-user permissions (needs its
-   own design pass, see ROADMAP.md), the auth-gated variant of the PHRIC cluster pages,
-   stash@{0} fate (HOME machine), small-cell cutoff (<5 or <10), data-dictionary greenlight, and
-   whether one `is_sensitive` bit is granular enough or a tiered RBAC scheme is needed (open
-   question left by ADR-021).
+## Next Session — first moves (the Session-10 resume plan)
+0. `startup protocols` (git sync FIRST). **Check the model is Opus 4.8; use Sonnet 5 for any
+   sub-agents; ping Joseph after each finished program** (standing instructions above).
+1. **Ask Joseph to ratify ADR-023** (rates stored already-multiplied) — one yes/no; everything
+   rate-based (Natality, Leprosy, Filariasis) builds on it.
+2. **Finish Mortality's last DoD box:** hit `/api/template-report` (endpoint is in
+   `backend/main.py` — find its exact params, that grep is where Session 10 stopped) for
+   `morta_mmr` + `morta_imr`, confirm layout + rows render. Then Mortality is DONE — ping Joseph.
+3. **Build order from there, one program per ping** (per-program notes in the analysis files +
+   consolidated summary §5/§7; per-task breakdown existed as session tasks #3-#15, recreate from
+   this list): **Natality** (try per-quarter split-configs around the structurally-different Q2 —
+   we recompute Annual ourselves so its live `#REF!` doesn't matter; if Q2 can't be expressed,
+   build Q1/Q3/Q4 and document Q2 as DOH-blocked) → **Leprosy** (A-only ×5 tabs, ALL
+   is_sensitive=TRUE per ADR-021, 3 formula bugs to absorb: missing ×10,000, E.Total
+   rate-not-sum, `#REF!`) → **Filariasis CDR + Lymph/Eleph/Hydro** (MDA file EXCLUDED —
+   wrong-region data, DOH-blocked) → **Demographics dry-run finish** (real file is HERE on the
+   HOME machine; expect only the population column populated) → **D4 reconciliation DQC rule
+   type** in `run_dqc_rules()` (+ backfill deferred rules: Intra Partum DT/DO, NCD RF
+   cross-template, Leprosy all-ages, STH Treated≤Confirmed, Mortality deaths-vs-zero-LB) →
+   **Rabies** (4 split configs — the consolidated summary says split-configs REPLACE the old
+   "needs parser change" claim) + **STH** (exclude 4 nationwide leftover sheets; document the
+   stage-denominator assumption, flag for encoder) → **D6 row-stacked parsing** (`row_filter`
+   config key) then **NCD Eye Health, Oral Health, Family Planning** (FP: source CUB_A from Q1
+   not Q4; EXCLUDE the structurally-dead Demand Satisfied KPI; D5 for Beginning/Ending stocks) →
+   **D5 rollup override + NCD Meds** (Dec sheet has the 106-row wrong-region block — build
+   Jan-Nov, flag Dec) → **Morbidity LAST** (own mini-phase: D7 Option B `diseases` table +
+   D10 name→PSGC lookup; HIV/syphilis rows sensitive per ADR-021; store None not 0 for the
+   dead Rate column).
+   **Schisto stays DOH-blocked** (scope clarifications) — do not build.
+4. Standing asks when Joseph surfaces: ports 80/443 status; ESR Google Sheets setup; parked
+   decisions (stash@{0}, small-cell cutoff, data dictionary, is_sensitive granularity).
 
 ## Machine-local state (things GitHub does NOT sync — required section per shutdown protocol)
-As of shutdown 2026-07-11, session 9 (HOME machine, hostname `_hansell_`):
-- **This machine (HOME): clean, everything committed and pushed** (`git status -sb` = up to date,
-  no "ahead"). All 8 feature commits + docs were code+config that DO sync via git — see the commit
-  list at the top of this file.
+As of shutdown 2026-07-11, **session 10** (HOME machine, hostname `_hansell_`):
+- **This machine (HOME): clean after this shutdown commit** — code + docs committed together
+  and pushed (verified, no "ahead").
+- **DB deltas this session (per-machine, NOT git-synced):** +38 `MORTA_*` indicators seeded
+  here (VITAL_STATS). The OFFICE machine does NOT have them — run
+  `docker compose exec backend python backend/bootstrap_db.py` there (idempotent). No
+  health_data/staging writes (dry-run only). Startup row counts here for reference:
+  health_data 6,763; staging 19,001; esr_reports 0 on this machine.
+- **Session scratchpad helper (`api.py`) lives in the session temp dir — gone next session**;
+  recreate if needed (notes in the Session 10 section above).
 - **The real program `.xlsx` source files live on this (HOME) machine** — this is why every
   Session 9 dry-run/verify ran here: `backend/data/INFECTIOUS_DISEASE/HIV-Syphilis-HepaB/` (the 3
   `infec_*_nir.xlsx` files — **confirmed present this session**, resolving Session 7's open

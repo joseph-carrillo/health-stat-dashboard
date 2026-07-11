@@ -2172,6 +2172,117 @@ INDICATORS = {
         ("NCD_RF_SC_BTI_PCT", "SC Smokers Provided BTI Percentage",
          "percentage", "quarterly", "percentage", 100, "NCD_RF_SC_SMOKER_ALL_TOTAL", True, False, None, None),
     ],
+
+    # =================================================
+    # VITAL STATISTICS -- Mortality (morta_mmr_imr_nir.xlsx)
+    # Two sheet families in one workbook: "a" = MMR (39 cols),
+    # "b" = IMR (6 cols). Split configs: morta_mmr / morta_imr.
+    # Rates use formula_type='rate' and are stored ALREADY MULTIPLIED
+    # (per 100,000 / per 1,000 — ADR-023): the config formula does the
+    # multiplication explicitly, rate_multiplier documents the unit.
+    # All Total and Ratio columns are recomputed from raw inputs, never
+    # trusted from the sheet (col-33 label bug is label-only, FLAG M1).
+    # =================================================
+    "VITAL_STATS": [
+
+        # --- Shared denominator (entered in "a" sheets; "b" sheets
+        #     reference the same value cross-sheet) ---
+        ("MORTA_LB_TOTAL", "Total Livebirths",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+
+        # --- Group b: Direct Maternal Deaths, Resident ---
+        ("MORTA_MD_DIR_RES_10_14", "Direct Maternal Deaths (Resident) 10-14",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("MORTA_MD_DIR_RES_15_19", "Direct Maternal Deaths (Resident) 15-19",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("MORTA_MD_DIR_RES_20_49", "Direct Maternal Deaths (Resident) 20-49",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("MORTA_MD_DIR_RES_TOTAL", "Direct Maternal Deaths (Resident) Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("MORTA_MD_DIR_RES_RATE", "Direct MD Ratio (Resident) per 100,000 LB",
+         "rate", "quarterly", "rate", 100000, "MORTA_LB_TOTAL", True, False, None, None),
+
+        # --- Group c: Direct Maternal Deaths, Non-Resident ---
+        ("MORTA_MD_DIR_NRES_10_14", "Direct Maternal Deaths (Non-Resident) 10-14",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("MORTA_MD_DIR_NRES_15_19", "Direct Maternal Deaths (Non-Resident) 15-19",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("MORTA_MD_DIR_NRES_20_49", "Direct Maternal Deaths (Non-Resident) 20-49",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("MORTA_MD_DIR_NRES_TOTAL", "Direct Maternal Deaths (Non-Resident) Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("MORTA_MD_DIR_NRES_RATE", "Direct MD Ratio (Non-Resident) per 100,000 LB",
+         "rate", "quarterly", "rate", 100000, "MORTA_LB_TOTAL", True, False, None, None),
+
+        # --- Group d: Direct Maternal Deaths, Res + Non-Res combined ---
+        ("MORTA_MD_DIR_ALL_10_14", "Direct Maternal Deaths (Res+NonRes) 10-14",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("MORTA_MD_DIR_ALL_15_19", "Direct Maternal Deaths (Res+NonRes) 15-19",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("MORTA_MD_DIR_ALL_20_49", "Direct Maternal Deaths (Res+NonRes) 20-49",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("MORTA_MD_DIR_ALL_TOTAL", "Direct Maternal Deaths (Res+NonRes) Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("MORTA_MD_DIR_ALL_RATE", "Direct MD Ratio (Res+NonRes) per 100,000 LB",
+         "rate", "quarterly", "rate", 100000, "MORTA_LB_TOTAL", True, False, None, None),
+
+        # --- Group e: Indirect Maternal Deaths, Resident ---
+        ("MORTA_MD_IND_RES_10_14", "Indirect Maternal Deaths (Resident) 10-14",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("MORTA_MD_IND_RES_15_19", "Indirect Maternal Deaths (Resident) 15-19",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("MORTA_MD_IND_RES_20_49", "Indirect Maternal Deaths (Resident) 20-49",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("MORTA_MD_IND_RES_TOTAL", "Indirect Maternal Deaths (Resident) Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("MORTA_MD_IND_RES_RATE", "Indirect MD Ratio (Resident) per 100,000 LB",
+         "rate", "quarterly", "rate", 100000, "MORTA_LB_TOTAL", True, False, None, None),
+
+        # --- Group f: Indirect Maternal Deaths, Non-Resident ---
+        ("MORTA_MD_IND_NRES_10_14", "Indirect Maternal Deaths (Non-Resident) 10-14",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("MORTA_MD_IND_NRES_15_19", "Indirect Maternal Deaths (Non-Resident) 15-19",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("MORTA_MD_IND_NRES_20_49", "Indirect Maternal Deaths (Non-Resident) 20-49",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("MORTA_MD_IND_NRES_TOTAL", "Indirect Maternal Deaths (Non-Resident) Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("MORTA_MD_IND_NRES_RATE", "Indirect MD Ratio (Non-Resident) per 100,000 LB",
+         "rate", "quarterly", "rate", 100000, "MORTA_LB_TOTAL", True, False, None, None),
+
+        # --- Group g: Indirect Maternal Deaths, Res + Non-Res combined ---
+        # (col-33 header label wrongly says "d4" — formula-verified as g4/a3,
+        #  so these ARE the indirect combined figures; FLAG M1)
+        ("MORTA_MD_IND_ALL_10_14", "Indirect Maternal Deaths (Res+NonRes) 10-14",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("MORTA_MD_IND_ALL_15_19", "Indirect Maternal Deaths (Res+NonRes) 15-19",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("MORTA_MD_IND_ALL_20_49", "Indirect Maternal Deaths (Res+NonRes) 20-49",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("MORTA_MD_IND_ALL_TOTAL", "Indirect Maternal Deaths (Res+NonRes) Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("MORTA_MD_IND_ALL_RATE", "Indirect MD Ratio (Res+NonRes) per 100,000 LB",
+         "rate", "quarterly", "rate", 100000, "MORTA_LB_TOTAL", True, False, None, None),
+
+        # --- Group h: All Maternal Deaths (Direct + Indirect, Res+NonRes)
+        #     — the headline MMR ---
+        ("MORTA_MD_ALL_10_14", "Maternal Deaths (Dir+Ind, Res+NonRes) 10-14",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("MORTA_MD_ALL_15_19", "Maternal Deaths (Dir+Ind, Res+NonRes) 15-19",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("MORTA_MD_ALL_20_49", "Maternal Deaths (Dir+Ind, Res+NonRes) 20-49",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("MORTA_MD_ALL_TOTAL", "Maternal Deaths (Dir+Ind, Res+NonRes) Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("MORTA_MMR_RATE", "Maternal Mortality Ratio (MMR) per 100,000 LB",
+         "rate", "quarterly", "rate", 100000, "MORTA_LB_TOTAL", True, False, None, None),
+
+        # --- IMR family ("b" sheets) ---
+        ("MORTA_INF_DEATHS", "Infant Deaths",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("MORTA_IMR_RATE", "Infant Mortality Rate (IMR) per 1,000 LB",
+         "rate", "quarterly", "rate", 1000, "MORTA_LB_TOTAL", True, False, None, None),
+    ],
 }
 
 # =====================================================

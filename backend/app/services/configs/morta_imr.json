@@ -1,0 +1,41 @@
+{
+  "template_id": "MORTA_IMR",
+  "template_version": "2026",
+  "program_code": "VITAL_STATS",
+  "source_file_pattern": "morta_mmr_imr_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "Vital Stats — Infant Mortality (IMR)",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City" }
+    ]
+  },
+
+  "upload": { "sub_program": "Mortality", "file_number": 2 },
+
+  "sheet_map": { "1": "Q1b", "2": "Q2b", "3": "Q3b", "4": "Q4b" },
+
+  "columns": [
+    { "index": 3, "indicator_code": "MORTA_LB_TOTAL", "is_computed": false },
+    { "index": 4, "indicator_code": "MORTA_INF_DEATHS", "is_computed": false },
+    { "index": 5, "indicator_code": "MORTA_IMR_RATE", "is_computed": true,
+      "formula": "MORTA_INF_DEATHS / MORTA_LB_TOTAL * 1000" }
+  ],
+
+  "dqc_rules": [],
+
+  "notes": "Vital Stats Mortality, IMR family ('b' sheets Q1b-Q4b). Split-config sibling of morta_mmr (same physical workbook). The Livebirths column is a cross-sheet reference to the MMR family's entered value — both configs map it to the shared MORTA_LB_TOTAL code, so whichever family uploads second stages an identical value and is skipped as unchanged (no conflict). IMR recomputed as deaths/livebirths x1,000 (stored already multiplied, ADR-023); missing denominator stores null, not the file's IFERROR zero. Annual2 sheet is a rollup — not ingested. 'Infant deaths > 0 while livebirths = 0' DQC check pending the D4 rule-type work."
+}

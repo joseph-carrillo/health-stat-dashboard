@@ -62,6 +62,13 @@ PROGRAMS = [
             {"name": "Risk Factors"},
         ],
     },
+    {
+        "code": "VITAL_STATS",
+        "name": "Vital Statistics",
+        "sub_programs": [
+            {"name": "Mortality"},
+        ],
+    },
 ]
 
 

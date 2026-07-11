@@ -85,8 +85,13 @@ action.** Recipe: `.claude/skills/add-template`.
       validated + dry-run (HOME machine). Only the population column is populated; every facility
       and health-worker count is blank in the source — **blocked on DOH entering the real data**,
       and the ratio *display* still needs D2. Introduced `formula_type="ratio"` (live in schema).
-- [ ] **Vital Statistics (Mortality + Natality)** — **blocked on D1** (per-100k/10k rates not
-      supported end-to-end). Natality also needs the Q2 source-column fix (DOH).
+- [~] **Vital Statistics — Mortality BUILT (Session 10, 2026-07-11); Natality still open.**
+      D1/D2 rate-display uplift implemented first (ADR-023, **proposed — Joseph to ratify**),
+      then `morta_mmr` (36 ind) + `morta_imr` (2 ind): both validated, dry-run vs the real file
+      (Q1: 4 rows, 0 errors, 0 DQC), 12 cell values spot-checked matching Excel exactly,
+      48 backend tests green, registered in both catalogs. **Cut off by the usage limit before
+      the Excel-face (`/api/template-report`) render check for the two new templates** — that is
+      the one unfinished definition-of-done box. Natality NOT started (also needs DOH Q2 fix).
 - [ ] **Family Planning** — **blocked on D6** (quarters stacked as row-blocks in one tab).
 - [ ] **Morbidity** — **blocked on D7/D10** (disease-as-row matrix; ~10,400 codes or a `diseases`
       table; no `psgc_column`).
@@ -101,12 +106,15 @@ These are the one-way doors that block every remaining program. Deciding them (e
 unblocks the most work. Full context per decision: `template_analysis/00_CONSOLIDATED_SUMMARY.md`.
 - ~~New `formula_type="ratio"` for Demographics~~ — **resolved 2026-07-06**: schema already
   allowed the value; Demographics' 50 indicators use it (parse side). Display side is D2 below.
-- **D1 — non-percentage rate support (×1,000 / ×10,000 / ×100,000).** Needs a schema/display
-  uplift (the `rate_multiplier` column exists but is unused end-to-end). **Unblocks: Vital Stats
-  Mortality + Natality, Leprosy, Filariasis CDR/Lymph.** Biggest single lever.
-- **D2 — unbounded-ratio display** (population-per-resource, no 100% ceiling). Parse works;
-  Coverage/Trends pages assume a 0–100% scale. **Unblocks: Demographics display** (once DOH also
-  fills the data).
+- ~~**D1 — non-percentage rate support**~~ — **IMPLEMENTED Session 10 (2026-07-11) as ADR-023,
+  PROPOSED — ratify or reverse before more rate programs are built on it**: rates stored
+  already-multiplied (62.5 = "per 100,000"), `rate_multiplier` is the display-unit label only,
+  coverage status bands now percentage-only, `_RATE` codes recomputed (never summed) across
+  period slices. Mortality is built on this; **Leprosy + Filariasis CDR/Lymph are now unblocked
+  but NOT yet built.**
+- ~~**D2 — unbounded-ratio display**~~ — **IMPLEMENTED with D1 (ADR-023)**: ratios render as
+  plain numbers, no 100% ceiling, no status colour. Demographics *display* unblocked (its
+  source data is still blocked on DOH data entry).
 - **D3 — split-configs for multi-sheet-group workbooks.** RESOLVED in practice — used this session
   for every a/b/c file (Prenatal BP, Post Partum BP, Intra Partum SHP/DT/DO, WASH, NCD Cancer/RA).
   No further decision needed; documented here so it's not re-litigated.

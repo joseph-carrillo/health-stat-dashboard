@@ -374,9 +374,12 @@ export default function Landing() {
             <div style={styles.footerColTitle}>ADDRESS</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <div style={styles.footerLink}>
-                3rd Floor, Integrated Provincial Health Office, Piapi St
+                3rd Floor Integrated Provincial Health Office Bldg.
               </div>
-              <div style={styles.footerLink}>Dumaguete City, Negros Oriental 6201</div>
+              <div style={styles.footerLink}>
+                Negros Oriental Provincial Hospital Compound
+              </div>
+              <div style={styles.footerLink}>Piapi, Dumaguete City, Negros Oriental 6200</div>
             </div>
           </div>
         </div>
