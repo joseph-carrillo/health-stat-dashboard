@@ -30,6 +30,7 @@ PROGRAMS = [
             {"name": "Infectious Disease"},
             {"name": "Leprosy"},
             {"name": "Filariasis"},
+            {"name": "Rabies"},
         ],
     },
     {

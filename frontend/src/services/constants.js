@@ -81,6 +81,31 @@ export const TEMPLATES = [
     program_code: "INFECTIOUS_DISEASE",
   },
   {
+    id: "animal_bites",
+    label: "Rabies — Animal Bites & Deaths (quarterly)",
+    program_code: "INFECTIOUS_DISEASE",
+  },
+  {
+    id: "infec_rabies_base",
+    label: "Rabies — Exposure by WHO Category (quarterly)",
+    program_code: "INFECTIOUS_DISEASE",
+  },
+  {
+    id: "infec_rabies_cat2arv",
+    label: "Rabies — Category II ARV Completion (quarterly)",
+    program_code: "INFECTIOUS_DISEASE",
+  },
+  {
+    id: "infec_rabies_cat3",
+    label: "Rabies — Category III ARV+RIG / ARV-only (quarterly)",
+    program_code: "INFECTIOUS_DISEASE",
+  },
+  {
+    id: "infec_rabies_source",
+    label: "Rabies — Exposure by Animal Source (quarterly)",
+    program_code: "INFECTIOUS_DISEASE",
+  },
+  {
     id: "envi_water",
     label: "Water Supply — Household Coverage (BSWS & Safely Managed)",
     program_code: "WASH",

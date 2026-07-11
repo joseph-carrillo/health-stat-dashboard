@@ -1,0 +1,57 @@
+{
+  "template_id": "INFEC_RABIES_CAT3",
+  "template_version": "2026",
+  "program_code": "INFECTIOUS_DISEASE",
+  "source_file_pattern": "infec_rabies_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "Rabies — Category III ARV+RIG / ARV-only Completion (quarterly)",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City" }
+    ]
+  },
+
+  "upload": { "sub_program": "Rabies", "file_number": 4 },
+
+  "sheet_map": { "1": "Qtr1b", "2": "Qtr2b", "3": "Qtr3b", "4": "Qtr4b" },
+
+  "columns": [
+    { "index": 6, "indicator_code": "RABIES_CAT3_ARV_RIG_MALE", "is_computed": false },
+    { "index": 7, "indicator_code": "RABIES_CAT3_ARV_RIG_FEMALE", "is_computed": false },
+    { "index": 8, "indicator_code": "RABIES_CAT3_ARV_RIG_TOTAL", "is_computed": true,
+      "formula": "RABIES_CAT3_ARV_RIG_MALE + RABIES_CAT3_ARV_RIG_FEMALE" },
+    { "index": 9, "indicator_code": "RABIES_CAT3_NO_VAX_HISTORY_MALE", "is_computed": false },
+    { "index": 10, "indicator_code": "RABIES_CAT3_NO_VAX_HISTORY_FEMALE", "is_computed": false },
+    { "index": 11, "indicator_code": "RABIES_CAT3_NO_VAX_HISTORY_TOTAL", "is_computed": true,
+      "formula": "RABIES_CAT3_NO_VAX_HISTORY_MALE + RABIES_CAT3_NO_VAX_HISTORY_FEMALE" },
+    { "index": 12, "indicator_code": "RABIES_CAT3_ARV_RIG_PCT", "is_computed": true,
+      "formula": "RABIES_CAT3_ARV_RIG_TOTAL / RABIES_CAT3_NO_VAX_HISTORY_TOTAL" },
+    { "index": 13, "indicator_code": "RABIES_CAT3_ARV_ONLY_MALE", "is_computed": false },
+    { "index": 14, "indicator_code": "RABIES_CAT3_ARV_ONLY_FEMALE", "is_computed": false },
+    { "index": 15, "indicator_code": "RABIES_CAT3_ARV_ONLY_TOTAL", "is_computed": true,
+      "formula": "RABIES_CAT3_ARV_ONLY_MALE + RABIES_CAT3_ARV_ONLY_FEMALE" },
+    { "index": 16, "indicator_code": "RABIES_CAT3_VAX_HISTORY_MALE", "is_computed": false },
+    { "index": 17, "indicator_code": "RABIES_CAT3_VAX_HISTORY_FEMALE", "is_computed": false },
+    { "index": 18, "indicator_code": "RABIES_CAT3_VAX_HISTORY_TOTAL", "is_computed": true,
+      "formula": "RABIES_CAT3_VAX_HISTORY_MALE + RABIES_CAT3_VAX_HISTORY_FEMALE" },
+    { "index": 19, "indicator_code": "RABIES_CAT3_ARV_ONLY_PCT", "is_computed": true,
+      "formula": "RABIES_CAT3_ARV_ONLY_TOTAL / RABIES_CAT3_VAX_HISTORY_TOTAL" }
+  ],
+
+  "dqc_rules": [],
+
+  "notes": "Rabies Category III post-exposure prophylaxis (group 'b' sheets Qtr1b-Qtr4b). Two completion metrics with DIFFERENT denominators: ARV+RIG completion is measured against patients WITHOUT prior ARV history (need full PEP + immunoglobulin); ARV-only completion against patients WITH prior history (boosters only). Both denominators are within this sheet. Linked Category-III exposure columns (idx 3-5) are cross-sheet references to base and NOT re-ingested. Reconciliation DQC (no-history + with-history == Cat III total; ARV+RIG + ARV-only <= Cat III total) deferred to the D4 rule type."
+}

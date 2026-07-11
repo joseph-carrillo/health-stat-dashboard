@@ -1,0 +1,52 @@
+{
+  "template_id": "INFEC_RABIES_CAT2ARV",
+  "template_version": "2026",
+  "program_code": "INFECTIOUS_DISEASE",
+  "source_file_pattern": "infec_rabies_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "Rabies — Category II ARV Completion (quarterly)",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City" }
+    ]
+  },
+
+  "upload": { "sub_program": "Rabies", "file_number": 3 },
+
+  "sheet_map": { "1": "Qtr1a", "2": "Qtr2a", "3": "Qtr3a", "4": "Qtr4a" },
+
+  "columns": [
+    { "index": 6, "indicator_code": "RABIES_CAT2_ELIGIBLE_MALE", "is_computed": false },
+    { "index": 7, "indicator_code": "RABIES_CAT2_ELIGIBLE_FEMALE", "is_computed": false },
+    { "index": 8, "indicator_code": "RABIES_CAT2_ELIGIBLE_TOTAL", "is_computed": true,
+      "formula": "RABIES_CAT2_ELIGIBLE_MALE + RABIES_CAT2_ELIGIBLE_FEMALE" },
+    { "index": 9, "indicator_code": "RABIES_CAT2_ARV_COMPLETED_MALE", "is_computed": false },
+    { "index": 10, "indicator_code": "RABIES_CAT2_ARV_COMPLETED_FEMALE", "is_computed": false },
+    { "index": 11, "indicator_code": "RABIES_CAT2_ARV_COMPLETED_TOTAL", "is_computed": true,
+      "formula": "RABIES_CAT2_ARV_COMPLETED_MALE + RABIES_CAT2_ARV_COMPLETED_FEMALE" },
+    { "index": 12, "indicator_code": "RABIES_CAT2_ARV_COMPLETED_PCT", "is_computed": true,
+      "formula": "RABIES_CAT2_ARV_COMPLETED_TOTAL / RABIES_CAT2_ELIGIBLE_TOTAL" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "RABIES_CAT2_ARV_COMPLETED_PCT", "threshold": 1.0,
+      "numerator_code": "RABIES_CAT2_ARV_COMPLETED_TOTAL", "denominator_code": "RABIES_CAT2_ELIGIBLE_TOTAL",
+      "message": "Category II ARV completed exceeds eligible (over 100%)",
+      "hint": "More people cannot complete ARV than were eligible for it. Over 100% means a value is wrong: check the source file and re-upload." }
+  ],
+
+  "notes": "Rabies Category II -> ARV completion (group 'a' sheets Qtr1a-Qtr4a of the infec_rabies workbook). Split-config sibling of infec_rabies_base. The linked Category-II exposure columns (idx 3-5) are cross-sheet references to the base sheet and are NOT re-ingested (FLAG 2d); only the eligibility and completion counts entered here are stored. ARV completion % denominator (eligible total) is within this sheet."
+}
