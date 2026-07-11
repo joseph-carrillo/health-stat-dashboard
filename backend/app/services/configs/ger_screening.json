@@ -1,0 +1,122 @@
+{
+  "template_id": "GER_SCREENING",
+  "template_version": "2026",
+  "program_code": "GERIATRIC",
+  "source_file_pattern": "ncd_geriatric_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 1,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000",
+    "NIRA": "1800000000",
+    "Negros Island Region": "1800000000",
+    "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "Geriatric Screening — Senior Citizen (60+) 9-Domain Screening",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City" }
+    ]
+  },
+
+  "upload": {
+    "sub_program": "Geriatric Screening",
+    "file_number": 1
+  },
+
+  "sheet_map": {
+    "1": "Qtr1",
+    "2": "Qtr2",
+    "3": "Qtr3",
+    "4": "Qtr4"
+  },
+
+  "columns": [
+    { "index": 2, "indicator_code": "GER_POP", "is_computed": false },
+
+    { "index": 3, "indicator_code": "GER_SCREENED_MALE", "is_computed": false },
+    { "index": 4, "indicator_code": "GER_SCREENED_FEMALE", "is_computed": false },
+    { "index": 5, "indicator_code": "GER_SCREENED_TOTAL", "is_computed": true, "formula": "GER_SCREENED_MALE + GER_SCREENED_FEMALE" },
+    { "index": 6, "indicator_code": "GER_SCREENED_PCT", "is_computed": true, "formula": "GER_SCREENED_TOTAL / GER_POP" },
+
+    { "index": 7, "indicator_code": "GER_MEMORY_MALE", "is_computed": false },
+    { "index": 8, "indicator_code": "GER_MEMORY_FEMALE", "is_computed": false },
+    { "index": 9, "indicator_code": "GER_MEMORY_TOTAL", "is_computed": true, "formula": "GER_MEMORY_MALE + GER_MEMORY_FEMALE" },
+    { "index": 10, "indicator_code": "GER_MEMORY_PCT", "is_computed": true, "formula": "GER_MEMORY_TOTAL / GER_SCREENED_TOTAL" },
+
+    { "index": 11, "indicator_code": "GER_DEPRESSION_MALE", "is_computed": false },
+    { "index": 12, "indicator_code": "GER_DEPRESSION_FEMALE", "is_computed": false },
+    { "index": 13, "indicator_code": "GER_DEPRESSION_TOTAL", "is_computed": true, "formula": "GER_DEPRESSION_MALE + GER_DEPRESSION_FEMALE" },
+    { "index": 14, "indicator_code": "GER_DEPRESSION_PCT", "is_computed": true, "formula": "GER_DEPRESSION_TOTAL / GER_SCREENED_TOTAL" },
+
+    { "index": 15, "indicator_code": "GER_POLYPHARMACY_MALE", "is_computed": false },
+    { "index": 16, "indicator_code": "GER_POLYPHARMACY_FEMALE", "is_computed": false },
+    { "index": 17, "indicator_code": "GER_POLYPHARMACY_TOTAL", "is_computed": true, "formula": "GER_POLYPHARMACY_MALE + GER_POLYPHARMACY_FEMALE" },
+    { "index": 18, "indicator_code": "GER_POLYPHARMACY_PCT", "is_computed": true, "formula": "GER_POLYPHARMACY_TOTAL / GER_SCREENED_TOTAL" },
+
+    { "index": 19, "indicator_code": "GER_URININCONT_MALE", "is_computed": false },
+    { "index": 20, "indicator_code": "GER_URININCONT_FEMALE", "is_computed": false },
+    { "index": 21, "indicator_code": "GER_URININCONT_TOTAL", "is_computed": true, "formula": "GER_URININCONT_MALE + GER_URININCONT_FEMALE" },
+    { "index": 22, "indicator_code": "GER_URININCONT_PCT", "is_computed": true, "formula": "GER_URININCONT_TOTAL / GER_SCREENED_TOTAL" },
+
+    { "index": 23, "indicator_code": "GER_FUNCCAP_MALE", "is_computed": false },
+    { "index": 24, "indicator_code": "GER_FUNCCAP_FEMALE", "is_computed": false },
+    { "index": 25, "indicator_code": "GER_FUNCCAP_TOTAL", "is_computed": true, "formula": "GER_FUNCCAP_MALE + GER_FUNCCAP_FEMALE" },
+    { "index": 26, "indicator_code": "GER_FUNCCAP_PCT", "is_computed": true, "formula": "GER_FUNCCAP_TOTAL / GER_SCREENED_TOTAL" },
+
+    { "index": 27, "indicator_code": "GER_MALNUTRITION_MALE", "is_computed": false },
+    { "index": 28, "indicator_code": "GER_MALNUTRITION_FEMALE", "is_computed": false },
+    { "index": 29, "indicator_code": "GER_MALNUTRITION_TOTAL", "is_computed": true, "formula": "GER_MALNUTRITION_MALE + GER_MALNUTRITION_FEMALE" },
+    { "index": 30, "indicator_code": "GER_MALNUTRITION_PCT", "is_computed": true, "formula": "GER_MALNUTRITION_TOTAL / GER_SCREENED_TOTAL" },
+
+    { "index": 31, "indicator_code": "GER_HEARING_MALE", "is_computed": false },
+    { "index": 32, "indicator_code": "GER_HEARING_FEMALE", "is_computed": false },
+    { "index": 33, "indicator_code": "GER_HEARING_TOTAL", "is_computed": true, "formula": "GER_HEARING_MALE + GER_HEARING_FEMALE" },
+    { "index": 34, "indicator_code": "GER_HEARING_PCT", "is_computed": true, "formula": "GER_HEARING_TOTAL / GER_SCREENED_TOTAL" },
+
+    { "index": 35, "indicator_code": "GER_VISION_MALE", "is_computed": false },
+    { "index": 36, "indicator_code": "GER_VISION_FEMALE", "is_computed": false },
+    { "index": 37, "indicator_code": "GER_VISION_TOTAL", "is_computed": true, "formula": "GER_VISION_MALE + GER_VISION_FEMALE" },
+    { "index": 38, "indicator_code": "GER_VISION_PCT", "is_computed": true, "formula": "GER_VISION_TOTAL / GER_SCREENED_TOTAL" },
+
+    { "index": 39, "indicator_code": "GER_FALLRISK_MALE", "is_computed": false },
+    { "index": 40, "indicator_code": "GER_FALLRISK_FEMALE", "is_computed": false },
+    { "index": 41, "indicator_code": "GER_FALLRISK_TOTAL", "is_computed": true, "formula": "GER_FALLRISK_MALE + GER_FALLRISK_FEMALE" },
+    { "index": 42, "indicator_code": "GER_FALLRISK_PCT", "is_computed": true, "formula": "GER_FALLRISK_TOTAL / GER_SCREENED_TOTAL" },
+
+    { "index": 43, "indicator_code": "GER_ATLEASTONE_MALE", "is_computed": false },
+    { "index": 44, "indicator_code": "GER_ATLEASTONE_FEMALE", "is_computed": false },
+    { "index": 45, "indicator_code": "GER_ATLEASTONE_TOTAL", "is_computed": true, "formula": "GER_ATLEASTONE_MALE + GER_ATLEASTONE_FEMALE" },
+    { "index": 46, "indicator_code": "GER_ATLEASTONE_PCT", "is_computed": true, "formula": "GER_ATLEASTONE_TOTAL / GER_SCREENED_TOTAL" },
+
+    { "index": 47, "indicator_code": "GER_CAREPLAN_MALE", "is_computed": false },
+    { "index": 48, "indicator_code": "GER_CAREPLAN_FEMALE", "is_computed": false },
+    { "index": 49, "indicator_code": "GER_CAREPLAN_TOTAL", "is_computed": true, "formula": "GER_CAREPLAN_MALE + GER_CAREPLAN_FEMALE" },
+    { "index": 50, "indicator_code": "GER_CAREPLAN_PCT", "is_computed": true, "formula": "GER_CAREPLAN_TOTAL / GER_ATLEASTONE_TOTAL" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "GER_SCREENED_PCT", "threshold": 1.0, "numerator_code": "GER_SCREENED_TOTAL", "denominator_code": "GER_POP", "message": "Senior-citizen screening coverage exceeds 100% of projected SC population", "hint": "Coverage is measured against a projected Senior Citizen population (an estimate). Over 100% usually means the screened count or the population figure in the source file is off — check and re-upload." },
+
+    { "rule_type": "sequence", "sequence": ["GER_SCREENED_TOTAL", "GER_ATLEASTONE_TOTAL"], "message": "'At least one positive' total exceeds the number screened — impossible (it is a subset of those screened)." },
+
+    { "rule_type": "sequence", "sequence": ["GER_ATLEASTONE_TOTAL", "GER_MEMORY_TOTAL"], "message": "Memory-positive total exceeds 'at least one positive' — impossible (anyone positive for Memory is positive for at least one domain)." },
+    { "rule_type": "sequence", "sequence": ["GER_ATLEASTONE_TOTAL", "GER_DEPRESSION_TOTAL"], "message": "Depression-positive total exceeds 'at least one positive' — impossible." },
+    { "rule_type": "sequence", "sequence": ["GER_ATLEASTONE_TOTAL", "GER_POLYPHARMACY_TOTAL"], "message": "Polypharmacy-positive total exceeds 'at least one positive' — impossible." },
+    { "rule_type": "sequence", "sequence": ["GER_ATLEASTONE_TOTAL", "GER_URININCONT_TOTAL"], "message": "Urinary-incontinence-positive total exceeds 'at least one positive' — impossible." },
+    { "rule_type": "sequence", "sequence": ["GER_ATLEASTONE_TOTAL", "GER_FUNCCAP_TOTAL"], "message": "Functional-capacity-positive total exceeds 'at least one positive' — impossible." },
+    { "rule_type": "sequence", "sequence": ["GER_ATLEASTONE_TOTAL", "GER_MALNUTRITION_TOTAL"], "message": "Malnutrition-positive total exceeds 'at least one positive' — impossible." },
+    { "rule_type": "sequence", "sequence": ["GER_ATLEASTONE_TOTAL", "GER_HEARING_TOTAL"], "message": "Hearing-positive total exceeds 'at least one positive' — impossible." },
+    { "rule_type": "sequence", "sequence": ["GER_ATLEASTONE_TOTAL", "GER_VISION_TOTAL"], "message": "Vision-positive total exceeds 'at least one positive' — impossible." },
+    { "rule_type": "sequence", "sequence": ["GER_ATLEASTONE_TOTAL", "GER_FALLRISK_TOTAL"], "message": "Fall-risk-positive total exceeds 'at least one positive' — impossible." }
+  ],
+
+  "notes": "Geriatric screening file (ncd_geriatric_nir.xlsx — the 'ncd_' filename prefix is a legacy on-disk artifact; this seeds under the GERIATRIC program, not NCD). Province/HUC rollup (5 sheet rows: region + 3 provinces + Bacolod HUC; region row skipped on ingest and recomputed). Quarterly + Annual, but only quarters are ingested (Annual is a pure cross-quarter Excel rollup). psgc col 0, location NAME col 1. Male/Female split, no age brackets. No sensitive indicators. Domain percentages all divide by GER_SCREENED_TOTAL; care-plan percentage divides by GER_ATLEASTONE_TOTAL (only those with a positive finding are eligible). DQC is RE-DERIVED, not ported: the source file's 18 logical-consistency rules are all dead (anchored one row past the real 5-row data — see geriatric.md GER-1). The 'sequence' rules here re-implement the intended checks (screened >= at-least-one >= each domain) anchored to real data — they are EXPECTED to fire on the shipped Q1 sample because it genuinely violates them (e.g. City of Bacolod HUC reports Memory=8 but 'at least one positive'=0; Negros Occidental reports 35 screened, 0 at-least-one). That is the DQC correctly catching a real DOH data-entry error, not a parser fault. Second file in this program (ncd_scimmunization_nir.xlsx, Senior Citizen Immunization) is a separate later build, blocked: its shipped file is entirely zero/blank so its Influenza-denominator bug (IMM-1) can't be value-verified until DOH sends populated data."
+}

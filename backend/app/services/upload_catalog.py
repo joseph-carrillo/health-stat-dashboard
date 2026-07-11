@@ -37,6 +37,13 @@ PROGRAMS = [
             {"name": "WASH"},
         ],
     },
+    {
+        "code": "GERIATRIC",
+        "name": "Geriatric Health",
+        "sub_programs": [
+            {"name": "Geriatric Screening"},
+        ],
+    },
 ]
 
 

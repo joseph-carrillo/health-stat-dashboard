@@ -66,6 +66,20 @@ always agree (a future CI check will enforce it).
   D4). The sibling sanitation file is a separate later build (it has a known Qtr3/Qtr4 column-shift
   needing a DOH-side source fix).
 
+- **Geriatric Health program (first file — Screening)** — `ger_screening` template: 49 indicators
+  covering the DOH Geriatric Screening Tool (9 domains — Memory, Depression, Polypharmacy, Urinary
+  Incontinence, Functional Capacity, Malnutrition, Hearing, Vision, Fall Risk), plus screened
+  coverage, an "at least one positive" union, and care-plan/referral follow-up. Province/HUC
+  rollup (4 ingested rows), quarterly, Male/Female split, no sensitive indicators. Validated +
+  dry-run parsed against the real file (0 errors); 75 values verified against the source (3 raw +
+  72 computed against the sheet's own cells). The DQC is **re-derived, not ported** — the source
+  file's 18 logical-consistency rules are all dead (anchored one row past the real data). The new
+  `sequence` rules ("screened ≥ at-least-one ≥ each domain") correctly catch the real GER-1
+  data-entry error in the shipped Q1 sample (City of Bacolod reports 5 domains positive but "at
+  least one" = 0; Negros Occidental reports 35 screened, 0 at-least-one). The program's second file
+  (Senior Citizen Immunization) is a later build, blocked: its shipped file is entirely
+  zero/blank, so its Influenza-denominator bug can't be verified until DOH sends populated data.
+
 ### Fixed
 - **Sheet footer/annotation rows are no longer reported as location errors.** The Infectious
   Disease templates are the first whose sheets carry footer text ("Source: DOH-FHSIS", "Legend:",

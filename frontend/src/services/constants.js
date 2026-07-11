@@ -70,6 +70,11 @@ export const TEMPLATES = [
     label: "Water Supply — Household Coverage (BSWS & Safely Managed)",
     program_code: "WASH",
   },
+  {
+    id: "ger_screening",
+    label: "Geriatric Screening — Senior Citizen (60+) 9-Domain",
+    program_code: "GERIATRIC",
+  },
 ];
 
 export const MONTHS = [

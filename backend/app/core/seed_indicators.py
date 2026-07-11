@@ -1025,6 +1025,153 @@ INDICATORS = {
          "percentage", "quarterly", "percentage",
          100, "WASH_WTR_PROJ_HH", True, False, None, None),
     ],
+
+    # =================================================
+    # GERIATRIC -- Screening (ncd_geriatric_nir.xlsx, File 1)
+    # Senior Citizen (60+) screening across 9 domains using the DOH
+    # Geriatric Screening Tool, plus an "at least one positive" union count
+    # and care-plan/referral follow-up. Province/HUC rollup (5 rows),
+    # quarterly + annual, Male/Female split (no age brackets), no sensitive
+    # indicators. Every domain percentage divides by GER_SCREENED_TOTAL;
+    # care-plan percentage divides by GER_ATLEASTONE_TOTAL (only those with
+    # a positive finding are eligible for a care plan).
+    # =================================================
+    "GERIATRIC": [
+        ("GER_POP", "Projected Population of Senior Citizens (60+)",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+
+        # --- Screened using the Geriatric Screening Tool ---
+        ("GER_SCREENED_MALE", "Screened with Geriatric Tool, Male",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_SCREENED_FEMALE", "Screened with Geriatric Tool, Female",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_SCREENED_TOTAL", "Screened with Geriatric Tool, Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("GER_SCREENED_PCT", "Screened with Geriatric Tool, Percentage",
+         "percentage", "quarterly", "percentage",
+         100, "GER_POP", True, False, None, None),
+
+        # --- Domain 1: Memory ---
+        ("GER_MEMORY_MALE", "Positive Memory Screening, Male",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_MEMORY_FEMALE", "Positive Memory Screening, Female",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_MEMORY_TOTAL", "Positive Memory Screening, Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("GER_MEMORY_PCT", "Positive Memory Screening, Percentage",
+         "percentage", "quarterly", "percentage",
+         100, "GER_SCREENED_TOTAL", True, False, None, None),
+
+        # --- Domain 2: Depression ---
+        ("GER_DEPRESSION_MALE", "Positive Depression Screening, Male",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_DEPRESSION_FEMALE", "Positive Depression Screening, Female",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_DEPRESSION_TOTAL", "Positive Depression Screening, Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("GER_DEPRESSION_PCT", "Positive Depression Screening, Percentage",
+         "percentage", "quarterly", "percentage",
+         100, "GER_SCREENED_TOTAL", True, False, None, None),
+
+        # --- Domain 3: Polypharmacy ---
+        ("GER_POLYPHARMACY_MALE", "Positive Polypharmacy Screening, Male",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_POLYPHARMACY_FEMALE", "Positive Polypharmacy Screening, Female",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_POLYPHARMACY_TOTAL", "Positive Polypharmacy Screening, Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("GER_POLYPHARMACY_PCT", "Positive Polypharmacy Screening, Percentage",
+         "percentage", "quarterly", "percentage",
+         100, "GER_SCREENED_TOTAL", True, False, None, None),
+
+        # --- Domain 4: Urinary Incontinence ---
+        ("GER_URININCONT_MALE", "Positive Urinary Incontinence Screening, Male",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_URININCONT_FEMALE", "Positive Urinary Incontinence Screening, Female",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_URININCONT_TOTAL", "Positive Urinary Incontinence Screening, Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("GER_URININCONT_PCT", "Positive Urinary Incontinence Screening, Percentage",
+         "percentage", "quarterly", "percentage",
+         100, "GER_SCREENED_TOTAL", True, False, None, None),
+
+        # --- Domain 5: Functional Capacity ---
+        ("GER_FUNCCAP_MALE", "Positive Functional Capacity Screening, Male",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_FUNCCAP_FEMALE", "Positive Functional Capacity Screening, Female",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_FUNCCAP_TOTAL", "Positive Functional Capacity Screening, Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("GER_FUNCCAP_PCT", "Positive Functional Capacity Screening, Percentage",
+         "percentage", "quarterly", "percentage",
+         100, "GER_SCREENED_TOTAL", True, False, None, None),
+
+        # --- Domain 6: Malnutrition ---
+        ("GER_MALNUTRITION_MALE", "Positive Malnutrition Screening, Male",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_MALNUTRITION_FEMALE", "Positive Malnutrition Screening, Female",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_MALNUTRITION_TOTAL", "Positive Malnutrition Screening, Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("GER_MALNUTRITION_PCT", "Positive Malnutrition Screening, Percentage",
+         "percentage", "quarterly", "percentage",
+         100, "GER_SCREENED_TOTAL", True, False, None, None),
+
+        # --- Domain 7: Hearing ---
+        ("GER_HEARING_MALE", "Positive Hearing Screening, Male",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_HEARING_FEMALE", "Positive Hearing Screening, Female",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_HEARING_TOTAL", "Positive Hearing Screening, Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("GER_HEARING_PCT", "Positive Hearing Screening, Percentage",
+         "percentage", "quarterly", "percentage",
+         100, "GER_SCREENED_TOTAL", True, False, None, None),
+
+        # --- Domain 8: Vision ---
+        ("GER_VISION_MALE", "Positive Vision Screening, Male",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_VISION_FEMALE", "Positive Vision Screening, Female",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_VISION_TOTAL", "Positive Vision Screening, Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("GER_VISION_PCT", "Positive Vision Screening, Percentage",
+         "percentage", "quarterly", "percentage",
+         100, "GER_SCREENED_TOTAL", True, False, None, None),
+
+        # --- Domain 9: Fall Risk ---
+        ("GER_FALLRISK_MALE", "Positive Fall Risk Screening, Male",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_FALLRISK_FEMALE", "Positive Fall Risk Screening, Female",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_FALLRISK_TOTAL", "Positive Fall Risk Screening, Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("GER_FALLRISK_PCT", "Positive Fall Risk Screening, Percentage",
+         "percentage", "quarterly", "percentage",
+         100, "GER_SCREENED_TOTAL", True, False, None, None),
+
+        # --- With at least one positive screening (deduplicated union) ---
+        ("GER_ATLEASTONE_MALE", "With At Least One Positive Screening, Male",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_ATLEASTONE_FEMALE", "With At Least One Positive Screening, Female",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_ATLEASTONE_TOTAL", "With At Least One Positive Screening, Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("GER_ATLEASTONE_PCT", "With At Least One Positive Screening, Percentage",
+         "percentage", "quarterly", "percentage",
+         100, "GER_SCREENED_TOTAL", True, False, None, None),
+
+        # --- Provided with a care plan or referred ---
+        ("GER_CAREPLAN_MALE", "Provided Care Plan or Referred, Male",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_CAREPLAN_FEMALE", "Provided Care Plan or Referred, Female",
+         "count", "quarterly", "count", 100, None, False, False, None, None),
+        ("GER_CAREPLAN_TOTAL", "Provided Care Plan or Referred, Total",
+         "count", "quarterly", "sum", 100, None, True, False, None, None),
+        ("GER_CAREPLAN_PCT", "Provided Care Plan or Referred, Percentage",
+         "percentage", "quarterly", "percentage",
+         100, "GER_ATLEASTONE_TOTAL", True, False, None, None),
+    ],
 }
 
 # =====================================================
