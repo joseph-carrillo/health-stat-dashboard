@@ -1,0 +1,68 @@
+{
+  "template_id": "INTRA_DT",
+  "template_version": "2026",
+  "program_code": "MATERNAL_CARE",
+  "source_file_pattern": "intra_shp_fbd__dt_do_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "Intra Partum — Delivery Type (Vaginal / Cesarean / Combined)",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region/PHIC" }
+    ]
+  },
+
+  "upload": { "sub_program": "Intra Partum", "file_number": 1 },
+
+  "sheet_map": { "1": "Q1b", "2": "Q2b", "3": "Q3b", "4": "Q4b" },
+
+  "columns": [
+    { "index": 3, "indicator_code": "INTRA_DELIVERIES_10_14", "is_computed": false },
+    { "index": 4, "indicator_code": "INTRA_DELIVERIES_15_19", "is_computed": false },
+    { "index": 5, "indicator_code": "INTRA_DELIVERIES_20_49", "is_computed": false },
+    { "index": 6, "indicator_code": "INTRA_DELIVERIES_TOTAL", "is_computed": true, "formula": "INTRA_DELIVERIES_10_14 + INTRA_DELIVERIES_15_19 + INTRA_DELIVERIES_20_49" },
+    { "index": 7, "indicator_code": "INTRA_DT_VAGINAL_10_14", "is_computed": false },
+    { "index": 8, "indicator_code": "INTRA_DT_VAGINAL_10_14_PCT", "is_computed": true, "formula": "INTRA_DT_VAGINAL_10_14 / INTRA_DELIVERIES_10_14" },
+    { "index": 9, "indicator_code": "INTRA_DT_VAGINAL_15_19", "is_computed": false },
+    { "index": 10, "indicator_code": "INTRA_DT_VAGINAL_15_19_PCT", "is_computed": true, "formula": "INTRA_DT_VAGINAL_15_19 / INTRA_DELIVERIES_15_19" },
+    { "index": 11, "indicator_code": "INTRA_DT_VAGINAL_20_49", "is_computed": false },
+    { "index": 12, "indicator_code": "INTRA_DT_VAGINAL_20_49_PCT", "is_computed": true, "formula": "INTRA_DT_VAGINAL_20_49 / INTRA_DELIVERIES_20_49" },
+    { "index": 13, "indicator_code": "INTRA_DT_VAGINAL_TOTAL", "is_computed": true, "formula": "INTRA_DT_VAGINAL_10_14 + INTRA_DT_VAGINAL_15_19 + INTRA_DT_VAGINAL_20_49" },
+    { "index": 14, "indicator_code": "INTRA_DT_VAGINAL_TOTAL_PCT", "is_computed": true, "formula": "INTRA_DT_VAGINAL_TOTAL / INTRA_DELIVERIES_TOTAL" },
+    { "index": 15, "indicator_code": "INTRA_DT_CS_10_14", "is_computed": false },
+    { "index": 16, "indicator_code": "INTRA_DT_CS_10_14_PCT", "is_computed": true, "formula": "INTRA_DT_CS_10_14 / INTRA_DELIVERIES_10_14" },
+    { "index": 17, "indicator_code": "INTRA_DT_CS_15_19", "is_computed": false },
+    { "index": 18, "indicator_code": "INTRA_DT_CS_15_19_PCT", "is_computed": true, "formula": "INTRA_DT_CS_15_19 / INTRA_DELIVERIES_15_19" },
+    { "index": 19, "indicator_code": "INTRA_DT_CS_20_49", "is_computed": false },
+    { "index": 20, "indicator_code": "INTRA_DT_CS_20_49_PCT", "is_computed": true, "formula": "INTRA_DT_CS_20_49 / INTRA_DELIVERIES_20_49" },
+    { "index": 21, "indicator_code": "INTRA_DT_CS_TOTAL", "is_computed": true, "formula": "INTRA_DT_CS_10_14 + INTRA_DT_CS_15_19 + INTRA_DT_CS_20_49" },
+    { "index": 22, "indicator_code": "INTRA_DT_CS_TOTAL_PCT", "is_computed": true, "formula": "INTRA_DT_CS_TOTAL / INTRA_DELIVERIES_TOTAL" },
+    { "index": 23, "indicator_code": "INTRA_DT_CVC_10_14", "is_computed": false },
+    { "index": 24, "indicator_code": "INTRA_DT_CVC_10_14_PCT", "is_computed": true, "formula": "INTRA_DT_CVC_10_14 / INTRA_DELIVERIES_10_14" },
+    { "index": 25, "indicator_code": "INTRA_DT_CVC_15_19", "is_computed": false },
+    { "index": 26, "indicator_code": "INTRA_DT_CVC_15_19_PCT", "is_computed": true, "formula": "INTRA_DT_CVC_15_19 / INTRA_DELIVERIES_15_19" },
+    { "index": 27, "indicator_code": "INTRA_DT_CVC_20_49", "is_computed": false },
+    { "index": 28, "indicator_code": "INTRA_DT_CVC_20_49_PCT", "is_computed": true, "formula": "INTRA_DT_CVC_20_49 / INTRA_DELIVERIES_20_49" },
+    { "index": 29, "indicator_code": "INTRA_DT_CVC_TOTAL", "is_computed": true, "formula": "INTRA_DT_CVC_10_14 + INTRA_DT_CVC_15_19 + INTRA_DT_CVC_20_49" },
+    { "index": 30, "indicator_code": "INTRA_DT_CVC_TOTAL_PCT", "is_computed": true, "formula": "INTRA_DT_CVC_TOTAL / INTRA_DELIVERIES_TOTAL" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "sequence", "sequence": ["INTRA_DELIVERIES_TOTAL", "INTRA_DT_VAGINAL_TOTAL"], "message": "Vaginal-delivery total exceeds total deliveries — impossible." },
+    { "rule_type": "sequence", "sequence": ["INTRA_DELIVERIES_TOTAL", "INTRA_DT_CS_TOTAL"], "message": "Cesarean total exceeds total deliveries — impossible." }
+  ],
+
+  "notes": "Intra Partum File 1, Group B (delivery type: Vaginal / Cesarean / Combined). Split config over the 'b' sheets (Q1b-Q4b). Province/HUC rollup (5 rows; region skipped). 3 meta cols; location NAME col 2. Bracket percentages divide by the same-bracket Deliveries count; totals by Deliveries Total. The Deliveries columns (3-6) are cross-sheet references to Group a — mapped to the shared INTRA_DELIVERIES_* codes here too (skip-unchanged dedups on commit). The source's own 'Delivery Type = Deliveries' reconciliation check (a sum-of-parts vs whole) is a real, firing check but needs the D4 reconciliation DQC rule type not yet implemented — deferred; the over-total sequence checks here are a partial substitute. Annual sheet is a pure rollup, not ingested."
+}

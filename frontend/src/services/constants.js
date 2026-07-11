@@ -145,6 +145,21 @@ export const TEMPLATES = [
     label: "Intra Partum — Birth Weight (Normal / Low / Unknown)",
     program_code: "MATERNAL_CARE",
   },
+  {
+    id: "intra_shp",
+    label: "Intra Partum — Skilled Attendant & Facility-Based Delivery",
+    program_code: "MATERNAL_CARE",
+  },
+  {
+    id: "intra_dt",
+    label: "Intra Partum — Delivery Type (Vaginal / Cesarean / Combined)",
+    program_code: "MATERNAL_CARE",
+  },
+  {
+    id: "intra_do",
+    label: "Intra Partum — Delivery Outcome (Full Term / Pre-Term / Fetal Death / Abortion)",
+    program_code: "MATERNAL_CARE",
+  },
 ];
 
 export const MONTHS = [

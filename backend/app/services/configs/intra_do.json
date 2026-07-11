@@ -1,0 +1,72 @@
+{
+  "template_id": "INTRA_DO",
+  "template_version": "2026",
+  "program_code": "MATERNAL_CARE",
+  "source_file_pattern": "intra_shp_fbd__dt_do_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "Intra Partum — Delivery Outcome (Full Term / Pre-Term / Fetal Death / Abortion)",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region/PHIC" }
+    ]
+  },
+
+  "upload": { "sub_program": "Intra Partum", "file_number": 1 },
+
+  "sheet_map": { "1": "Q1c", "2": "Q2c", "3": "Q3c", "4": "Q4c" },
+
+  "columns": [
+    { "index": 3, "indicator_code": "INTRA_DELIVERIES_10_14", "is_computed": false },
+    { "index": 4, "indicator_code": "INTRA_DELIVERIES_15_19", "is_computed": false },
+    { "index": 5, "indicator_code": "INTRA_DELIVERIES_20_49", "is_computed": false },
+    { "index": 6, "indicator_code": "INTRA_DELIVERIES_TOTAL", "is_computed": true, "formula": "INTRA_DELIVERIES_10_14 + INTRA_DELIVERIES_15_19 + INTRA_DELIVERIES_20_49" },
+    { "index": 7, "indicator_code": "INTRA_DO_FULLTERM_10_14", "is_computed": false },
+    { "index": 8, "indicator_code": "INTRA_DO_FULLTERM_10_14_PCT", "is_computed": true, "formula": "INTRA_DO_FULLTERM_10_14 / INTRA_DELIVERIES_10_14" },
+    { "index": 9, "indicator_code": "INTRA_DO_FULLTERM_15_19", "is_computed": false },
+    { "index": 10, "indicator_code": "INTRA_DO_FULLTERM_15_19_PCT", "is_computed": true, "formula": "INTRA_DO_FULLTERM_15_19 / INTRA_DELIVERIES_15_19" },
+    { "index": 11, "indicator_code": "INTRA_DO_FULLTERM_20_49", "is_computed": false },
+    { "index": 12, "indicator_code": "INTRA_DO_FULLTERM_20_49_PCT", "is_computed": true, "formula": "INTRA_DO_FULLTERM_20_49 / INTRA_DELIVERIES_20_49" },
+    { "index": 13, "indicator_code": "INTRA_DO_FULLTERM_TOTAL", "is_computed": true, "formula": "INTRA_DO_FULLTERM_10_14 + INTRA_DO_FULLTERM_15_19 + INTRA_DO_FULLTERM_20_49" },
+    { "index": 14, "indicator_code": "INTRA_DO_FULLTERM_TOTAL_PCT", "is_computed": true, "formula": "INTRA_DO_FULLTERM_TOTAL / INTRA_DELIVERIES_TOTAL" },
+    { "index": 15, "indicator_code": "INTRA_DO_PRETERM_10_14", "is_computed": false },
+    { "index": 16, "indicator_code": "INTRA_DO_PRETERM_10_14_PCT", "is_computed": true, "formula": "INTRA_DO_PRETERM_10_14 / INTRA_DELIVERIES_10_14" },
+    { "index": 17, "indicator_code": "INTRA_DO_PRETERM_15_19", "is_computed": false },
+    { "index": 18, "indicator_code": "INTRA_DO_PRETERM_15_19_PCT", "is_computed": true, "formula": "INTRA_DO_PRETERM_15_19 / INTRA_DELIVERIES_15_19" },
+    { "index": 19, "indicator_code": "INTRA_DO_PRETERM_20_49", "is_computed": false },
+    { "index": 20, "indicator_code": "INTRA_DO_PRETERM_20_49_PCT", "is_computed": true, "formula": "INTRA_DO_PRETERM_20_49 / INTRA_DELIVERIES_20_49" },
+    { "index": 21, "indicator_code": "INTRA_DO_PRETERM_TOTAL", "is_computed": true, "formula": "INTRA_DO_PRETERM_10_14 + INTRA_DO_PRETERM_15_19 + INTRA_DO_PRETERM_20_49" },
+    { "index": 22, "indicator_code": "INTRA_DO_PRETERM_TOTAL_PCT", "is_computed": true, "formula": "INTRA_DO_PRETERM_TOTAL / INTRA_DELIVERIES_TOTAL" },
+    { "index": 23, "indicator_code": "INTRA_DO_FETALDEATH_10_14", "is_computed": false },
+    { "index": 24, "indicator_code": "INTRA_DO_FETALDEATH_10_14_PCT", "is_computed": true, "formula": "INTRA_DO_FETALDEATH_10_14 / INTRA_DELIVERIES_10_14" },
+    { "index": 25, "indicator_code": "INTRA_DO_FETALDEATH_15_19", "is_computed": false },
+    { "index": 26, "indicator_code": "INTRA_DO_FETALDEATH_15_19_PCT", "is_computed": true, "formula": "INTRA_DO_FETALDEATH_15_19 / INTRA_DELIVERIES_15_19" },
+    { "index": 27, "indicator_code": "INTRA_DO_FETALDEATH_20_49", "is_computed": false },
+    { "index": 28, "indicator_code": "INTRA_DO_FETALDEATH_20_49_PCT", "is_computed": true, "formula": "INTRA_DO_FETALDEATH_20_49 / INTRA_DELIVERIES_20_49" },
+    { "index": 29, "indicator_code": "INTRA_DO_FETALDEATH_TOTAL", "is_computed": true, "formula": "INTRA_DO_FETALDEATH_10_14 + INTRA_DO_FETALDEATH_15_19 + INTRA_DO_FETALDEATH_20_49" },
+    { "index": 30, "indicator_code": "INTRA_DO_FETALDEATH_TOTAL_PCT", "is_computed": true, "formula": "INTRA_DO_FETALDEATH_TOTAL / INTRA_DELIVERIES_TOTAL" },
+    { "index": 31, "indicator_code": "INTRA_DO_ABORTION_10_14", "is_computed": false },
+    { "index": 32, "indicator_code": "INTRA_DO_ABORTION_15_19", "is_computed": false },
+    { "index": 33, "indicator_code": "INTRA_DO_ABORTION_20_49", "is_computed": false },
+    { "index": 34, "indicator_code": "INTRA_DO_ABORTION_TOTAL", "is_computed": true, "formula": "INTRA_DO_ABORTION_10_14 + INTRA_DO_ABORTION_15_19 + INTRA_DO_ABORTION_20_49" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "sequence", "sequence": ["INTRA_DELIVERIES_TOTAL", "INTRA_DO_FULLTERM_TOTAL"], "message": "Full-term total exceeds total deliveries — check the source." },
+    { "rule_type": "over_threshold", "indicator_code": "INTRA_DO_FULLTERM_10_14_PCT", "threshold": 1.0, "numerator_code": "INTRA_DO_FULLTERM_10_14", "denominator_code": "INTRA_DELIVERIES_10_14", "message": "Full-term (10-14) exceeds deliveries in that bracket (over 100%)", "hint": "A delivery outcome cannot exceed the deliveries in its own age bracket. Check the source file (this is a known real anomaly in the NIR/Negros Occidental 10-14 sample rows)." }
+  ],
+
+  "notes": "Intra Partum File 1, Group C (delivery outcome: Full Term / Pre-Term / Fetal Death / Abortion). Split config over the 'c' sheets (Q1c-Q4c). Province/HUC rollup (5 rows; region skipped). 3 meta cols; location NAME col 2. Bracket percentages divide by same-bracket Deliveries; totals by Deliveries Total. Abortion has NO percentage columns in the source (by design — abortion is treated as outside the delivery-outcome universe; the source's outcome=deliveries reconciliation deliberately excludes it). Deliveries columns (3-6) are cross-sheet refs to Group a, mapped to the shared INTRA_DELIVERIES_* codes (skip-unchanged dedups on commit). The full-term 10-14 percentage genuinely exceeds 100% in the NIR/Negros Occidental sample (a real source anomaly the DQC catches). Header letter duplication (Abortion reuses Fetal Death's n/o/p/q) is cosmetic. Annual sheet is a pure rollup, not ingested."
+}

@@ -109,6 +109,19 @@ always agree (a future CI check will enforce it).
   Bacolod birth-weight/live-births mismatch. Remaining Intra Partum file (SHP/FBD/Delivery
   Type/Outcome, 3 cross-referencing sheet-groups) is a follow-up.
 
+- **Maternal Care — Intra Partum SHP/FBD/Delivery Type/Outcome (1 file → 3 configs)** —
+  `intra_shp` (skilled attendant + facility-based delivery), `intra_dt` (delivery type:
+  vaginal/cesarean/combined), `intra_do` (delivery outcome: full-term/pre-term/fetal-death/
+  abortion). Split per D3 across the file's parallel `Q1a`/`Q1b`/`Q1c` sheet-groups. 70
+  indicators. The three groups share one "Deliveries" baseline (groups b/c reference group a
+  cross-sheet); all three configs map the shared `INTRA_DELIVERIES_*` codes, so the parser's
+  skip-unchanged logic dedups on commit. FBD percentages divide by Deliveries Total (INTRA1-1:
+  the source header mislabels the denominator as Physicians). Validated + dry-run against the
+  real file (0 errors); 129 values verified against the sheet cells. **This completes the
+  Maternal Care program** — all 13 files (Prenatal 8, Post Partum 3, Intra Partum 2) across 17
+  templates. The source's sum-of-parts reconciliation checks (delivery type/outcome should sum to
+  deliveries) are deferred pending the D4 reconciliation DQC rule type.
+
 ### Fixed
 - **Sheet footer/annotation rows are no longer reported as location errors.** The Infectious
   Disease templates are the first whose sheets carry footer text ("Source: DOH-FHSIS", "Legend:",
