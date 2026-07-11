@@ -53,7 +53,13 @@
       "formula": "RABIES_SRC_OTHER_TOTAL / RABIES_EXP_ALL_TOTAL" }
   ],
 
-  "dqc_rules": [],
+  "dqc_rules": [
+    { "rule_type": "reconciliation", "mode": "equals",
+      "parts": ["RABIES_SRC_DOG_TOTAL", "RABIES_SRC_CAT_TOTAL", "RABIES_SRC_OTHER_TOTAL"],
+      "whole": "RABIES_EXP_ALL_TOTAL",
+      "message": "Dog + cat + other exposures do not sum to all-category exposure",
+      "hint": "Every rabies exposure should be attributed to dog, cat, or other. If the three sources do not add up to the all-category total, a source count or the total is wrong: check the source file and re-upload." }
+  ],
 
   "notes": "Rabies exposure by animal source (group 'd' sheets Qtr1d-Qtr4d) — dog / cat / other, each as % of all-category exposure. Unlike the a/b groups, the all-category exposure columns (idx 3-5) ARE mapped here (to the same RABIES_EXP_ALL_* codes as the base config) because the source %s need that total as a within-sheet denominator; the values are identical to the base sheet's so they dedupe as unchanged on upload rather than double-counting. Reconciliation DQC (dog+cat+other == all-category total) deferred to D4."
 }

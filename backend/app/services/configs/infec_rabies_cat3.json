@@ -29,6 +29,10 @@
   "sheet_map": { "1": "Qtr1b", "2": "Qtr2b", "3": "Qtr3b", "4": "Qtr4b" },
 
   "columns": [
+    { "index": 3, "indicator_code": "RABIES_CAT3_MALE", "is_computed": false },
+    { "index": 4, "indicator_code": "RABIES_CAT3_FEMALE", "is_computed": false },
+    { "index": 5, "indicator_code": "RABIES_CAT3_TOTAL", "is_computed": true,
+      "formula": "RABIES_CAT3_MALE + RABIES_CAT3_FEMALE" },
     { "index": 6, "indicator_code": "RABIES_CAT3_ARV_RIG_MALE", "is_computed": false },
     { "index": 7, "indicator_code": "RABIES_CAT3_ARV_RIG_FEMALE", "is_computed": false },
     { "index": 8, "indicator_code": "RABIES_CAT3_ARV_RIG_TOTAL", "is_computed": true,
@@ -51,7 +55,18 @@
       "formula": "RABIES_CAT3_ARV_ONLY_TOTAL / RABIES_CAT3_VAX_HISTORY_TOTAL" }
   ],
 
-  "dqc_rules": [],
+  "dqc_rules": [
+    { "rule_type": "reconciliation", "mode": "equals",
+      "parts": ["RABIES_CAT3_NO_VAX_HISTORY_TOTAL", "RABIES_CAT3_VAX_HISTORY_TOTAL"],
+      "whole": "RABIES_CAT3_TOTAL",
+      "message": "Category III without-history + with-history do not sum to Category III total",
+      "hint": "Every Category III exposure is either without or with prior ARV history. If the two do not add up to the Category III total, a count is wrong: check the source file and re-upload." },
+    { "rule_type": "reconciliation", "mode": "at_most",
+      "parts": ["RABIES_CAT3_ARV_RIG_TOTAL", "RABIES_CAT3_ARV_ONLY_TOTAL"],
+      "whole": "RABIES_CAT3_TOTAL",
+      "message": "Completed ARV+RIG and ARV-only exceed total Category III exposures",
+      "hint": "You cannot complete prophylaxis for more people than were exposed in Category III. If the completed counts exceed the total, a value is wrong: check the source file and re-upload." }
+  ],
 
-  "notes": "Rabies Category III post-exposure prophylaxis (group 'b' sheets Qtr1b-Qtr4b). Two completion metrics with DIFFERENT denominators: ARV+RIG completion is measured against patients WITHOUT prior ARV history (need full PEP + immunoglobulin); ARV-only completion against patients WITH prior history (boosters only). Both denominators are within this sheet. Linked Category-III exposure columns (idx 3-5) are cross-sheet references to base and NOT re-ingested. Reconciliation DQC (no-history + with-history == Cat III total; ARV+RIG + ARV-only <= Cat III total) deferred to the D4 rule type."
+  "notes": "Rabies Category III post-exposure prophylaxis (group 'b' sheets Qtr1b-Qtr4b). Two completion metrics with DIFFERENT denominators: ARV+RIG completion is measured against patients WITHOUT prior ARV history (need full PEP + immunoglobulin); ARV-only completion against patients WITH prior history (boosters only). Both denominators are within this sheet. The linked Category-III exposure columns (idx 3-5) ARE mapped here (to the same RABIES_CAT3_* codes as base) so the reconciliation DQC has the Cat III total as a within-sheet whole; identical to base's values, so they dedupe as unchanged on upload. Reconciliation DQC (D4): no-history + with-history == Cat III total; ARV+RIG + ARV-only <= Cat III total."
 }

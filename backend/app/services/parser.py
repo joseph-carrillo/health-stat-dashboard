@@ -537,6 +537,37 @@ def run_dqc_rules(staged_rows: list, dqc_rules: list) -> list:
                         "message": message
                     })
 
+        elif rule_type == "reconciliation":
+            # Sum of parts must equal ("equals") or not exceed ("at_most")
+            # a whole. e.g. dog+cat+other == all-category exposure, or
+            # ARV+RIG + ARV-only <= Category III total. Skips silently when
+            # any part or the whole is missing (avoids false positives on
+            # partially-entered rows, matching the over_threshold/sequence
+            # None-handling above).
+            parts = rule.get("parts", [])
+            whole_code = rule.get("whole")
+            mode = rule.get("mode", "equals")
+            part_values = [values.get(code) for code in parts]
+            whole = values.get(whole_code)
+            if whole is None or any(v is None for v in part_values):
+                continue
+            parts_sum = sum(part_values)
+            # Round to the DB's DECIMAL(15,4) precision to ignore
+            # floating-point/Excel round-trip noise.
+            parts_sum_r = round(float(parts_sum), 4)
+            whole_r = round(float(whole), 4)
+            flagged = (
+                parts_sum_r > whole_r if mode == "at_most"
+                else parts_sum_r != whole_r
+            )
+            if flagged:
+                issues.append({
+                    "indicator_code": whole_code,
+                    "value": whole,
+                    "rule": rule_type,
+                    "message": message,
+                })
+
     return issues
 
 
