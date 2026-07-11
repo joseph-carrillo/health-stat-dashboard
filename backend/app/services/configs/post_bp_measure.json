@@ -1,0 +1,51 @@
+{
+  "template_id": "POST_BP_MEASURE",
+  "template_version": "2026",
+  "program_code": "MATERNAL_CARE",
+  "source_file_pattern": "post_bp_measure_hpn_mngt_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "Post Partum — BP Measured During PNC Visits",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City, Municipality" }
+    ]
+  },
+
+  "upload": { "sub_program": "Post Partum", "file_number": 3 },
+
+  "sheet_map": { "1": "Q1a", "2": "Q2a", "3": "Q3a", "4": "Q4a" },
+
+  "columns": [
+    { "index": 3, "indicator_code": "POST_BP_PNCVISIT_10_14", "is_computed": false },
+    { "index": 4, "indicator_code": "POST_BP_PNCVISIT_15_19", "is_computed": false },
+    { "index": 5, "indicator_code": "POST_BP_PNCVISIT_20_49", "is_computed": false },
+    { "index": 6, "indicator_code": "POST_BP_PNCVISIT_TOTAL", "is_computed": true, "formula": "POST_BP_PNCVISIT_10_14 + POST_BP_PNCVISIT_15_19 + POST_BP_PNCVISIT_20_49" },
+    { "index": 7, "indicator_code": "POST_BP_MEASURED_10_14", "is_computed": false },
+    { "index": 8, "indicator_code": "POST_BP_MEASURED_10_14_PCT", "is_computed": true, "formula": "POST_BP_MEASURED_10_14 / POST_BP_PNCVISIT_10_14" },
+    { "index": 9, "indicator_code": "POST_BP_MEASURED_15_19", "is_computed": false },
+    { "index": 10, "indicator_code": "POST_BP_MEASURED_15_19_PCT", "is_computed": true, "formula": "POST_BP_MEASURED_15_19 / POST_BP_PNCVISIT_15_19" },
+    { "index": 11, "indicator_code": "POST_BP_MEASURED_20_49", "is_computed": false },
+    { "index": 12, "indicator_code": "POST_BP_MEASURED_20_49_PCT", "is_computed": true, "formula": "POST_BP_MEASURED_20_49 / POST_BP_PNCVISIT_20_49" },
+    { "index": 13, "indicator_code": "POST_BP_MEASURED_TOTAL", "is_computed": true, "formula": "POST_BP_MEASURED_10_14 + POST_BP_MEASURED_15_19 + POST_BP_MEASURED_20_49" },
+    { "index": 14, "indicator_code": "POST_BP_MEASURED_TOTAL_PCT", "is_computed": true, "formula": "POST_BP_MEASURED_TOTAL / POST_BP_PNCVISIT_TOTAL" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "POST_BP_MEASURED_TOTAL_PCT", "threshold": 1.0, "numerator_code": "POST_BP_MEASURED_TOTAL", "denominator_code": "POST_BP_PNCVISIT_TOTAL", "message": "BP-measured count exceeds PNC visits (over 100%)", "hint": "BP-measured women are a subset of those with PNC visits, so this should never exceed 100%. Check the source file." }
+  ],
+
+  "notes": "Post Partum File 3, Group A (BP measured during PNC visits). Split config over the 'a' sheets (Q1a-Q4a); paired Group B (high-BP referral) is post_hpn_mgmt over the 'b' sheets (decision D3). Municipality level (66 ingested rows; region skipped). 3 meta cols; location NAME col 2. Chained same-bracket denominator; fixed & logged (v2). No DQC columns in source; over-100% rule is ours. Annual sheets are pure rollups, not ingested."
+}

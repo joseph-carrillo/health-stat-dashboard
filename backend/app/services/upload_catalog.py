@@ -49,6 +49,8 @@ PROGRAMS = [
         "name": "Maternal Care and Services",
         "sub_programs": [
             {"name": "Prenatal"},
+            {"name": "Post Partum"},
+            {"name": "Intra Partum"},
         ],
     },
 ]

@@ -1,0 +1,57 @@
+{
+  "template_id": "POST_SUPPLEMENTATION",
+  "template_version": "2026",
+  "program_code": "MATERNAL_CARE",
+  "source_file_pattern": "post_supplementation_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "Post Partum — Supplementation (IFA / Vitamin A)",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region/PHIC" }
+    ]
+  },
+
+  "upload": { "sub_program": "Post Partum", "file_number": 2 },
+
+  "sheet_map": { "1": "Q1", "2": "Q2", "3": "Q3", "4": "Q4" },
+
+  "columns": [
+    { "index": 3, "indicator_code": "POST_SUPP_POP", "is_computed": false },
+    { "index": 4, "indicator_code": "POST_IFA_10_14", "is_computed": false },
+    { "index": 5, "indicator_code": "POST_IFA_10_14_PCT", "is_computed": true, "formula": "POST_IFA_10_14 / POST_SUPP_POP" },
+    { "index": 6, "indicator_code": "POST_IFA_15_19", "is_computed": false },
+    { "index": 7, "indicator_code": "POST_IFA_15_19_PCT", "is_computed": true, "formula": "POST_IFA_15_19 / POST_SUPP_POP" },
+    { "index": 8, "indicator_code": "POST_IFA_20_49", "is_computed": false },
+    { "index": 9, "indicator_code": "POST_IFA_20_49_PCT", "is_computed": true, "formula": "POST_IFA_20_49 / POST_SUPP_POP" },
+    { "index": 10, "indicator_code": "POST_IFA_TOTAL", "is_computed": true, "formula": "POST_IFA_10_14 + POST_IFA_15_19 + POST_IFA_20_49" },
+    { "index": 11, "indicator_code": "POST_IFA_TOTAL_PCT", "is_computed": true, "formula": "POST_IFA_TOTAL / POST_SUPP_POP" },
+    { "index": 12, "indicator_code": "POST_VITA_10_14", "is_computed": false },
+    { "index": 13, "indicator_code": "POST_VITA_10_14_PCT", "is_computed": true, "formula": "POST_VITA_10_14 / POST_SUPP_POP" },
+    { "index": 14, "indicator_code": "POST_VITA_15_19", "is_computed": false },
+    { "index": 15, "indicator_code": "POST_VITA_15_19_PCT", "is_computed": true, "formula": "POST_VITA_15_19 / POST_SUPP_POP" },
+    { "index": 16, "indicator_code": "POST_VITA_20_49", "is_computed": false },
+    { "index": 17, "indicator_code": "POST_VITA_20_49_PCT", "is_computed": true, "formula": "POST_VITA_20_49 / POST_SUPP_POP" },
+    { "index": 18, "indicator_code": "POST_VITA_TOTAL", "is_computed": true, "formula": "POST_VITA_10_14 + POST_VITA_15_19 + POST_VITA_20_49" },
+    { "index": 19, "indicator_code": "POST_VITA_TOTAL_PCT", "is_computed": true, "formula": "POST_VITA_TOTAL / POST_SUPP_POP" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "POST_IFA_TOTAL_PCT", "threshold": 1.0, "numerator_code": "POST_IFA_TOTAL", "denominator_code": "POST_SUPP_POP", "message": "Post-partum IFA coverage exceeds 100% of the population proxy", "hint": "Check the count or the population figure in the source file and re-upload." },
+    { "rule_type": "over_threshold", "indicator_code": "POST_VITA_TOTAL_PCT", "threshold": 1.0, "numerator_code": "POST_VITA_TOTAL", "denominator_code": "POST_SUPP_POP", "message": "Post-partum Vitamin A coverage exceeds 100% of the population proxy", "hint": "Check the count or the population figure in the source file and re-upload." }
+  ],
+
+  "notes": "Post Partum File 2 (supplementation: IFA + Vitamin A). Province/HUC rollup (5 rows; region skipped). 3 meta cols; location NAME col 2. Population-proxy denominator (same 'Projected Population (Under 1)' values as Prenatal — Flag P / PP2-1). Clean file, no formula bugs. Annual sheet is a pure rollup, not ingested."
+}

@@ -1,0 +1,71 @@
+{
+  "template_id": "POST_4PNC",
+  "template_version": "2026",
+  "program_code": "MATERNAL_CARE",
+  "source_file_pattern": "post_4pnc_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "Post Partum — 4 PNC Visit Completion",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region/PHIC" }
+    ]
+  },
+
+  "upload": { "sub_program": "Post Partum", "file_number": 1 },
+
+  "sheet_map": { "1": "Q1", "2": "Q2", "3": "Q3", "4": "Q4" },
+
+  "columns": [
+    { "index": 3, "indicator_code": "POST_4PNC_RESIDENT_10_14", "is_computed": false },
+    { "index": 4, "indicator_code": "POST_4PNC_RESIDENT_15_19", "is_computed": false },
+    { "index": 5, "indicator_code": "POST_4PNC_RESIDENT_20_49", "is_computed": false },
+    { "index": 6, "indicator_code": "POST_4PNC_RESIDENT_TOTAL", "is_computed": true, "formula": "POST_4PNC_RESIDENT_10_14 + POST_4PNC_RESIDENT_15_19 + POST_4PNC_RESIDENT_20_49" },
+    { "index": 7, "indicator_code": "POST_4PNC_TRANSIN_10_14", "is_computed": false },
+    { "index": 8, "indicator_code": "POST_4PNC_TRANSIN_15_19", "is_computed": false },
+    { "index": 9, "indicator_code": "POST_4PNC_TRANSIN_20_49", "is_computed": false },
+    { "index": 10, "indicator_code": "POST_4PNC_TRANSIN_TOTAL", "is_computed": true, "formula": "POST_4PNC_TRANSIN_10_14 + POST_4PNC_TRANSIN_15_19 + POST_4PNC_TRANSIN_20_49" },
+    { "index": 11, "indicator_code": "POST_4PNC_TRANSOUT_10_14", "is_computed": false },
+    { "index": 12, "indicator_code": "POST_4PNC_TRANSOUT_15_19", "is_computed": false },
+    { "index": 13, "indicator_code": "POST_4PNC_TRANSOUT_20_49", "is_computed": false },
+    { "index": 14, "indicator_code": "POST_4PNC_TRANSOUT_TOTAL", "is_computed": true, "formula": "POST_4PNC_TRANSOUT_10_14 + POST_4PNC_TRANSOUT_15_19 + POST_4PNC_TRANSOUT_20_49" },
+    { "index": 15, "indicator_code": "POST_4PNC_TRACKED_10_14", "is_computed": true, "formula": "POST_4PNC_RESIDENT_10_14 + POST_4PNC_TRANSIN_10_14" },
+    { "index": 16, "indicator_code": "POST_4PNC_TRACKED_15_19", "is_computed": true, "formula": "POST_4PNC_RESIDENT_15_19 + POST_4PNC_TRANSIN_15_19" },
+    { "index": 17, "indicator_code": "POST_4PNC_TRACKED_20_49", "is_computed": true, "formula": "POST_4PNC_RESIDENT_20_49 + POST_4PNC_TRANSIN_20_49" },
+    { "index": 18, "indicator_code": "POST_4PNC_TRACKED_TOTAL", "is_computed": true, "formula": "POST_4PNC_TRACKED_10_14 + POST_4PNC_TRACKED_15_19 + POST_4PNC_TRACKED_20_49" },
+    { "index": 19, "indicator_code": "POST_4PNC_ONSCHED_10_14", "is_computed": false },
+    { "index": 20, "indicator_code": "POST_4PNC_ONSCHED_15_19", "is_computed": false },
+    { "index": 21, "indicator_code": "POST_4PNC_ONSCHED_20_49", "is_computed": false },
+    { "index": 22, "indicator_code": "POST_4PNC_ONSCHED_TOTAL", "is_computed": true, "formula": "POST_4PNC_ONSCHED_10_14 + POST_4PNC_ONSCHED_15_19 + POST_4PNC_ONSCHED_20_49" },
+    { "index": 23, "indicator_code": "POST_4PNC_TRANSIN_DONE_10_14", "is_computed": false },
+    { "index": 24, "indicator_code": "POST_4PNC_TRANSIN_DONE_15_19", "is_computed": false },
+    { "index": 25, "indicator_code": "POST_4PNC_TRANSIN_DONE_20_49", "is_computed": false },
+    { "index": 26, "indicator_code": "POST_4PNC_TRANSIN_DONE_TOTAL", "is_computed": true, "formula": "POST_4PNC_TRANSIN_DONE_10_14 + POST_4PNC_TRANSIN_DONE_15_19 + POST_4PNC_TRANSIN_DONE_20_49" },
+    { "index": 27, "indicator_code": "POST_4PNC_COMPLETED_10_14", "is_computed": true, "formula": "POST_4PNC_ONSCHED_10_14 + POST_4PNC_TRANSIN_DONE_10_14" },
+    { "index": 28, "indicator_code": "POST_4PNC_COMPLETED_10_14_PCT", "is_computed": true, "formula": "POST_4PNC_COMPLETED_10_14 / POST_4PNC_TRACKED_10_14" },
+    { "index": 29, "indicator_code": "POST_4PNC_COMPLETED_15_19", "is_computed": true, "formula": "POST_4PNC_ONSCHED_15_19 + POST_4PNC_TRANSIN_DONE_15_19" },
+    { "index": 30, "indicator_code": "POST_4PNC_COMPLETED_15_19_PCT", "is_computed": true, "formula": "POST_4PNC_COMPLETED_15_19 / POST_4PNC_TRACKED_15_19" },
+    { "index": 31, "indicator_code": "POST_4PNC_COMPLETED_20_49", "is_computed": true, "formula": "POST_4PNC_ONSCHED_20_49 + POST_4PNC_TRANSIN_DONE_20_49" },
+    { "index": 32, "indicator_code": "POST_4PNC_COMPLETED_20_49_PCT", "is_computed": true, "formula": "POST_4PNC_COMPLETED_20_49 / POST_4PNC_TRACKED_20_49" },
+    { "index": 33, "indicator_code": "POST_4PNC_COMPLETED_TOTAL", "is_computed": true, "formula": "POST_4PNC_COMPLETED_10_14 + POST_4PNC_COMPLETED_15_19 + POST_4PNC_COMPLETED_20_49" },
+    { "index": 34, "indicator_code": "POST_4PNC_COMPLETED_TOTAL_PCT", "is_computed": true, "formula": "POST_4PNC_COMPLETED_TOTAL / POST_4PNC_TRACKED_TOTAL" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "POST_4PNC_COMPLETED_TOTAL_PCT", "threshold": 1.0, "numerator_code": "POST_4PNC_COMPLETED_TOTAL", "denominator_code": "POST_4PNC_TRACKED_TOTAL", "message": "4PNC completion exceeds the number due (over 100%)", "hint": "Completed women are a subset of those due for PNC, so this should never exceed 100%. Check the source file." }
+  ],
+
+  "notes": "Post Partum File 1 (4 PNC completion). Province/HUC rollup (5 rows; region skipped). 3 meta cols: psgc 0, constant 'NIR' filler 1, location NAME 2. CRITICAL RECOMPUTE (maternal_care_post_partum.md FLAG PP1-1): the source Excel 'completed' cells (cols 27/29/31) are cross-bracket shifted — 10-14 borrows 15-19's trans-in-done, etc. This config computes the CORRECT same-bracket sums (on-schedule + trans-in-done, same bracket), so the parser's completed values deliberately DIFFER from the source's buggy cells (e.g. NIR 10-14: parser 11 vs source 85). The total completion % is II/I (Completed/Tracked) despite the source's inverted '(I/II)' label. The source's own over-100% DQC is scale-broken (compares raw ratio to literal 100 — PP1-2); ours compares correctly. Annual sheet is a pure rollup, not ingested."
+}

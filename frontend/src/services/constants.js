@@ -120,6 +120,31 @@ export const TEMPLATES = [
     label: "Prenatal — High BP Identified & Referred",
     program_code: "MATERNAL_CARE",
   },
+  {
+    id: "post_4pnc",
+    label: "Post Partum — 4 PNC Visit Completion",
+    program_code: "MATERNAL_CARE",
+  },
+  {
+    id: "post_supplementation",
+    label: "Post Partum — Supplementation (IFA / Vitamin A)",
+    program_code: "MATERNAL_CARE",
+  },
+  {
+    id: "post_bp_measure",
+    label: "Post Partum — BP Measured During PNC Visits",
+    program_code: "MATERNAL_CARE",
+  },
+  {
+    id: "post_hpn_mgmt",
+    label: "Post Partum — High BP Identified & Referred",
+    program_code: "MATERNAL_CARE",
+  },
+  {
+    id: "intra_bw",
+    label: "Intra Partum — Birth Weight (Normal / Low / Unknown)",
+    program_code: "MATERNAL_CARE",
+  },
 ];
 
 export const MONTHS = [

@@ -97,6 +97,18 @@ always agree (a future CI check will enforce it).
   (matching the Immunization precedent); whether it should be a single shared indicator is a
   naming decision left open (Flag P / Q-Pre-1).
 
+- **Maternal Care — Post Partum (3 files → 4 configs) + Intra Partum Birth Weight (1 config)** —
+  Post Partum: 4 PNC completion (`post_4pnc`), supplementation (`post_supplementation`), and
+  BP-during-PNC + high-BP referral (`post_bp_measure` + `post_hpn_mgmt`, split per D3). Intra
+  Partum: newborn birth-weight classification (`intra_bw`). 92 indicators. Validated + dry-run
+  against the real files (0 errors); 108 values verified. `post_4pnc` **recomputes the completed
+  totals same-bracket** to fix the source's confirmed cross-age-bracket shift bug (PP1-1) — the
+  parser's values deliberately differ from the buggy sheet cells (NIR 10-14: 11 vs the source's
+  85). `intra_bw` maps Live Births as a raw indicator and flags (does not fix) the source's
+  self-referential Live-Births defect (INTRA2-1); its over-100% DQC correctly catches the real
+  Bacolod birth-weight/live-births mismatch. Remaining Intra Partum file (SHP/FBD/Delivery
+  Type/Outcome, 3 cross-referencing sheet-groups) is a follow-up.
+
 ### Fixed
 - **Sheet footer/annotation rows are no longer reported as location errors.** The Infectious
   Disease templates are the first whose sheets carry footer text ("Source: DOH-FHSIS", "Legend:",

@@ -1,0 +1,58 @@
+{
+  "template_id": "INTRA_BW",
+  "template_version": "2026",
+  "program_code": "MATERNAL_CARE",
+  "source_file_pattern": "intra_bw_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "Intra Partum — Birth Weight (Normal / Low / Unknown)",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region/PHIC" }
+    ]
+  },
+
+  "upload": { "sub_program": "Intra Partum", "file_number": 2 },
+
+  "sheet_map": { "1": "Q1", "2": "Q2", "3": "Q3", "4": "Q4" },
+
+  "columns": [
+    { "index": 3, "indicator_code": "INTRA_BW_LIVEBIRTHS", "is_computed": false },
+    { "index": 4, "indicator_code": "INTRA_BW_NORMAL_MALE", "is_computed": false },
+    { "index": 5, "indicator_code": "INTRA_BW_NORMAL_MALE_PCT", "is_computed": true, "formula": "INTRA_BW_NORMAL_MALE / INTRA_BW_LIVEBIRTHS" },
+    { "index": 6, "indicator_code": "INTRA_BW_NORMAL_FEMALE", "is_computed": false },
+    { "index": 7, "indicator_code": "INTRA_BW_NORMAL_FEMALE_PCT", "is_computed": true, "formula": "INTRA_BW_NORMAL_FEMALE / INTRA_BW_LIVEBIRTHS" },
+    { "index": 8, "indicator_code": "INTRA_BW_NORMAL_TOTAL", "is_computed": true, "formula": "INTRA_BW_NORMAL_MALE + INTRA_BW_NORMAL_FEMALE" },
+    { "index": 9, "indicator_code": "INTRA_BW_NORMAL_TOTAL_PCT", "is_computed": true, "formula": "INTRA_BW_NORMAL_TOTAL / INTRA_BW_LIVEBIRTHS" },
+    { "index": 10, "indicator_code": "INTRA_BW_LOW_MALE", "is_computed": false },
+    { "index": 11, "indicator_code": "INTRA_BW_LOW_MALE_PCT", "is_computed": true, "formula": "INTRA_BW_LOW_MALE / INTRA_BW_LIVEBIRTHS" },
+    { "index": 12, "indicator_code": "INTRA_BW_LOW_FEMALE", "is_computed": false },
+    { "index": 13, "indicator_code": "INTRA_BW_LOW_FEMALE_PCT", "is_computed": true, "formula": "INTRA_BW_LOW_FEMALE / INTRA_BW_LIVEBIRTHS" },
+    { "index": 14, "indicator_code": "INTRA_BW_LOW_TOTAL", "is_computed": true, "formula": "INTRA_BW_LOW_MALE + INTRA_BW_LOW_FEMALE" },
+    { "index": 15, "indicator_code": "INTRA_BW_LOW_TOTAL_PCT", "is_computed": true, "formula": "INTRA_BW_LOW_TOTAL / INTRA_BW_LIVEBIRTHS" },
+    { "index": 16, "indicator_code": "INTRA_BW_UNKNOWN_MALE", "is_computed": false },
+    { "index": 17, "indicator_code": "INTRA_BW_UNKNOWN_MALE_PCT", "is_computed": true, "formula": "INTRA_BW_UNKNOWN_MALE / INTRA_BW_LIVEBIRTHS" },
+    { "index": 18, "indicator_code": "INTRA_BW_UNKNOWN_FEMALE", "is_computed": false },
+    { "index": 19, "indicator_code": "INTRA_BW_UNKNOWN_FEMALE_PCT", "is_computed": true, "formula": "INTRA_BW_UNKNOWN_FEMALE / INTRA_BW_LIVEBIRTHS" },
+    { "index": 20, "indicator_code": "INTRA_BW_UNKNOWN_TOTAL", "is_computed": true, "formula": "INTRA_BW_UNKNOWN_MALE + INTRA_BW_UNKNOWN_FEMALE" },
+    { "index": 21, "indicator_code": "INTRA_BW_UNKNOWN_TOTAL_PCT", "is_computed": true, "formula": "INTRA_BW_UNKNOWN_TOTAL / INTRA_BW_LIVEBIRTHS" }
+  ],
+
+  "dqc_rules": [
+    { "rule_type": "over_threshold", "indicator_code": "INTRA_BW_NORMAL_TOTAL_PCT", "threshold": 1.0, "numerator_code": "INTRA_BW_NORMAL_TOTAL", "denominator_code": "INTRA_BW_LIVEBIRTHS", "message": "Normal-birth-weight count exceeds live births (over 100%)", "hint": "Birth-weight categories are a subset of live births, so this should never exceed 100%. Check the source file's Live Births figure (see the known INTRA2-1 data issue)." }
+  ],
+
+  "notes": "Intra Partum File 2 (birth weight: Normal/Low/Unknown by newborn sex). Province/HUC rollup (5 rows; region skipped). 3 meta cols; location NAME col 2. Percentages divide by Live Births (col 3). KNOWN DATA ISSUE (INTRA2-1, flag to DOH, do not fix in config): in the source, 'Live Births' is a self-referential SUM of the birth-weight category totals for 3 of 5 rows (NIR, Negros Occidental, Negros Oriental) but a raw typed value for Siquijor and Bacolod — the parser reads whatever is in the cell (raw), so its output matches the sheet, but the underlying figure is unreliable for those 3 rows and the NIR total is inflated by 153 relative to a true province rollup, traceable to a real Live-Births/BW mismatch at City of Bacolod (HUC). Annual sheet is a pure rollup, not ingested."
+}
