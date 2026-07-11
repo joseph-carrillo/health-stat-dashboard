@@ -28,6 +28,7 @@ PROGRAMS = [
         "name": "Infectious Disease Prevention and Control",
         "sub_programs": [
             {"name": "Infectious Disease"},
+            {"name": "Leprosy"},
         ],
     },
     {

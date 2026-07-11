@@ -1,0 +1,200 @@
+{
+  "template_id": "INFEC_LEPROSY",
+  "template_version": "2026",
+  "program_code": "INFECTIOUS_DISEASE",
+  "source_file_pattern": "infec_leprosy_nir",
+  "frequency": "annual",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 1,
+  "stop_at_blank_psgc": true,
+
+  "location_aliases": {
+    "NIR": "1800000000", "NIRA": "1800000000",
+    "Negros Island Region": "1800000000", "Negros Island Region (NIR)": "1800000000"
+  },
+
+  "display": {
+    "label": "Infectious Disease — Leprosy (annual)",
+    "dqc_highlight": true,
+    "id_columns": [
+      { "key": "psgc", "label": "PSGC" },
+      { "key": "location", "label": "Region, Province/City" }
+    ]
+  },
+
+  "upload": { "sub_program": "Leprosy", "file_number": 1 },
+
+  "sheet_map": { "annual": "Annual" },
+
+  "columns": [
+    { "index": 3, "indicator_code": "LEP_POP_0_14", "is_computed": false },
+    { "index": 4, "indicator_code": "LEP_POP_15_18", "is_computed": false },
+    { "index": 5, "indicator_code": "LEP_POP_19", "is_computed": false },
+    { "index": 6, "indicator_code": "LEP_POP_TOTAL", "is_computed": false },
+
+    { "index": 8, "indicator_code": "LEP_REG_0_14_M", "is_computed": false },
+    { "index": 9, "indicator_code": "LEP_REG_0_14_F", "is_computed": false },
+    { "index": 10, "indicator_code": "LEP_REG_0_14_TOTAL", "is_computed": true,
+      "formula": "LEP_REG_0_14_M + LEP_REG_0_14_F" },
+    { "index": 11, "indicator_code": "LEP_PREV_0_14_RATE", "is_computed": true,
+      "formula": "LEP_REG_0_14_TOTAL / LEP_POP_0_14 * 10000" },
+    { "index": 12, "indicator_code": "LEP_REG_15_18_M", "is_computed": false },
+    { "index": 13, "indicator_code": "LEP_REG_15_18_F", "is_computed": false },
+    { "index": 14, "indicator_code": "LEP_REG_15_18_TOTAL", "is_computed": true,
+      "formula": "LEP_REG_15_18_M + LEP_REG_15_18_F" },
+    { "index": 15, "indicator_code": "LEP_PREV_15_18_RATE", "is_computed": true,
+      "formula": "LEP_REG_15_18_TOTAL / LEP_POP_15_18 * 10000" },
+    { "index": 16, "indicator_code": "LEP_REG_19_M", "is_computed": false },
+    { "index": 17, "indicator_code": "LEP_REG_19_F", "is_computed": false },
+    { "index": 18, "indicator_code": "LEP_REG_19_TOTAL", "is_computed": true,
+      "formula": "LEP_REG_19_M + LEP_REG_19_F" },
+    { "index": 19, "indicator_code": "LEP_PREV_19_RATE", "is_computed": true,
+      "formula": "LEP_REG_19_TOTAL / LEP_POP_19 * 10000" },
+    { "index": 20, "indicator_code": "LEP_REG_ALL_M", "is_computed": false },
+    { "index": 21, "indicator_code": "LEP_REG_ALL_F", "is_computed": false },
+    { "index": 22, "indicator_code": "LEP_REG_ALL_TOTAL", "is_computed": true,
+      "formula": "LEP_REG_ALL_M + LEP_REG_ALL_F" },
+    { "index": 23, "indicator_code": "LEP_PREV_ALL_RATE", "is_computed": true,
+      "formula": "LEP_REG_ALL_TOTAL / LEP_POP_TOTAL * 10000" },
+
+    { "index": 25, "indicator_code": "LEP_NEWDET_0_14_M", "is_computed": false },
+    { "index": 26, "indicator_code": "LEP_NEWDET_0_14_F", "is_computed": false },
+    { "index": 27, "indicator_code": "LEP_NEWDET_0_14_TOTAL", "is_computed": true,
+      "formula": "LEP_NEWDET_0_14_M + LEP_NEWDET_0_14_F" },
+    { "index": 28, "indicator_code": "LEP_CDR_0_14_RATE", "is_computed": true,
+      "formula": "LEP_NEWDET_0_14_TOTAL / LEP_POP_0_14 * 100000" },
+    { "index": 29, "indicator_code": "LEP_NEWDET_15_18_M", "is_computed": false },
+    { "index": 30, "indicator_code": "LEP_NEWDET_15_18_F", "is_computed": false },
+    { "index": 31, "indicator_code": "LEP_NEWDET_15_18_TOTAL", "is_computed": true,
+      "formula": "LEP_NEWDET_15_18_M + LEP_NEWDET_15_18_F" },
+    { "index": 32, "indicator_code": "LEP_CDR_15_18_RATE", "is_computed": true,
+      "formula": "LEP_NEWDET_15_18_TOTAL / LEP_POP_15_18 * 100000" },
+    { "index": 33, "indicator_code": "LEP_NEWDET_19_M", "is_computed": false },
+    { "index": 34, "indicator_code": "LEP_NEWDET_19_F", "is_computed": false },
+    { "index": 35, "indicator_code": "LEP_NEWDET_19_TOTAL", "is_computed": true,
+      "formula": "LEP_NEWDET_19_M + LEP_NEWDET_19_F" },
+    { "index": 36, "indicator_code": "LEP_CDR_19_RATE", "is_computed": true,
+      "formula": "LEP_NEWDET_19_TOTAL / LEP_POP_19 * 100000" },
+    { "index": 38, "indicator_code": "LEP_NEWDET_ALL_M", "is_computed": true,
+      "formula": "LEP_NEWDET_0_14_M + LEP_NEWDET_15_18_M + LEP_NEWDET_19_M" },
+    { "index": 39, "indicator_code": "LEP_NEWDET_ALL_F", "is_computed": true,
+      "formula": "LEP_NEWDET_0_14_F + LEP_NEWDET_15_18_F + LEP_NEWDET_19_F" },
+    { "index": 40, "indicator_code": "LEP_NEWDET_ALL_TOTAL", "is_computed": true,
+      "formula": "LEP_NEWDET_ALL_M + LEP_NEWDET_ALL_F" },
+    { "index": 41, "indicator_code": "LEP_CDR_ALL_RATE", "is_computed": true,
+      "formula": "LEP_NEWDET_ALL_TOTAL / LEP_POP_TOTAL * 100000" }
+  ],
+
+  "extra_sheets": [
+    {
+      "sheet_name": "Annual1",
+      "columns": [
+        { "index": 8, "indicator_code": "LEP_CONF_0_14_M", "is_computed": false },
+        { "index": 9, "indicator_code": "LEP_CONF_0_14_F", "is_computed": false },
+        { "index": 10, "indicator_code": "LEP_CONF_0_14_TOTAL", "is_computed": true,
+          "formula": "LEP_CONF_0_14_M + LEP_CONF_0_14_F" },
+        { "index": 11, "indicator_code": "LEP_CONF_15_18_M", "is_computed": false },
+        { "index": 12, "indicator_code": "LEP_CONF_15_18_F", "is_computed": false },
+        { "index": 13, "indicator_code": "LEP_CONF_15_18_TOTAL", "is_computed": true,
+          "formula": "LEP_CONF_15_18_M + LEP_CONF_15_18_F" },
+        { "index": 14, "indicator_code": "LEP_CONF_19_M", "is_computed": false },
+        { "index": 15, "indicator_code": "LEP_CONF_19_F", "is_computed": false },
+        { "index": 16, "indicator_code": "LEP_CONF_19_TOTAL", "is_computed": true,
+          "formula": "LEP_CONF_19_M + LEP_CONF_19_F" },
+        { "index": 17, "indicator_code": "LEP_CONF_ALL_M", "is_computed": true,
+          "formula": "LEP_CONF_0_14_M + LEP_CONF_15_18_M + LEP_CONF_19_M" },
+        { "index": 18, "indicator_code": "LEP_CONF_ALL_F", "is_computed": true,
+          "formula": "LEP_CONF_0_14_F + LEP_CONF_15_18_F + LEP_CONF_19_F" },
+        { "index": 19, "indicator_code": "LEP_CONF_ALL_TOTAL", "is_computed": true,
+          "formula": "LEP_CONF_ALL_M + LEP_CONF_ALL_F" }
+      ]
+    },
+    {
+      "sheet_name": "Annual2",
+      "columns": [
+        { "index": 3, "indicator_code": "LEP_TREATED_0_14_M", "is_computed": false },
+        { "index": 4, "indicator_code": "LEP_TREATED_0_14_F", "is_computed": false },
+        { "index": 5, "indicator_code": "LEP_TREATED_0_14_TOTAL", "is_computed": true,
+          "formula": "LEP_TREATED_0_14_M + LEP_TREATED_0_14_F" },
+        { "index": 7, "indicator_code": "LEP_TREATED_15_18_M", "is_computed": false },
+        { "index": 8, "indicator_code": "LEP_TREATED_15_18_F", "is_computed": false },
+        { "index": 9, "indicator_code": "LEP_TREATED_15_18_TOTAL", "is_computed": true,
+          "formula": "LEP_TREATED_15_18_M + LEP_TREATED_15_18_F" },
+        { "index": 11, "indicator_code": "LEP_TREATED_19_M", "is_computed": false },
+        { "index": 12, "indicator_code": "LEP_TREATED_19_F", "is_computed": false },
+        { "index": 13, "indicator_code": "LEP_TREATED_19_TOTAL", "is_computed": true,
+          "formula": "LEP_TREATED_19_M + LEP_TREATED_19_F" },
+        { "index": 15, "indicator_code": "LEP_TREATED_ALL_M", "is_computed": true,
+          "formula": "LEP_TREATED_0_14_M + LEP_TREATED_15_18_M + LEP_TREATED_19_M" },
+        { "index": 16, "indicator_code": "LEP_TREATED_ALL_F", "is_computed": true,
+          "formula": "LEP_TREATED_0_14_F + LEP_TREATED_15_18_F + LEP_TREATED_19_F" },
+        { "index": 17, "indicator_code": "LEP_TREATED_ALL_TOTAL", "is_computed": true,
+          "formula": "LEP_TREATED_ALL_M + LEP_TREATED_ALL_F" }
+      ]
+    },
+    {
+      "sheet_name": "Annual3",
+      "columns": [
+        { "index": 3, "indicator_code": "LEP_COMPLETED_0_14_M", "is_computed": false },
+        { "index": 4, "indicator_code": "LEP_COMPLETED_0_14_F", "is_computed": false },
+        { "index": 5, "indicator_code": "LEP_COMPLETED_0_14_TOTAL", "is_computed": true,
+          "formula": "LEP_COMPLETED_0_14_M + LEP_COMPLETED_0_14_F" },
+        { "index": 7, "indicator_code": "LEP_COMPLETED_15_18_M", "is_computed": false },
+        { "index": 8, "indicator_code": "LEP_COMPLETED_15_18_F", "is_computed": false },
+        { "index": 9, "indicator_code": "LEP_COMPLETED_15_18_TOTAL", "is_computed": true,
+          "formula": "LEP_COMPLETED_15_18_M + LEP_COMPLETED_15_18_F" },
+        { "index": 11, "indicator_code": "LEP_COMPLETED_19_M", "is_computed": false },
+        { "index": 12, "indicator_code": "LEP_COMPLETED_19_F", "is_computed": false },
+        { "index": 13, "indicator_code": "LEP_COMPLETED_19_TOTAL", "is_computed": true,
+          "formula": "LEP_COMPLETED_19_M + LEP_COMPLETED_19_F" },
+        { "index": 15, "indicator_code": "LEP_COMPLETED_ALL_M", "is_computed": true,
+          "formula": "LEP_COMPLETED_0_14_M + LEP_COMPLETED_15_18_M + LEP_COMPLETED_19_M" },
+        { "index": 16, "indicator_code": "LEP_COMPLETED_ALL_F", "is_computed": true,
+          "formula": "LEP_COMPLETED_0_14_F + LEP_COMPLETED_15_18_F + LEP_COMPLETED_19_F" },
+        { "index": 17, "indicator_code": "LEP_COMPLETED_ALL_TOTAL", "is_computed": true,
+          "formula": "LEP_COMPLETED_ALL_M + LEP_COMPLETED_ALL_F" }
+      ]
+    },
+    {
+      "sheet_name": "Annual4",
+      "columns": [
+        { "index": 3, "indicator_code": "LEP_G2D_POP_0_14", "is_computed": false },
+        { "index": 4, "indicator_code": "LEP_G2D_POP_15_18", "is_computed": false },
+        { "index": 5, "indicator_code": "LEP_G2D_POP_19", "is_computed": false },
+        { "index": 6, "indicator_code": "LEP_G2D_POP_TOTAL", "is_computed": false },
+        { "index": 8, "indicator_code": "LEP_G2D_0_14_M", "is_computed": false },
+        { "index": 9, "indicator_code": "LEP_G2D_0_14_F", "is_computed": false },
+        { "index": 10, "indicator_code": "LEP_G2D_0_14_TOTAL", "is_computed": true,
+          "formula": "LEP_G2D_0_14_M + LEP_G2D_0_14_F" },
+        { "index": 11, "indicator_code": "LEP_G2D_0_14_RATE", "is_computed": true,
+          "formula": "LEP_G2D_0_14_TOTAL / LEP_G2D_POP_0_14 * 1000000" },
+        { "index": 12, "indicator_code": "LEP_G2D_15_18_M", "is_computed": false },
+        { "index": 13, "indicator_code": "LEP_G2D_15_18_F", "is_computed": false },
+        { "index": 14, "indicator_code": "LEP_G2D_15_18_TOTAL", "is_computed": true,
+          "formula": "LEP_G2D_15_18_M + LEP_G2D_15_18_F" },
+        { "index": 15, "indicator_code": "LEP_G2D_15_18_RATE", "is_computed": true,
+          "formula": "LEP_G2D_15_18_TOTAL / LEP_G2D_POP_15_18 * 1000000" },
+        { "index": 16, "indicator_code": "LEP_G2D_19_M", "is_computed": false },
+        { "index": 17, "indicator_code": "LEP_G2D_19_F", "is_computed": false },
+        { "index": 18, "indicator_code": "LEP_G2D_19_TOTAL", "is_computed": true,
+          "formula": "LEP_G2D_19_M + LEP_G2D_19_F" },
+        { "index": 19, "indicator_code": "LEP_G2D_19_RATE", "is_computed": true,
+          "formula": "LEP_G2D_19_TOTAL / LEP_G2D_POP_19 * 1000000" },
+        { "index": 20, "indicator_code": "LEP_G2D_ALL_M", "is_computed": true,
+          "formula": "LEP_G2D_0_14_M + LEP_G2D_15_18_M + LEP_G2D_19_M" },
+        { "index": 21, "indicator_code": "LEP_G2D_ALL_F", "is_computed": true,
+          "formula": "LEP_G2D_0_14_F + LEP_G2D_15_18_F + LEP_G2D_19_F" },
+        { "index": 22, "indicator_code": "LEP_G2D_ALL_TOTAL", "is_computed": true,
+          "formula": "LEP_G2D_ALL_M + LEP_G2D_ALL_F" },
+        { "index": 23, "indicator_code": "LEP_G2D_ALL_RATE", "is_computed": true,
+          "formula": "LEP_G2D_ALL_TOTAL / LEP_G2D_POP_TOTAL * 1000000" }
+      ]
+    }
+  ],
+
+  "dqc_rules": [],
+
+  "notes": "Leprosy — annual, 5 'Annual' tabs via extra_sheets (Annual=Registered+NewlyDetected, Annual1=Confirmed, Annual2=Treated, Annual3=CompletedMDT, Annual4=G2D). Province/HUC granularity only, 4 real rows; NIR rollup (row 2) skipped via data_start_row:1. location_column:2 (col 1 is the 'NIRA' region literal, FLAG 10). ALL indicators is_sensitive=TRUE (stigma). Three source bugs FIXED here, not copied: Annual col-11 prevalence 0-14 missing its x10,000 (FLAG 1) — recomputed; Annual 'E.Total' (idx31) + CDR 15-18 (idx32) are a rate/double-rate not a Male+Female sum (FLAG 2) — recomputed as sum then rate; Annual2 all-ages %treated has a dangling #REF! (FLAG 3). %treated/%completed are NOT config-computed — their denominators (Confirmed totals) live cross-sheet in Annual1, which the parser's per-sheet row_values cannot reach; instead LEP_TREATED_*_PCT / LEP_COMPLETED_*_PCT are seeded with denominator_source=LEP_CONF_*_TOTAL and derived by the analytics/Coverage layer (health_data lookup is sheet-agnostic). Population repeated in 3 tabs (FLAG 8): Annual holds canonical LEP_POP_*; Annual4 has its own LEP_G2D_POP_* copy so its G2D rate resolves within-sheet without a duplicate-staging collision. Rates stored already-multiplied (ADR-023): prevalence x10,000, CDR x100,000, G2D x1,000,000. Registered all-ages M/F are independently entered raw (FLAG 4). Population for 15-18/19+ is blank in province rows (FLAG 7) so those age-specific rates resolve None — expected, a DOH data gap not a parser bug. Deferred DQC (need D4 sequence/reconciliation): Registered>=Confirmed>=Treated>=Completed; all-ages == sum of age groups; %treated/%completed <= 100%. Annual2/Annual3 have a trailing footnote row in the PSGC column (FLAG 5) — expected as ignorable annotation noise."
+}

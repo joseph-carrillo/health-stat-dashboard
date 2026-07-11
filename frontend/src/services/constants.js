@@ -66,6 +66,11 @@ export const TEMPLATES = [
     program_code: "INFECTIOUS_DISEASE",
   },
   {
+    id: "infec_leprosy",
+    label: "Leprosy — Registered / Newly Detected / Confirmed / Treatment / G2D (annual)",
+    program_code: "INFECTIOUS_DISEASE",
+  },
+  {
     id: "envi_water",
     label: "Water Supply — Household Coverage (BSWS & Safely Managed)",
     program_code: "WASH",
