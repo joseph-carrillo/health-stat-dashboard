@@ -2,6 +2,7 @@
 # Config-driven Excel parser for FHSIS templates
 # DOH-NIR CHD Health Statistics Dashboard
 
+import ast
 import json
 import re
 import uuid
@@ -589,6 +590,45 @@ def _zero_division_result(formula: str, row_values: dict) -> float | None:
     return None
 
 
+class _MissingValue(Exception):
+    """A code referenced by the formula has no value in this row."""
+
+
+def _eval_formula_node(node, row_values: dict) -> float:
+    """Recursively evaluate one AST node of a config formula.
+
+    Only plain arithmetic is allowed: + - * /, parentheses, numeric
+    literals, and indicator codes as names. Anything else (function
+    calls, attribute access, subscripts, comparisons) is rejected —
+    formulas are data, and data must never be able to execute code.
+    """
+    if isinstance(node, ast.Expression):
+        return _eval_formula_node(node.body, row_values)
+    if isinstance(node, ast.BinOp):
+        left = _eval_formula_node(node.left, row_values)
+        right = _eval_formula_node(node.right, row_values)
+        if isinstance(node.op, ast.Add):
+            return left + right
+        if isinstance(node.op, ast.Sub):
+            return left - right
+        if isinstance(node.op, ast.Mult):
+            return left * right
+        if isinstance(node.op, ast.Div):
+            return left / right
+        raise ValueError(f"Operator not allowed in formula: {type(node.op).__name__}")
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
+        value = _eval_formula_node(node.operand, row_values)
+        return -value if isinstance(node.op, ast.USub) else value
+    if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+        return float(node.value)
+    if isinstance(node, ast.Name):
+        value = row_values.get(node.id)
+        if value is None:
+            raise _MissingValue(node.id)
+        return float(value)
+    raise ValueError(f"Element not allowed in formula: {type(node).__name__}")
+
+
 def compute_value(formula: str, row_values: dict) -> float | None:
     """
     Calculate a computed value from a formula string.
@@ -596,23 +636,18 @@ def compute_value(formula: str, row_values: dict) -> float | None:
     e.g. "CPAB_MALE + CPAB_FEMALE"
     e.g. "CPAB_TOTAL / IMMUN_POP_0_11M"
 
+    Evaluated with a whitelisted AST walk (see _eval_formula_node), not
+    eval() — a config formula can compute arithmetic and nothing else.
+    Codes are resolved as real identifiers, so a shorter code like
+    CPAB_MALE can never collide with CPAB_MALE_SOME_LONGER_CODE.
+
     Only returns None when a value that actually appears in THIS formula is
     missing.  Unrelated indicators being None (blank cells in the Excel for
-    other columns) no longer cause the whole computation to bail out.
-
-    Codes are substituted longest-first so that a shorter code like CPAB_MALE
-    does not accidentally overwrite part of CPAB_MALE_SOME_LONGER_CODE.
+    other columns) do not cause the computation to bail out.
     """
     try:
-        expression = formula
-        for code in sorted(row_values.keys(), key=len, reverse=True):
-            if code not in expression:
-                continue
-            value = row_values[code]
-            if value is None:
-                return None
-            expression = expression.replace(code, str(value))
-        return float(eval(expression))
+        tree = ast.parse(formula, mode="eval")
+        return float(_eval_formula_node(tree, row_values))
     except ZeroDivisionError:
         return _zero_division_result(formula, row_values)
     except Exception:

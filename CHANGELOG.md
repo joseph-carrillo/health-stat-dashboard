@@ -57,6 +57,17 @@ always agree (a future CI check will enforce it).
   template's own "Check Data" cells (surfacing genuine DOH data gaps the parser was blind to).
 
 ### Fixed
+- **Config formulas are no longer evaluated with `eval()`** — `compute_value()` used to
+  string-substitute indicator codes into the formula and call `eval()`, so any edit to a
+  template config could execute arbitrary Python inside the parser, and code substitution
+  relied on a longest-first sort to avoid one code overwriting part of a longer one.
+  Formulas are now evaluated by a whitelisted AST walk: `+ - * /`, unary minus,
+  parentheses, numeric literals, and indicator codes resolved as real identifiers —
+  nothing else (function calls, attribute access, subscripts, `**` are rejected).
+  Verified behaviorally identical to the old implementation across 3,390 evaluations
+  covering every formula in all 565 config columns. New `test_compute_value.py` (17 tests)
+  locks in both the arithmetic/FHSIS semantics (0/0 → 0%, missing referenced code → None,
+  unrelated blank cells ignored) and the safety properties.
 - **Database connections no longer leak when a query raises** — nearly every endpoint and
   service function followed `conn = get_db_connection()` … `conn.close()` with no
   try/finally, so any exception between the two (bad parameter, constraint violation,
