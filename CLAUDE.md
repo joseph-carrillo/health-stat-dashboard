@@ -148,7 +148,10 @@ dev fallbacks. Compose injects them from `.env`; inside the network the host is 
 **Schema pattern:** Narrow/tall — one row per (indicator, location, period, value). Key tables:
 - `health_data` — production values; unique on `(indicator_id, location_id, period_id)`
 - `staging_health_data` — pre-approval staging with conflict tracking
-- `locations` (128 rows), `indicators` (247 rows — CHILD_CARE only; the other 10 programs are pending), `report_periods` (34 rows)
+- `locations` (128 rows), `report_periods` (34 rows), `indicators` (~1,131 rows across 8 of the
+  11 program areas as of 2026-07-12: CHILD_CARE 247, MATERNAL_CARE 319, INFECTIOUS_DISEASE 260,
+  NCD 143, VITAL_STATS 52, DEMOGRAPHICS 50, GERIATRIC 49, WASH 11. Family Planning, Oral Health,
+  and Morbidity are still pending — each blocked on a schema/parser decision, see ROADMAP)
 
 To reset/seed the DB from scratch (idempotent — safe to re-run):
 ```bash
@@ -179,9 +182,15 @@ Roles: `admin`, `data_encoder`, `program_manager`, `mancom`, `execom`. Admin-onl
 
 ## Known Gaps
 
-- Test coverage is thin — CI runs pytest + ruff + eslint, but only env, thresholds,
-  pct-ratio, and password hashing have real tests so far.
-- `backend/main.py` (~1200 lines) and a few frontend pages exceed the 800-line cap and
-  should be split.
+- Test coverage is well below the 80% standard in `testing.md` — 77 backend tests cover env,
+  thresholds, pct-ratio, password hashing, rate display, annotation rows, reconciliation DQC,
+  ESR submit, registration, and formula evaluation. **The riskiest code is still the least
+  tested**: `commit.py`'s approve/overwrite logic and the full upload→stage→approve→commit
+  path have no end-to-end test, and there are no frontend tests at all.
+- `backend/main.py` (1423 lines), `backend/app/services/analytics.py` (1497), and
+  `frontend/src/pages/Upload.jsx` (1018) exceed the 800-line cap and should be split.
+- Four security/robustness decisions are open, each needing Joseph — see ADR-025: connection
+  pooling, `approve_batch(force=True)` bypassing conflict review, JWT in localStorage before
+  public go-live, and unscoped staging read endpoints.
 - (Closed 2026-07-04: fail-fast secrets via `app/core/env.py`; bcrypt→argon2 with
   upgrade-on-login. See CHANGELOG.)

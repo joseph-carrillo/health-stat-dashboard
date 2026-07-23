@@ -424,3 +424,64 @@ dog+cat+other (5,164) ≠ all-category (7,565). Genuine DOH data gaps the parser
 **Deferred:** backfilling the rule into the other configs that want it (Intra Partum DT/DO, NCD
 Risk-Factors cross-template, Leprosy Registered≥Confirmed≥Treated≥Completed, STH cascade) — the
 mechanism exists; adding the individual `dqc_rules` entries is follow-up config work.
+
+---
+
+## ADR-025 — Security & robustness hardening from the 2026-07-18 audit (2026-07-23) — **PROPOSED, reversible**
+
+**Status:** Proposed (built in Joseph's absence on his "work on open items that don't require my
+approval" instruction). Every item is a contained, reversible fix with no schema, API-shape, or
+data-model change — deliberately excluding everything that is a policy or deployment decision.
+
+**Context:** A 2026-07-18 session ran a full adversarial audit of the project (findings preserved
+in that session's transcript, see machine-local state in `session-handoff.md`). It found one fix
+already applied but uncommitted, plus a ranked list of real defects. That session was interrupted
+before anything was verified, committed, or logged in memory — this ADR closes it out.
+
+**Decision — fixed this session (4 commits, each verified and pushed separately):**
+1. **Audit-log failures are logged, not swallowed** (`da35b4a`). `write_audit()` caught every
+   exception and `pass`ed, so a failed insert left no trace — the opposite of what a Data Privacy
+   Act audit trail is for. Now logs with action/entity context and releases the connection in a
+   `finally`. Caller contract unchanged: auditing still never raises.
+2. **Registration credentials moved out of the URL** (`0780a8c`). `POST /api/register` took
+   username/password as **query parameters**, so plaintext passwords landed in nginx access logs,
+   browser history, and proxy logs. Now a validated JSON body (`RegisterRequest`: username ≥3,
+   password ≥8), old query-string convention rejected with 422, and rate-limited 5/min/IP — it was
+   the only unauthenticated write endpoint without a limit. 4 new tests.
+3. **DB connections always released** (`d6491d0`). The dominant codebase pattern was
+   `conn = get_db_connection()` … `conn.close()` with **no try/finally**, so any exception in
+   between abandoned the connection; with no pool, a burst of errors could exhaust Postgres
+   `max_connections` and take the API down. All 39 acquisition sites across `main.py`,
+   `analytics.py`, `commit.py`, `auth.py`, `audit.py`, `parser.py` are now wrapped.
+   `get_template_report`'s empty-data fallback reuses the open connection instead of opening a
+   second one. Verified by 14-endpoint live smoke test + real-file dry-run parses.
+4. **`eval()` removed from formula evaluation** (`3fb9b24`). `compute_value()` string-substituted
+   indicator codes into the formula and called `eval()` — any config edit could execute arbitrary
+   Python, and correctness relied on a longest-first sort so one code wouldn't overwrite part of a
+   longer one. Replaced with a whitelisted AST walk (`+ - * /`, unary minus, parentheses, numeric
+   literals, codes as real identifiers; everything else rejected). **Verified behaviorally
+   identical across 3,390 evaluations covering every formula in all 565 config columns, zero
+   mismatches.** 17 new tests.
+
+**Decision — deliberately NOT done (each needs Joseph, and is why this list stops here):**
+- **Connection pooling.** The other half of finding #1. Pool sizing interacts with gunicorn worker
+  count and Postgres `max_connections` — a deployment decision, not a code cleanup. The try/finally
+  pass above removes the *leak*; pooling is a separate performance/capacity choice.
+- **`approve_batch(force=True)`** (`main.py`). The endpoint hardcodes `force=True`, so approving a
+  batch auto-accepts every unreviewed conflict and overwrites production values. The ADR-004
+  conflict-review gate is therefore optional in practice. **This is a data-integrity policy
+  question only Joseph can settle** — the current behavior may well be intentional (it avoids
+  stranding stale NULLs); changing it silently would be worse than leaving it.
+- **JWT in `localStorage` → httpOnly cookie.** ADR-003 accepted localStorage "for a single-page
+  internal tool" and set the trigger to revisit as "before external exposure". ADR-022's public
+  pages fired that trigger. This is a real pre-go-live item but touches the whole auth flow —
+  too big to do unreviewed.
+- **Program-scoping the staging read endpoints.** `GET /api/staging/{batch_id}`, `/rows`,
+  `/conflicts`, `/api/batches/history` require only `get_current_user`, so any authenticated user
+  can read another program's staged values by batch_id. Fixing it means deciding the intended
+  scoping rule (per-program? uploader-only? admin override?) — a permissions-model decision.
+
+**Trade-off:** committing security fixes without Joseph's per-change review departs from the
+standing propose→approve→build cadence. Justified narrowly by his explicit instruction and by
+scope discipline: every fix is behavior-preserving on the happy path, test-covered, and revertible
+as a single commit. Everything requiring judgement was left untouched and is listed above.

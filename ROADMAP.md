@@ -248,6 +248,12 @@ Owner-approved plan, one reversible step at a time (propose → review → appro
 - [x] **F. Pin Python deps** — `requirements.txt` now uses exact `==` versions (was `>=`),
   matching what's actually installed and running. Rebuilt the backend image and re-verified
   clean. _Done 2026-07-01._
+- [x] **J. Security & robustness hardening** (from the 2026-07-18 adversarial audit, ADR-025) —
+  audit-log failures logged instead of swallowed; registration credentials moved out of the query
+  string into a validated body + rate limit; DB connections released via try/finally at all 39
+  acquisition sites (they leaked on any query error, with no pool behind them); `eval()` in config
+  formula evaluation replaced by a whitelisted AST evaluator, verified identical across 3,390
+  evaluations. 21 new tests (77 total). _Done 2026-07-23._
 - [ ] **F. Privacy** — small-cell suppression (needs owner decision: cut-off count).
   ~~fix `SECURITY.md`~~ — doc side done 2026-07-04 (now correctly says full exclusion).
 - [ ] **F. Data dictionary + provenance** — per-indicator numerator/denominator/bands; lock it.
@@ -256,8 +262,16 @@ Owner-approved plan, one reversible step at a time (propose → review → appro
 - [x] Fail-fast on missing secrets (removed `os.getenv` fallbacks; `app/core/env.py`) —
   _done 2026-07-04, go-live checklist Step 1_
 - [x] bcrypt → argon2 migration (upgrade-on-login; bootstrap creates argon2) — _done 2026-07-04_
-- [ ] Split `backend/main.py` (~1300 lines) and oversized frontend pages (>800 lines)
+- [ ] Split `backend/main.py` (1423 lines), `analytics.py` (1497), and oversized frontend pages
+      (`Upload.jsx` 1018) — all over the 800-line cap in `coding-style.md`
 - [ ] Roadmap milestones: add explicit exit criteria per phase
+- [ ] **Decisions left open by ADR-025's hardening pass** (each needs Joseph — see ADR-025):
+      connection pooling (sizing vs gunicorn workers); `approve_batch(force=True)` silently
+      bypassing the conflict-review gate; JWT localStorage → httpOnly cookie before public
+      go-live; program-scoping the staging read endpoints
+- [ ] API self-version is hardcoded `0.1.0` in `main.py` while `package.json` (the ADR-011 source
+      of truth) says `0.9.0` — one-line fix, not done this session to keep the shutdown commit
+      docs-only
 
 ## Pending (external — team / higher ops)
 - Template fixes: envi_sanitation, nata_lb_abr, morta_mmr, pre_gd_screening, Vitamin A, schisto

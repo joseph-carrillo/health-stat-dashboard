@@ -1,6 +1,15 @@
 # session-handoff.md
 
 ## Last Updated
+2026-07-23, **session 13** (HOME machine, hostname `_hansell_`). Security/robustness hardening
+session — no program build-out. Closed out an **orphaned 2026-07-18 session** that had run a full
+adversarial audit, applied one fix, and died before committing or logging anything. Shipped 4
+verified fixes (audit-log logging, register credentials out of the URL, DB connection release,
+`eval()` removal), each committed + pushed separately; ADR-025 records them **and the 4 things
+deliberately left for Joseph**. Feature commits: `da35b4a`, `0780a8c`, `d6491d0`, `3fb9b24`.
+Shutdown docs/memory commit follows on top.
+
+### Previously (session 12)
 2026-07-12, **session 12** (HOME machine, hostname `_hansell_`). Big autonomous build session:
 Joseph said "continue building the programs, do this alone, ping me after each program is done."
 Built **every remaining config-only program** (Natality, Leprosy, Filariasis, Rabies, STH
@@ -24,8 +33,22 @@ commit follows on top.
    as a PROPOSED ADR he can reverse, never ingest known-garbage source data.
 
 ## Current Objective
-**All config-only programs are DONE. Everything remaining needs a Joseph decision or a DOH/encoder
-action** — do NOT start these without his direction (they're schema/parser one-way doors):
+**Two queues are now waiting on Joseph, not on build capacity.**
+
+**Queue A — the 4 security decisions from ADR-025** (new, session 13). Each was deliberately NOT
+fixed because it needs his judgement, not more code:
+- **`approve_batch(force=True)`** — the endpoint hardcodes force, so approving a batch
+  auto-accepts every unreviewed conflict and overwrites production. The ADR-004 review gate is
+  optional in practice. Data-integrity policy call: intended or not?
+- **JWT in localStorage → httpOnly cookie** — ADR-003's "revisit before external exposure"
+  trigger fired when ADR-022 shipped public pages. Real pre-go-live item.
+- **Connection pooling** — leaks are fixed; pooling is a deploy-sizing decision (gunicorn workers
+  vs Postgres `max_connections`).
+- **Program-scoping the staging read endpoints** — any authenticated user can read another
+  program's staged rows by batch_id. Needs the intended scoping rule decided.
+
+**Queue B — all config-only programs are DONE; everything remaining needs a Joseph decision or a
+DOH/encoder action** — do NOT start these without his direction (schema/parser one-way doors):
 - **D6 — row-stacked parsing** → unblocks **NCD Eye Health, Oral Health, Family Planning** (3
   programs, 3 stacking patterns). Joseph's likely next pick; design the `row_filter` mechanism and
   run it past him before wiring configs.
@@ -39,6 +62,51 @@ Two one-liners from Joseph would unblock a lot: **ratify/reverse ADR-023** (rate
 **ADR-024** (D4 reconciliation) — both PROPOSED, everything built rides on them. Other live
 tracks unchanged: (1) Joseph's UI golden-path check of Sessions 9–12 then real uploads;
 (2) go-live Step 3 (ports 80/443 pending with IT); (3) ESR Google Sheets setup (parked).
+
+## Done This Session — Session 13 (2026-07-23, HOME `_hansell_`) — audit close-out, 4 security fixes
+Joseph set the model to Fable 5, said "work on unfinished/open items that don't require my
+attention or approval," and left. Mid-session he returned, switched back to Opus 4.8, and asked
+whether I'd been cut off — I had been, mid-unit-4 (on a cosmetic preview check, not a real
+verification step), so unit 4 was finished properly and then shutdown ran.
+
+**The startup finding that set the agenda:** an **orphaned session from 2026-07-18** (5 days after
+session 12, never logged in memory) had run a full adversarial project audit, started fixing the
+easiest finding, and been interrupted before verifying or committing. It left `audit.py` modified
+in the working tree and its whole transcript untracked in the repo root
+(`2026-07-18-182844-code investigation.txt` — still untracked, see Machine-local state).
+
+**Shipped — 4 commits, each verified + pushed separately (ADR-025 has full detail):**
+- **`da35b4a` audit-log failures logged, not swallowed** — adopted the orphaned session's
+  `audit.py` fix after verifying it (ruff + 56 tests). `write_audit()` had caught everything and
+  `pass`ed, so a failed insert vanished — a Data Privacy Act gap. Also releases the connection.
+- **`0780a8c` register credentials out of the URL** — `POST /api/register` took username/password
+  as **query params**, so plaintext passwords hit nginx access logs, browser history, proxy logs.
+  Now a validated JSON body (`app/schemas/register.py`), old query-string form rejected 422, and
+  rate-limited 5/min/IP (it was the only unauthenticated write endpoint with no limit). Frontend
+  `register()` helper updated — it has **no callers**, there's no registration UI yet.
+- **`d6491d0` DB connections always released** — the codebase-wide pattern was
+  `conn = get_db_connection()` … `conn.close()` with **no try/finally**; any query error leaked a
+  connection, and there's no pool, so an error burst could exhaust `max_connections` and down the
+  API. Wrapped all **39** sites (`main.py`, `analytics.py`, `commit.py`, `auth.py`, `audit.py`,
+  `parser.py`) via a scripted transform + manual fixes; `get_template_report`'s empty-data
+  fallback now reuses the open connection instead of opening a second. Verified with a
+  **14-endpoint authenticated smoke test** (all 200) + real-file dry-run parses.
+- **`3fb9b24` `eval()` removed from formula evaluation** — `compute_value()` substituted codes into
+  the formula string and called `eval()`; a config edit could execute arbitrary Python, and
+  correctness depended on a longest-first sort so a short code wouldn't clobber a longer one.
+  Now a whitelisted AST walk (`+ - * /`, unary minus, parens, numeric literals, codes as real
+  identifiers — everything else rejected). **Proved equivalent to the old `eval()` across 3,390
+  evaluations covering every formula in all 565 config columns, zero mismatches.**
+- **21 new tests (56 → 77), ruff clean, eslint clean.** Dry-run re-parses of `animal_bites` (28
+  staged), `infec_rabies_base` (48), `demographics_annual` (204) all 0 errors / 0 DQC after the
+  changes. **No DB writes — everything dry-run; live `health_data` untouched.**
+- **Docs-truth pass** (this shutdown): CLAUDE.md's indicator count (was "247, CHILD_CARE only" →
+  ~1,131 across 8 areas), Known Gaps (real line counts, honest test-coverage statement), ROADMAP
+  (new item J + the open decisions), ADR-025.
+
+**Deliberately NOT done** — the 4 decisions in "Current Objective → Queue A", plus the one-line
+API version fix (`main.py` says `0.1.0`, `package.json` says `0.9.0`) which was left out only to
+keep this shutdown commit docs-only. It's a trivial next-session pickup.
 
 ## Done This Session — Session 12 (2026-07-12, HOME `_hansell_`) — 5 programs + D4
 Joseph: "continue building the programs, do this alone, ping me after each program is done, remember
@@ -390,6 +458,13 @@ Not a resume of the build-out — Joseph opened with a CI failure report. Handle
 ## Next Session — first moves (all config-only programs are DONE; everything left needs a decision)
 0. `startup protocols` (git sync FIRST). Model Opus 4.8; Sonnet 5 for any sub-agents; ping after
    each finished program (standing instructions above).
+0a. **Two housekeeping questions for Joseph** (30 seconds, from session 13): what to do with the
+   untracked `2026-07-18-...code investigation.txt` transcript, and what the three loose SBI-looking
+   `.xlsx` files in `backend/data/` root are. Both in Machine-local state below.
+0b. **Ratify/reverse the 4 ADR-025 security decisions** (Queue A in Current Objective) — the
+   `approve_batch(force=True)` one is the sharpest: unreviewed conflicts currently overwrite
+   production on approve. Also a free one-liner available: `main.py`'s API version is `0.1.0`,
+   should be `0.9.0` per ADR-011.
 1. **Get two one-liners from Joseph:** ratify/reverse **ADR-023** (rates) and **ADR-024** (D4
    reconciliation). Everything built this session rides on them.
 2. **Pick the next target with Joseph.** Recommended: **D6 (row-stacked parsing)** — one mechanism
@@ -414,7 +489,31 @@ Not a resume of the build-out — Joseph opened with a CI failure report. Handle
    data dictionary, is_sensitive granularity).
 
 ## Machine-local state (things GitHub does NOT sync — required section per shutdown protocol)
-As of shutdown 2026-07-12, **session 12** (HOME machine, hostname `_hansell_`):
+As of shutdown 2026-07-23, **session 13** (HOME machine, hostname `_hansell_`):
+- **Uncommitted code: none.** All 4 feature commits were pushed per-unit mid-session
+  (`da35b4a`/`0780a8c`/`d6491d0`/`3fb9b24`); this docs/memory sync is a separate commit on top.
+- **⚠️ Untracked file left in the repo root on purpose:
+  `2026-07-18-182844-code investigation.txt`** — the full transcript of the orphaned 2026-07-18
+  audit session (its findings are now distilled into ADR-025, so nothing is lost if it goes).
+  **Not committed and not deleted — Joseph's call.** It is the only reason `git status` isn't
+  clean on this machine.
+- **⚠️ Three `.xlsx` files sit loose in `backend/data/` root, unmentioned in any prior memory:**
+  `9 G1_G7_Given Td_nir.xlsx`, `10 G1_G7_Given MR_nir.xlsx`, `11 HPV- SBI and CBI_nir.xlsx`.
+  They look School-Based-Immunization related (SBI templates are already built). Unknown whether
+  they're new drops from DOH or leftovers from the original CHILD_CARE work — **ask Joseph.**
+  Gitignored, so this machine only.
+- **No DB writes this session** — every parse was `dry_run=true`; `health_data`/`staging_health_data`
+  untouched, no new indicators seeded. Indicator counts verified unchanged at startup (1,131 across
+  8 programs: CHILD_CARE 247, MATERNAL_CARE 319, INFECTIOUS_DISEASE 260, NCD 143, VITAL_STATS 52,
+  DEMOGRAPHICS 50, GERIATRIC 49, WASH 11).
+- **Both stashes still present, unchanged** (`stash@{0}` Overview Card WIP, `stash@{1}`
+  indicator-reports-area-filter). `.env` not touched. `secrets/` not touched.
+- **Container dev tools**: `pytest`/`ruff`/`httpx` had to be pip-installed into the backend
+  container again this session (not in the image — the known per-container gotcha).
+- Docker stack was up on arrival (running ~11h from a prior session) and is stopped by this
+  shutdown.
+
+### Previously — as of shutdown 2026-07-12, **session 12** (HOME machine, hostname `_hansell_`):
 - **This machine (HOME): clean after this shutdown commit** — all 6 feature commits were pushed
   per-unit mid-session (`37c517c`/`8418cc4`/`3f47e1c`/`4ac8193`/`1200aa5`/`98ecc04`); this docs/
   memory sync is a separate commit on top, also pushed (verified, no "ahead"). Docker stack was up

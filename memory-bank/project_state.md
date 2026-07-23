@@ -29,6 +29,42 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   `staging_health_data` only — **does not touch the new `esr_reports` table**, which has one
   real test row from this session's browser verification, `id=1` "Test Measles Cluster").
 
+## Session 13 (2026-07-23, HOME `_hansell_`) — security/robustness hardening; audit close-out
+Joseph: "work on unfinished/open items that don't require my attention or approval" (then left;
+returned mid-session, switched Fable 5 → Opus 4.8, asked if I'd been cut off — I had, mid-unit-4,
+so it was finished and shutdown ran). **No program build-out this session.**
+
+**Startup surfaced an orphaned session:** a **2026-07-18** session (never logged in memory) had run
+a full adversarial audit of the project, applied one fix, and been interrupted before verifying or
+committing it. It left `audit.py` modified in the tree and its transcript untracked in the repo
+root. This session verified and closed out everything in it that didn't need Joseph's judgement.
+
+**Shipped — 4 commits, verified + pushed per unit (full detail in ADR-025):**
+- **`da35b4a`** — `write_audit()` no longer swallows failures silently (a Data Privacy Act gap:
+  the action succeeded, the audit record vanished, nothing was detectable). Logs with context;
+  connection released in `finally`. Contract unchanged — auditing still never raises.
+- **`0780a8c`** — `POST /api/register` took credentials as **query parameters**, putting plaintext
+  passwords in nginx access logs, browser history, and proxy logs. Now a validated JSON body
+  (`RegisterRequest`), old form rejected 422, rate-limited 5/min/IP. 4 tests.
+- **`d6491d0`** — DB connections leaked on **any** query error: the whole codebase used
+  `get_db_connection()` … `close()` with no try/finally, and there's no pool, so an error burst
+  could exhaust `max_connections` and take the API down. All **39** sites wrapped; template-report's
+  empty-data fallback reuses the open connection. Verified: 14-endpoint smoke test all 200.
+- **`3fb9b24`** — `eval()` removed from `compute_value()` (a config edit could execute arbitrary
+  Python; code substitution relied on a longest-first sort to avoid collisions). Whitelisted AST
+  evaluator instead. **Proved equivalent across 3,390 evaluations over all 565 config formulas,
+  zero mismatches.** 17 tests.
+- **56 → 77 backend tests**, ruff + eslint clean. Dry-run re-parses green (`animal_bites` 28,
+  `infec_rabies_base` 48, `demographics_annual` 204 — all 0 errors). **Nothing written to the DB.**
+- **Docs-truth pass:** CLAUDE.md indicator count + Known Gaps corrected, ROADMAP item J + open
+  decisions, ADR-025.
+
+**Deliberately NOT done (needs Joseph — now Queue A in `session-handoff.md`):** connection pooling
+(deploy sizing), `approve_batch(force=True)` silently bypassing the ADR-004 conflict-review gate
+(data-integrity policy), JWT localStorage → httpOnly cookie (ADR-003's trigger fired when ADR-022
+shipped public pages), program-scoping the staging read endpoints (permissions-model decision).
+Also left: the one-line API version fix (`0.1.0` → `0.9.0`), only to keep this shutdown docs-only.
+
 ## Session 12 (2026-07-12, HOME `_hansell_`) — 5 config-only programs + D4; then paused for decisions
 Joseph: "continue building the programs, do this alone, ping me after each program is done, remember
 my model policy." Ran on Opus 4.8, no sub-agents. Built every remaining **config-only** program,
@@ -520,9 +556,18 @@ Three tracks now, running in parallel:
   `/health-statistics`, `/epidemiology-surveillance`, `/research`, `/laboratory`, public-state
   only (ADR-022). Login moved to `/login`.
 
-## Open work (priority order — updated at Session 12 shutdown)
-**All config-only programs are DONE.** Everything below #1 needs a Joseph decision or a DOH/encoder
+## Open work (priority order — updated at Session 13 shutdown)
+**All config-only programs are DONE.** Everything below needs a Joseph decision or a DOH/encoder
 action — do NOT start the schema/parser items without his direction.
+0. **The 4 security decisions from ADR-025** (session 13). Sharpest first:
+   **(a) `approve_batch(force=True)`** — approving a batch currently auto-accepts every unreviewed
+   conflict and overwrites production values, making the ADR-004 review gate optional in practice;
+   **(b) JWT localStorage → httpOnly cookie** before public go-live (ADR-003's own revisit trigger
+   fired when ADR-022 shipped public pages); **(c) connection pooling** (leaks are fixed; sizing is
+   a deploy decision); **(d) program-scoping the staging read endpoints** (any authenticated user
+   can read another program's staged rows by batch_id).
+0a. **Free one-liner:** `main.py` reports API version `0.1.0`; `package.json` (ADR-011's source of
+   truth) says `0.9.0`.
 1. **Ratify/reverse ADR-023 (rates) + ADR-024 (D4)** — both PROPOSED; everything built rides on them.
 2. **D6 — row-stacked parsing (Joseph's likely next pick).** One `row_filter` mechanism unblocks
    THREE programs: NCD Eye Health (age-as-rows), Oral Health (quarters+age), Family Planning

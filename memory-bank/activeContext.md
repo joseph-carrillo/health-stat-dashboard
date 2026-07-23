@@ -1,7 +1,20 @@
 # activeContext.md
 
 ## Current Session Goal (next session)
-**All config-only programs are DONE (Session 12).** 8 of 11 program areas now have every
+**Two decision queues are waiting on Joseph — build capacity is not the constraint.**
+
+**NEW after Session 13 — the 4 security decisions in ADR-025.** A hardening pass fixed everything
+that didn't need his judgement (audit-log logging, register credentials out of the URL, DB
+connection release at 39 sites, `eval()` → AST evaluator). What's left needs him:
+**(a)** `approve_batch(force=True)` — unreviewed conflicts currently overwrite production on
+approve, so the ADR-004 review gate is optional in practice (data-integrity policy);
+**(b)** JWT localStorage → httpOnly cookie before public go-live; **(c)** connection pooling
+(deploy sizing); **(d)** program-scoping the staging read endpoints. Plus a free one-liner:
+`main.py`'s API version says `0.1.0`, should be `0.9.0`. And two housekeeping questions — the
+untracked 2026-07-18 audit transcript in the repo root, and three unexplained SBI-looking `.xlsx`
+files loose in `backend/data/`.
+
+**Still true from Session 12 — all config-only programs are DONE.** 8 of 11 program areas have every
 currently-buildable template built + validated + dry-run-verified. **Everything remaining is a
 one-way-door schema/parser decision or a DOH/encoder action — do NOT start these without Joseph's
 direction.** Standing rules still hold: Opus 4.8 orchestrator / Sonnet 5 sub-agents; conserve
@@ -19,6 +32,22 @@ Full per-item plan: `session-handoff.md` "Next Session"; open-work priority: `pr
 
 **Also open (not build-order):** UI golden-path check of Sessions 9–12 then real uploads; go-live
 Step 3 (ports 80/443 pending with IT); ESR Google Sheets setup (parked).
+
+## 2026-07-23 session 13 (HOME `_hansell_`) — security hardening; orphaned-audit close-out
+Joseph: "work on unfinished/open items that don't require my attention or approval," then left
+(model was Fable 5; he returned mid-session, switched back to Opus 4.8, and asked whether I'd been
+cut off — I had, mid-unit-4, so it was finished before shutdown). Startup found an **orphaned
+2026-07-18 session** that had run a full adversarial audit, applied one uncommitted `audit.py` fix,
+and died before verifying or logging anything. Closed it out: 4 verified commits — audit-log
+failures now logged not swallowed (`da35b4a`); register credentials moved out of the query string
+into a validated body + 5/min rate limit, since plaintext passwords were landing in access logs
+(`0780a8c`); DB connections released via try/finally at all **39** acquisition sites, which
+previously leaked on any query error with no pool behind them (`d6491d0`); and `eval()` replaced
+with a whitelisted AST evaluator in `compute_value()`, proved equivalent across **3,390
+evaluations over all 565 config formulas** (`3fb9b24`). 56 → 77 tests, ruff + eslint clean, all
+dry-run, nothing written to the DB. Four decisions deliberately left for Joseph (ADR-025) — see
+"Current Session Goal" above. Also a docs-truth pass: CLAUDE.md's indicator count and Known Gaps
+were badly stale, ROADMAP got item J plus the open decisions.
 
 ## 2026-07-12 session 12 (HOME `_hansell_`) — 5 config-only programs + D4, then paused
 Joseph: "continue building the programs, do this alone, ping me after each program is done." Built
