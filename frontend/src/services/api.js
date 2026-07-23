@@ -46,9 +46,14 @@ export const login = async (username, password) => {
 }
 
 export const register = async (username, password, fullName, email) => {
-  const response = await API.post(
-    `/register?username=${username}&password=${password}&full_name=${fullName}&email=${email}`
-  )
+  // Credentials go in the JSON body — never the query string, which lands
+  // in server access logs and browser history.
+  const response = await API.post('/register', {
+    username,
+    password,
+    full_name: fullName,
+    email,
+  })
   return response.data
 }
 

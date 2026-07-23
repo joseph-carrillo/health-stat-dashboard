@@ -57,6 +57,13 @@ always agree (a future CI check will enforce it).
   template's own "Check Data" cells (surfacing genuine DOH data gaps the parser was blind to).
 
 ### Fixed
+- **Registration no longer passes the password in the URL** — `POST /api/register` used to
+  take username/password as query parameters, so plaintext passwords landed in server access
+  logs, browser history, and proxy logs. Credentials now travel in a validated JSON body
+  (new `RegisterRequest` schema: username ≥3 chars, password ≥8), the old query-string
+  calling convention is rejected (422), and the endpoint is rate-limited 5/min/IP — it was
+  the only unauthenticated write endpoint without a limit. Frontend `register()` helper
+  updated to match (it had no callers yet — registration UI doesn't exist).
 - **Audit-log failures are no longer silently swallowed** — `write_audit()` used to catch
   every exception and `pass`, so a failed insert left no trace (a Data Privacy Act compliance
   gap: the action succeeded with no audit record and no way to know). Failures are now logged

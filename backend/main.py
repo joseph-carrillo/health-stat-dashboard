@@ -44,6 +44,7 @@ from app.services.commit import (
 from app.services import analytics
 from app.services import google_sheets
 from app.schemas.esr_report import EsrReportSubmission
+from app.schemas.register import RegisterRequest
 
 # =====================================================
 # APP SETUP
@@ -830,36 +831,45 @@ def set_indicator_target(
 # USER MANAGEMENT
 # =====================================================
 @app.post("/api/register")
-def register_user(
-    username: str, password: str, full_name: str, email: str
-):
-    """Register a new user. Account starts pending until an admin acts."""
+@limiter.limit("5/minute")
+def register_user(request: Request, payload: RegisterRequest):
+    """Register a new user. Account starts pending until an admin acts.
+
+    Credentials arrive in the JSON body — never query parameters, which
+    get written to access logs. Rate-limited like /api/login: this is the
+    only other unauthenticated write endpoint.
+    """
+    username = payload.username.strip()
+    email = payload.email.strip()
+
     conn = get_db_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    cur.execute(
-        "SELECT id FROM users WHERE username = %s OR email = %s",
-        (username, email),
-    )
-    if cur.fetchone():
-        conn.close()
-        raise HTTPException(
-            status_code=400, detail="Username or email already exists."
+        cur.execute(
+            "SELECT id FROM users WHERE username = %s OR email = %s",
+            (username, email),
         )
+        if cur.fetchone():
+            raise HTTPException(
+                status_code=400, detail="Username or email already exists."
+            )
 
-    hashed = hash_password(password)
-    cur.execute(
-        """INSERT INTO users (
-            username, hashed_password, full_name,
-            email, role, status, is_active
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s)
-        RETURNING id""",
-        (username, hashed, full_name, email, None, "pending", False),
-    )
-    new_id = cur.fetchone()[0]
-    conn.commit()
-    cur.close()
-    conn.close()
+        hashed = hash_password(payload.password)
+        cur.execute(
+            """INSERT INTO users (
+                username, hashed_password, full_name,
+                email, role, status, is_active
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+            RETURNING id""",
+            (username, hashed, payload.full_name.strip(), email,
+             None, "pending", False),
+        )
+        new_id = cur.fetchone()[0]
+        conn.commit()
+        cur.close()
+    finally:
+        conn.close()
 
     write_audit(
         action="register",
