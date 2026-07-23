@@ -57,6 +57,12 @@ always agree (a future CI check will enforce it).
   template's own "Check Data" cells (surfacing genuine DOH data gaps the parser was blind to).
 
 ### Fixed
+- **Audit-log failures are no longer silently swallowed** — `write_audit()` used to catch
+  every exception and `pass`, so a failed insert left no trace (a Data Privacy Act compliance
+  gap: the action succeeded with no audit record and no way to know). Failures are now logged
+  with action/entity context via the standard `logging` module, and the DB connection is
+  released in a `finally` block (previously it leaked whenever the insert raised). The
+  caller-facing contract is unchanged: auditing still never raises.
 - **CI pytest collection was broken** — `test_annotation_rows.py` used `from backend.app...`
   while every other test (and `conftest.py`'s `sys.path` setup) uses `from app...`, which
   crashed pytest collection for the whole suite before any test could run. Also fixed a

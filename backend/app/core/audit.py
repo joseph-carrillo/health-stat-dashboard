@@ -5,9 +5,12 @@
 # Data Privacy Act compliance rules in CLAUDE.md.
 
 import json
+import logging
 from datetime import datetime
 
 from app.core.db import get_db_connection
+
+logger = logging.getLogger(__name__)
 
 
 AUDIT_TABLE_SQL = """
@@ -49,8 +52,11 @@ def write_audit(
 ):
     """Record an action in the audit log.
 
-    Never raises — auditing must not break the underlying operation.
+    Never raises — auditing must not break the underlying operation. A failed
+    write is logged (not silently dropped): under the Data Privacy Act a
+    missing audit entry is a compliance gap and must be detectable.
     """
+    conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -71,10 +77,16 @@ def write_audit(
         )
         conn.commit()
         cur.close()
-        conn.close()
     except Exception:
-        # Auditing is best-effort; swallow errors so the caller still succeeds.
-        pass
+        # Auditing is best-effort — never propagate to the caller — but a
+        # dropped audit event must leave a trace instead of vanishing.
+        logger.exception(
+            "Failed to write audit log entry (action=%s, entity=%s:%s)",
+            action, entity_type, entity_id,
+        )
+    finally:
+        if conn is not None:
+            conn.close()
 
 
 def get_audit_log(limit: int = 100) -> list:
