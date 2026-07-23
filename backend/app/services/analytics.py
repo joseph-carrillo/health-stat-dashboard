@@ -200,148 +200,163 @@ def status_for(coverage):
 
 def list_programs() -> list:
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute(
-        "SELECT code, name FROM programs WHERE is_active = TRUE ORDER BY name"
-    )
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    return [{"code": r[0], "name": r[1]} for r in rows]
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT code, name FROM programs WHERE is_active = TRUE ORDER BY name"
+        )
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return [{"code": r[0], "name": r[1]} for r in rows]
+    finally:
+        conn.close()
 
 
 def list_indicators(program_code: str = None,
                     include_sensitive: bool = True) -> list:
     conn = get_db_connection()
-    cur = conn.cursor()
-    query = """
-        SELECT i.id, i.code, i.name, i.unit, i.frequency_type,
-               i.formula_type, i.is_computed, i.is_sensitive,
-               i.target_value, i.target_year, p.code AS program_code,
-               p.name AS program_name, i.rate_multiplier
-        FROM indicators i
-        JOIN programs p ON p.id = i.program_id
-        WHERE i.is_active = TRUE
-    """
-    params = []
-    if program_code:
-        query += " AND p.code = %s"
-        params.append(program_code)
-    if not include_sensitive:
-        query += " AND i.is_sensitive = FALSE"
-    query += " ORDER BY p.name, i.code"
-    cur.execute(query, params)
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    return [
-        {
-            "id": r[0],
-            "code": r[1],
-            "name": r[2],
-            "unit": r[3],
-            "frequency_type": r[4],
-            "formula_type": r[5],
-            "is_computed": r[6],
-            "is_sensitive": r[7],
-            "target_value": float(r[8]) if r[8] is not None else None,
-            "target_year": r[9],
-            "program_code": r[10],
-            "program_name": r[11],
-            "rate_multiplier": r[12],
-        }
-        for r in rows
-    ]
+    try:
+        cur = conn.cursor()
+        query = """
+            SELECT i.id, i.code, i.name, i.unit, i.frequency_type,
+                   i.formula_type, i.is_computed, i.is_sensitive,
+                   i.target_value, i.target_year, p.code AS program_code,
+                   p.name AS program_name, i.rate_multiplier
+            FROM indicators i
+            JOIN programs p ON p.id = i.program_id
+            WHERE i.is_active = TRUE
+        """
+        params = []
+        if program_code:
+            query += " AND p.code = %s"
+            params.append(program_code)
+        if not include_sensitive:
+            query += " AND i.is_sensitive = FALSE"
+        query += " ORDER BY p.name, i.code"
+        cur.execute(query, params)
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return [
+            {
+                "id": r[0],
+                "code": r[1],
+                "name": r[2],
+                "unit": r[3],
+                "frequency_type": r[4],
+                "formula_type": r[5],
+                "is_computed": r[6],
+                "is_sensitive": r[7],
+                "target_value": float(r[8]) if r[8] is not None else None,
+                "target_year": r[9],
+                "program_code": r[10],
+                "program_name": r[11],
+                "rate_multiplier": r[12],
+            }
+            for r in rows
+        ]
+    finally:
+        conn.close()
 
 
 def list_locations(level: str = None, parent_psgc: str = None) -> list:
     conn = get_db_connection()
-    cur = conn.cursor()
-    query = """
-        SELECT psgc, name, level, parent_psgc, is_huc
-        FROM locations
-        WHERE is_active = TRUE
-    """
-    params = []
-    if level:
-        query += " AND level = %s"
-        params.append(level)
-    if parent_psgc:
-        query += " AND parent_psgc = %s"
-        params.append(parent_psgc)
-    query += " ORDER BY name"
-    cur.execute(query, params)
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    return [
-        {
-            "psgc": r[0],
-            "name": r[1],
-            "level": r[2],
-            "parent_psgc": r[3],
-            "is_huc": r[4],
-        }
-        for r in rows
-    ]
+    try:
+        cur = conn.cursor()
+        query = """
+            SELECT psgc, name, level, parent_psgc, is_huc
+            FROM locations
+            WHERE is_active = TRUE
+        """
+        params = []
+        if level:
+            query += " AND level = %s"
+            params.append(level)
+        if parent_psgc:
+            query += " AND parent_psgc = %s"
+            params.append(parent_psgc)
+        query += " ORDER BY name"
+        cur.execute(query, params)
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return [
+            {
+                "psgc": r[0],
+                "name": r[1],
+                "level": r[2],
+                "parent_psgc": r[3],
+                "is_huc": r[4],
+            }
+            for r in rows
+        ]
+    finally:
+        conn.close()
 
 
 def list_periods(year: int = None) -> list:
     conn = get_db_connection()
-    cur = conn.cursor()
-    query = """
-        SELECT year, period_type, period_value, label
-        FROM report_periods
-    """
-    params = []
-    if year:
-        query += " WHERE year = %s"
-        params.append(year)
-    query += " ORDER BY year DESC, period_type, period_value"
-    cur.execute(query, params)
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    return [
-        {
-            "year": r[0],
-            "period_type": r[1],
-            "period_value": r[2],
-            "label": r[3],
-        }
-        for r in rows
-    ]
+    try:
+        cur = conn.cursor()
+        query = """
+            SELECT year, period_type, period_value, label
+            FROM report_periods
+        """
+        params = []
+        if year:
+            query += " WHERE year = %s"
+            params.append(year)
+        query += " ORDER BY year DESC, period_type, period_value"
+        cur.execute(query, params)
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return [
+            {
+                "year": r[0],
+                "period_type": r[1],
+                "period_value": r[2],
+                "label": r[3],
+            }
+            for r in rows
+        ]
+    finally:
+        conn.close()
 
 
 def get_indicator_meta(code: str) -> dict:
     """Return key metadata for one indicator, or None."""
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute(
-        """SELECT i.id, i.code, i.name, i.formula_type, i.is_sensitive,
-                  p.code AS program_code, i.denominator_source,
-                  i.rate_multiplier, i.unit
-           FROM indicators i
-           JOIN programs p ON p.id = i.program_id
-           WHERE i.code = %s""",
-        (code,),
-    )
-    row = cur.fetchone()
-    cur.close()
-    conn.close()
-    if not row:
-        return None
-    return {
-        "id": row[0],
-        "code": row[1],
-        "name": row[2],
-        "formula_type": row[3],
-        "is_sensitive": row[4],
-        "program_code": row[5],
-        "denominator_source": row[6],
-        "rate_multiplier": row[7],
-        "unit": row[8],
-    }
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """SELECT i.id, i.code, i.name, i.formula_type, i.is_sensitive,
+                      p.code AS program_code, i.denominator_source,
+                      i.rate_multiplier, i.unit
+               FROM indicators i
+               JOIN programs p ON p.id = i.program_id
+               WHERE i.code = %s""",
+            (code,),
+        )
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        if not row:
+            return None
+        return {
+            "id": row[0],
+            "code": row[1],
+            "name": row[2],
+            "formula_type": row[3],
+            "is_sensitive": row[4],
+            "program_code": row[5],
+            "denominator_source": row[6],
+            "rate_multiplier": row[7],
+            "unit": row[8],
+        }
+    finally:
+        conn.close()
 
 
 # =====================================================
@@ -356,46 +371,49 @@ def get_scorecard(year: int, period_type: str, period_value,
     coverage = None and status = 'no_data'.
     """
     conn = get_db_connection()
-    cur = conn.cursor()
-    months = resolve_months(period_type, period_value)
-    period_ids = get_monthly_period_ids(cur, year, months) or [-1]
+    try:
+        cur = conn.cursor()
+        months = resolve_months(period_type, period_value)
+        period_ids = get_monthly_period_ids(cur, year, months) or [-1]
 
-    query = """
-        SELECT p.code, p.name,
-               AVG(h.value) AS coverage,
-               COUNT(h.id) AS data_points
-        FROM programs p
-        LEFT JOIN indicators i
-               ON i.program_id = p.id
-              AND i.formula_type = 'percentage'
-              AND i.is_active = TRUE
-        LEFT JOIN health_data h
-               ON h.indicator_id = i.id
-              AND h.period_id = ANY(%s)
-        WHERE p.is_active = TRUE
-    """
-    params = [period_ids]
-    if program_code:
-        query += " AND p.code = %s"
-        params.append(program_code)
-    query += " GROUP BY p.code, p.name ORDER BY p.name"
+        query = """
+            SELECT p.code, p.name,
+                   AVG(h.value) AS coverage,
+                   COUNT(h.id) AS data_points
+            FROM programs p
+            LEFT JOIN indicators i
+                   ON i.program_id = p.id
+                  AND i.formula_type = 'percentage'
+                  AND i.is_active = TRUE
+            LEFT JOIN health_data h
+                   ON h.indicator_id = i.id
+                  AND h.period_id = ANY(%s)
+            WHERE p.is_active = TRUE
+        """
+        params = [period_ids]
+        if program_code:
+            query += " AND p.code = %s"
+            params.append(program_code)
+        query += " GROUP BY p.code, p.name ORDER BY p.name"
 
-    cur.execute(query, params)
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
+        cur.execute(query, params)
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
 
-    result = []
-    for r in rows:
-        coverage = round(float(r[2]), 4) if r[2] is not None else None
-        result.append({
-            "program_code": r[0],
-            "program": r[1],
-            "coverage": coverage,
-            "status": status_for(coverage),
-            "data_points": r[3],
-        })
-    return result
+        result = []
+        for r in rows:
+            coverage = round(float(r[2]), 4) if r[2] is not None else None
+            result.append({
+                "program_code": r[0],
+                "program": r[1],
+                "coverage": coverage,
+                "status": status_for(coverage),
+                "data_points": r[3],
+            })
+        return result
+    finally:
+        conn.close()
 
 
 def get_coverage(indicator_code: str, year: int,
@@ -406,50 +424,53 @@ def get_coverage(indicator_code: str, year: int,
         return {"error": f"Indicator '{indicator_code}' not found"}
 
     conn = get_db_connection()
-    cur = conn.cursor()
-    months = resolve_months(period_type, period_value)
-    period_ids = get_monthly_period_ids(cur, year, months) or [-1]
+    try:
+        cur = conn.cursor()
+        months = resolve_months(period_type, period_value)
+        period_ids = get_monthly_period_ids(cur, year, months) or [-1]
 
-    agg = "AVG" if meta["formula_type"] in RATE_FORMULAS else "SUM"
-    cur.execute(
-        f"""SELECT l.psgc, l.name, l.level, l.is_huc,
-                   {agg}(h.value) AS value, COUNT(h.id) AS data_points
-            FROM locations l
-            JOIN health_data h ON h.location_id = l.id
-            JOIN indicators i ON i.id = h.indicator_id
-            WHERE i.code = %s AND h.period_id = ANY(%s)
-            GROUP BY l.psgc, l.name, l.level, l.is_huc
-            ORDER BY l.name""",
-        (indicator_code, period_ids),
-    )
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
+        agg = "AVG" if meta["formula_type"] in RATE_FORMULAS else "SUM"
+        cur.execute(
+            f"""SELECT l.psgc, l.name, l.level, l.is_huc,
+                       {agg}(h.value) AS value, COUNT(h.id) AS data_points
+                FROM locations l
+                JOIN health_data h ON h.location_id = l.id
+                JOIN indicators i ON i.id = h.indicator_id
+                WHERE i.code = %s AND h.period_id = ANY(%s)
+                GROUP BY l.psgc, l.name, l.level, l.is_huc
+                ORDER BY l.name""",
+            (indicator_code, period_ids),
+        )
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
 
-    is_rate = meta["formula_type"] in RATE_FORMULAS
-    # Coverage status bands (on/near/below) only make sense for percentages —
-    # a mortality rate has no "target coverage", and lower is better.
-    is_pct = meta["formula_type"] == "percentage"
-    data = []
-    for r in rows:
-        value = round(float(r[4]), 2) if r[4] is not None else None
-        data.append({
-            "psgc": r[0],
-            "location": r[1],
-            "level": r[2],
-            "is_huc": r[3],
-            "value": value,
-            "status": status_for(value) if is_pct else None,
-            "data_points": r[5],
-        })
-    return {
-        "indicator_code": meta["code"],
-        "indicator_name": meta["name"],
-        "formula_type": meta["formula_type"],
-        "is_rate": is_rate,
-        "unit": display_unit(meta["formula_type"], meta.get("rate_multiplier")),
-        "data": data,
-    }
+        is_rate = meta["formula_type"] in RATE_FORMULAS
+        # Coverage status bands (on/near/below) only make sense for percentages —
+        # a mortality rate has no "target coverage", and lower is better.
+        is_pct = meta["formula_type"] == "percentage"
+        data = []
+        for r in rows:
+            value = round(float(r[4]), 2) if r[4] is not None else None
+            data.append({
+                "psgc": r[0],
+                "location": r[1],
+                "level": r[2],
+                "is_huc": r[3],
+                "value": value,
+                "status": status_for(value) if is_pct else None,
+                "data_points": r[5],
+            })
+        return {
+            "indicator_code": meta["code"],
+            "indicator_name": meta["name"],
+            "formula_type": meta["formula_type"],
+            "is_rate": is_rate,
+            "unit": display_unit(meta["formula_type"], meta.get("rate_multiplier")),
+            "data": data,
+        }
+    finally:
+        conn.close()
 
 
 def _sum_by_location(cur, indicator_code, period_ids) -> dict:
@@ -487,47 +508,50 @@ def get_coverage_detail(indicator_code: str, year: int,
         num_code = indicator_code[: -len("_PCT")] + "_TOTAL"
 
     conn = get_db_connection()
-    cur = conn.cursor()
-    months = resolve_months(period_type, period_value)
-    period_ids = get_monthly_period_ids(cur, year, months) or [-1]
+    try:
+        cur = conn.cursor()
+        months = resolve_months(period_type, period_value)
+        period_ids = get_monthly_period_ids(cur, year, months) or [-1]
 
-    # Coverage percentage per location (AVG of monthly values).
-    cur.execute(
-        """SELECT l.psgc, l.name, AVG(h.value)
-           FROM locations l
-           JOIN health_data h ON h.location_id = l.id
-           JOIN indicators i ON i.id = h.indicator_id
-           WHERE i.code = %s AND h.period_id = ANY(%s)
-           GROUP BY l.psgc, l.name
-           ORDER BY l.name""",
-        (indicator_code, period_ids),
-    )
-    pct_rows = cur.fetchall()
+        # Coverage percentage per location (AVG of monthly values).
+        cur.execute(
+            """SELECT l.psgc, l.name, AVG(h.value)
+               FROM locations l
+               JOIN health_data h ON h.location_id = l.id
+               JOIN indicators i ON i.id = h.indicator_id
+               WHERE i.code = %s AND h.period_id = ANY(%s)
+               GROUP BY l.psgc, l.name
+               ORDER BY l.name""",
+            (indicator_code, period_ids),
+        )
+        pct_rows = cur.fetchall()
 
-    numerators = _sum_by_location(cur, num_code, period_ids)
-    denominators = _sum_by_location(cur, denom_code, period_ids)
+        numerators = _sum_by_location(cur, num_code, period_ids)
+        denominators = _sum_by_location(cur, denom_code, period_ids)
 
-    cur.close()
-    conn.close()
+        cur.close()
+        conn.close()
 
-    data = []
-    for psgc, name, pct in pct_rows:
-        coverage = round(float(pct), 2) if pct is not None else None
-        data.append({
-            "psgc": psgc,
-            "location": name,
-            "numerator": numerators.get(psgc),
-            "denominator": denominators.get(psgc),
-            "coverage": coverage,
-            "status": status_for(coverage),
-        })
-    return {
-        "indicator_code": meta["code"],
-        "indicator_name": meta["name"],
-        "numerator_code": num_code,
-        "denominator_code": denom_code,
-        "data": data,
-    }
+        data = []
+        for psgc, name, pct in pct_rows:
+            coverage = round(float(pct), 2) if pct is not None else None
+            data.append({
+                "psgc": psgc,
+                "location": name,
+                "numerator": numerators.get(psgc),
+                "denominator": denominators.get(psgc),
+                "coverage": coverage,
+                "status": status_for(coverage),
+            })
+        return {
+            "indicator_code": meta["code"],
+            "indicator_name": meta["name"],
+            "numerator_code": num_code,
+            "denominator_code": denom_code,
+            "data": data,
+        }
+    finally:
+        conn.close()
 
 
 def get_trend(indicator_code: str, year: int, location_psgc: str = None) -> dict:
@@ -538,95 +562,101 @@ def get_trend(indicator_code: str, year: int, location_psgc: str = None) -> dict
 
     agg = "AVG" if meta["formula_type"] in RATE_FORMULAS else "SUM"
     conn = get_db_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    query = f"""
-        SELECT rp.period_value, {agg}(h.value)
-        FROM health_data h
-        JOIN indicators i ON i.id = h.indicator_id
-        JOIN report_periods rp ON rp.id = h.period_id
-        JOIN locations l ON l.id = h.location_id
-        WHERE i.code = %s AND rp.year = %s AND rp.period_type = 'monthly'
-    """
-    params = [indicator_code, year]
-    if location_psgc:
-        query += " AND l.psgc = %s"
-        params.append(location_psgc)
-    query += " GROUP BY rp.period_value ORDER BY rp.period_value"
+        query = f"""
+            SELECT rp.period_value, {agg}(h.value)
+            FROM health_data h
+            JOIN indicators i ON i.id = h.indicator_id
+            JOIN report_periods rp ON rp.id = h.period_id
+            JOIN locations l ON l.id = h.location_id
+            WHERE i.code = %s AND rp.year = %s AND rp.period_type = 'monthly'
+        """
+        params = [indicator_code, year]
+        if location_psgc:
+            query += " AND l.psgc = %s"
+            params.append(location_psgc)
+        query += " GROUP BY rp.period_value ORDER BY rp.period_value"
 
-    cur.execute(query, params)
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
+        cur.execute(query, params)
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
 
-    # Percentages are stored as 0–1 ratios; scale to 0–100 so the chart and
-    # stat cards can show "77.1%" directly. Rates are stored already
-    # multiplied (per ADR-023) and ratios/counts are plain numbers — as-is.
-    scale = 100.0 if meta["formula_type"] == "percentage" else 1.0
-    by_month = {
-        int(r[0]): round(float(r[1]) * scale, 2) if r[1] is not None else None
-        for r in rows
-    }
-    series = [{"month": m, "value": by_month.get(m)} for m in range(1, 13)]
-    return {
-        "indicator_code": meta["code"],
-        "indicator_name": meta["name"],
-        "is_rate": meta["formula_type"] in RATE_FORMULAS,
-        "formula_type": meta["formula_type"],
-        "unit": display_unit(meta["formula_type"], meta.get("rate_multiplier")),
-        "year": year,
-        "series": series,
-    }
+        # Percentages are stored as 0–1 ratios; scale to 0–100 so the chart and
+        # stat cards can show "77.1%" directly. Rates are stored already
+        # multiplied (per ADR-023) and ratios/counts are plain numbers — as-is.
+        scale = 100.0 if meta["formula_type"] == "percentage" else 1.0
+        by_month = {
+            int(r[0]): round(float(r[1]) * scale, 2) if r[1] is not None else None
+            for r in rows
+        }
+        series = [{"month": m, "value": by_month.get(m)} for m in range(1, 13)]
+        return {
+            "indicator_code": meta["code"],
+            "indicator_name": meta["name"],
+            "is_rate": meta["formula_type"] in RATE_FORMULAS,
+            "formula_type": meta["formula_type"],
+            "unit": display_unit(meta["formula_type"], meta.get("rate_multiplier")),
+            "year": year,
+            "series": series,
+        }
+    finally:
+        conn.close()
 
 
 def get_data_availability(program_code: str, year: int) -> dict:
     """Matrix of which LGUs have submitted data per month for a program."""
     conn = get_db_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    # All city/municipality-level LGUs we expect submissions from.
-    cur.execute(
-        """SELECT psgc, name FROM locations
-           WHERE is_active = TRUE AND level = 'city_municipality'
-           ORDER BY name"""
-    )
-    locations = [{"psgc": r[0], "name": r[1]} for r in cur.fetchall()]
+        # All city/municipality-level LGUs we expect submissions from.
+        cur.execute(
+            """SELECT psgc, name FROM locations
+               WHERE is_active = TRUE AND level = 'city_municipality'
+               ORDER BY name"""
+        )
+        locations = [{"psgc": r[0], "name": r[1]} for r in cur.fetchall()]
 
-    # (location, month) pairs that actually have data for this program.
-    cur.execute(
-        """SELECT DISTINCT l.psgc, rp.period_value
-           FROM health_data h
-           JOIN locations l ON l.id = h.location_id
-           JOIN indicators i ON i.id = h.indicator_id
-           JOIN programs p ON p.id = i.program_id
-           JOIN report_periods rp ON rp.id = h.period_id
-           WHERE p.code = %s AND rp.year = %s
-           AND rp.period_type = 'monthly'""",
-        (program_code, year),
-    )
-    present = {}
-    for psgc, month in cur.fetchall():
-        present.setdefault(psgc, set()).add(int(month))
+        # (location, month) pairs that actually have data for this program.
+        cur.execute(
+            """SELECT DISTINCT l.psgc, rp.period_value
+               FROM health_data h
+               JOIN locations l ON l.id = h.location_id
+               JOIN indicators i ON i.id = h.indicator_id
+               JOIN programs p ON p.id = i.program_id
+               JOIN report_periods rp ON rp.id = h.period_id
+               WHERE p.code = %s AND rp.year = %s
+               AND rp.period_type = 'monthly'""",
+            (program_code, year),
+        )
+        present = {}
+        for psgc, month in cur.fetchall():
+            present.setdefault(psgc, set()).add(int(month))
 
-    cur.close()
-    conn.close()
+        cur.close()
+        conn.close()
 
-    months = list(range(1, 13))
-    matrix = []
-    for loc in locations:
-        submitted = present.get(loc["psgc"], set())
-        matrix.append({
-            "psgc": loc["psgc"],
-            "location": loc["name"],
-            "months": {str(m): (m in submitted) for m in months},
-            "submitted_count": len(submitted),
-        })
-    return {
-        "program_code": program_code,
-        "year": year,
-        "months": months,
-        "rows": matrix,
-    }
+        months = list(range(1, 13))
+        matrix = []
+        for loc in locations:
+            submitted = present.get(loc["psgc"], set())
+            matrix.append({
+                "psgc": loc["psgc"],
+                "location": loc["name"],
+                "months": {str(m): (m in submitted) for m in months},
+                "submitted_count": len(submitted),
+            })
+        return {
+            "program_code": program_code,
+            "year": year,
+            "months": months,
+            "rows": matrix,
+        }
+    finally:
+        conn.close()
 
 
 # =====================================================
@@ -722,54 +752,57 @@ def get_template_layout(template_id: str,
     active_sheet = sheet_name or (report_sheets[0]["id"] if report_sheets else None)
 
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute(
-        """SELECT code, name, is_computed, is_sensitive
-           FROM indicators
-           WHERE program_id = (SELECT id FROM programs WHERE code = %s)""",
-        (program_code,),
-    )
-    meta = {
-        r[0]: {"name": r[1], "is_computed": r[2], "is_sensitive": r[3]}
-        for r in cur.fetchall()
-    }
-    cur.close()
-    conn.close()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """SELECT code, name, is_computed, is_sensitive
+               FROM indicators
+               WHERE program_id = (SELECT id FROM programs WHERE code = %s)""",
+            (program_code,),
+        )
+        meta = {
+            r[0]: {"name": r[1], "is_computed": r[2], "is_sensitive": r[3]}
+            for r in cur.fetchall()
+        }
+        cur.close()
+        conn.close()
 
-    columns = []
-    for col in column_defs_for_sheet(config, active_sheet):
-        code = col.get("indicator_code")
-        m = meta.get(code, {})
-        if m.get("is_sensitive") and not include_sensitive:
-            continue
-        name = m.get("name", code)
-        group, sub = _derive_group_sub(name)
-        columns.append({
-            "indicator_code": code,
-            "name": name,
-            "group": group,
-            "sub": sub,
-            "is_percentage": code.endswith("_PCT") or sub == "%",
-            "is_computed": bool(
-                col.get("is_computed", m.get("is_computed", False))
-            ),
-            "formula": col.get("formula"),
-        })
+        columns = []
+        for col in column_defs_for_sheet(config, active_sheet):
+            code = col.get("indicator_code")
+            m = meta.get(code, {})
+            if m.get("is_sensitive") and not include_sensitive:
+                continue
+            name = m.get("name", code)
+            group, sub = _derive_group_sub(name)
+            columns.append({
+                "indicator_code": code,
+                "name": name,
+                "group": group,
+                "sub": sub,
+                "is_percentage": code.endswith("_PCT") or sub == "%",
+                "is_computed": bool(
+                    col.get("is_computed", m.get("is_computed", False))
+                ),
+                "formula": col.get("formula"),
+            })
 
-    display = config.get("display", {})
-    id_columns = display.get("id_columns") or [
-        {"key": "psgc", "label": "PSGC"},
-        {"key": "location", "label": "Name of City / Municipality"},
-    ]
-    return {
-        "template_id": template_id,
-        "label": display.get("label", config.get("label", template_id)),
-        "program_code": program_code,
-        "id_columns": id_columns,
-        "columns": columns,
-        "report_sheets": report_sheets,
-        "active_sheet": active_sheet,
-    }
+        display = config.get("display", {})
+        id_columns = display.get("id_columns") or [
+            {"key": "psgc", "label": "PSGC"},
+            {"key": "location", "label": "Name of City / Municipality"},
+        ]
+        return {
+            "template_id": template_id,
+            "label": display.get("label", config.get("label", template_id)),
+            "program_code": program_code,
+            "id_columns": id_columns,
+            "columns": columns,
+            "report_sheets": report_sheets,
+            "active_sheet": active_sheet,
+        }
+    finally:
+        conn.close()
 
 
 def get_template_report(
@@ -828,150 +861,155 @@ def get_template_report(
     aggregated = len(slices) > 1
 
     conn = get_db_connection()
-    cur = conn.cursor()
-    period_clauses = []
-    params: list = [year]
-    for pt, pv in slices:
-        _append_period_clause(period_clauses, params, pt, pv)
-    params.append(codes)
+    try:
+        cur = conn.cursor()
+        period_clauses = []
+        params: list = [year]
+        for pt, pv in slices:
+            _append_period_clause(period_clauses, params, pt, pv)
+        params.append(codes)
 
-    cur.execute(
-        f"""SELECT l.psgc, l.name, i.code, h.value
-           FROM health_data h
-           JOIN locations l ON l.id = h.location_id
-           JOIN indicators i ON i.id = h.indicator_id
-           JOIN report_periods rp ON rp.id = h.period_id
-           WHERE rp.year = %s
-             AND ({' OR '.join(period_clauses)})
-             AND i.code = ANY(%s)
-           ORDER BY l.psgc""",
-        params,
-    )
-
-    raw_by_loc: dict = {}
-    order: list = []
-    for psgc, name, code, value in cur.fetchall():
-        if psgc not in raw_by_loc:
-            raw_by_loc[psgc] = {
-                "psgc": psgc,
-                "location": name,
-                "slices": {},
-            }
-            order.append(psgc)
-        bucket = raw_by_loc[psgc]["slices"].setdefault(code, [])
-        bucket.append(float(value) if value is not None else None)
-
-    cur.close()
-    conn.close()
-
-    rows = []
-    for psgc in order:
-        loc = raw_by_loc[psgc]
-        values: dict = {}
-        for code in codes:
-            col_def = col_def_by_code.get(code)
-            if col_def and col_def.get("is_computed"):
-                continue
-            slice_vals = loc["slices"].get(code, [])
-            if not slice_vals:
-                values[code] = None
-                continue
-            values[code] = _combine_slice_values(
-                code, slice_vals, col_def
-            )
-        _recompute_row_values(values, col_defs)
-        rows.append({
-            "psgc": loc["psgc"],
-            "location": loc["location"],
-            "values": values,
-        })
-
-    # No committed data for this period: still return the canonical NIR
-    # reporting locations (provinces + cities/municipalities) with empty values,
-    # so the report renders the template's design (the Excel-face layout) with
-    # "—" cells instead of hiding the table behind a "no data" message.
-    if not rows:
-        conn2 = get_db_connection()
-        cur2 = conn2.cursor()
-        cur2.execute(
-            """SELECT psgc, name FROM locations
-               WHERE is_active = TRUE
-                 AND level IN ('province', 'city_municipality')
-               ORDER BY psgc"""
+        cur.execute(
+            f"""SELECT l.psgc, l.name, i.code, h.value
+               FROM health_data h
+               JOIN locations l ON l.id = h.location_id
+               JOIN indicators i ON i.id = h.indicator_id
+               JOIN report_periods rp ON rp.id = h.period_id
+               WHERE rp.year = %s
+                 AND ({' OR '.join(period_clauses)})
+                 AND i.code = ANY(%s)
+               ORDER BY l.psgc""",
+            params,
         )
-        canonical = cur2.fetchall()
-        cur2.close()
-        conn2.close()
-        for psgc, name in canonical:
-            values = {}
+
+        raw_by_loc: dict = {}
+        order: list = []
+        for psgc, name, code, value in cur.fetchall():
+            if psgc not in raw_by_loc:
+                raw_by_loc[psgc] = {
+                    "psgc": psgc,
+                    "location": name,
+                    "slices": {},
+                }
+                order.append(psgc)
+            bucket = raw_by_loc[psgc]["slices"].setdefault(code, [])
+            bucket.append(float(value) if value is not None else None)
+
+        cur.close()
+
+        rows = []
+        for psgc in order:
+            loc = raw_by_loc[psgc]
+            values: dict = {}
             for code in codes:
                 col_def = col_def_by_code.get(code)
                 if col_def and col_def.get("is_computed"):
                     continue
-                values[code] = None
+                slice_vals = loc["slices"].get(code, [])
+                if not slice_vals:
+                    values[code] = None
+                    continue
+                values[code] = _combine_slice_values(
+                    code, slice_vals, col_def
+                )
             _recompute_row_values(values, col_defs)
-            rows.append({"psgc": psgc, "location": name, "values": values})
+            rows.append({
+                "psgc": loc["psgc"],
+                "location": loc["location"],
+                "values": values,
+            })
 
-    display = config.get("display", {})
-    dqc_highlight = bool(display.get("dqc_highlight"))
-    dqc_rules = config.get("dqc_rules", []) if dqc_highlight else []
-    if dqc_rules:
-        for row in rows:
-            dqc_values = _values_for_dqc(row["values"])
-            staged = [
-                {"indicator_code": code, "value": val}
-                for code, val in dqc_values.items()
-            ]
-            issues = run_dqc_rules(staged, dqc_rules)
-            flags = {}
-            for issue in issues:
-                code = issue.get("indicator_code")
-                if code and code not in flags:
-                    flags[code] = issue.get("message", "DQC warning")
-            row["dqc"] = flags
+        # No committed data for this period: still return the canonical NIR
+        # reporting locations (provinces + cities/municipalities) with empty values,
+        # so the report renders the template's design (the Excel-face layout) with
+        # "—" cells instead of hiding the table behind a "no data" message.
+        if not rows:
+            # conn is still open (released by this function's finally), so
+            # reuse it instead of opening a second connection.
+            cur2 = conn.cursor()
+            cur2.execute(
+                """SELECT psgc, name FROM locations
+                   WHERE is_active = TRUE
+                     AND level IN ('province', 'city_municipality')
+                   ORDER BY psgc"""
+            )
+            canonical = cur2.fetchall()
+            cur2.close()
+            for psgc, name in canonical:
+                values = {}
+                for code in codes:
+                    col_def = col_def_by_code.get(code)
+                    if col_def and col_def.get("is_computed"):
+                        continue
+                    values[code] = None
+                _recompute_row_values(values, col_defs)
+                rows.append({"psgc": psgc, "location": name, "values": values})
 
-    _normalize_pct_display_values(rows)
+        display = config.get("display", {})
+        dqc_highlight = bool(display.get("dqc_highlight"))
+        dqc_rules = config.get("dqc_rules", []) if dqc_highlight else []
+        if dqc_rules:
+            for row in rows:
+                dqc_values = _values_for_dqc(row["values"])
+                staged = [
+                    {"indicator_code": code, "value": val}
+                    for code, val in dqc_values.items()
+                ]
+                issues = run_dqc_rules(staged, dqc_rules)
+                flags = {}
+                for issue in issues:
+                    code = issue.get("indicator_code")
+                    if code and code not in flags:
+                        flags[code] = issue.get("message", "DQC warning")
+                row["dqc"] = flags
 
-    return {
-        **layout,
-        "year": year,
-        "month": view_value,
-        "period_type": data_frequency,
-        "view_period_type": view_type,
-        "view_period_value": view_value,
-        "aggregated": aggregated,
-        "dqc_highlight": dqc_highlight,
-        "dqc_rules": dqc_rules,
-        "rows": rows,
-    }
+        _normalize_pct_display_values(rows)
+
+        return {
+            **layout,
+            "year": year,
+            "month": view_value,
+            "period_type": data_frequency,
+            "view_period_type": view_type,
+            "view_period_value": view_value,
+            "aggregated": aggregated,
+            "dqc_highlight": dqc_highlight,
+            "dqc_rules": dqc_rules,
+            "rows": rows,
+        }
+    finally:
+        conn.close()
 
 
 def update_indicator_target(indicator_id: int, target_value,
                             target_year: int) -> dict:
     """Set the official target for an indicator."""
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute(
-        """UPDATE indicators
-           SET target_value = %s, target_year = %s
-           WHERE id = %s
-           RETURNING code, name, target_value, target_year""",
-        (target_value, target_year, indicator_id),
-    )
-    row = cur.fetchone()
-    if not row:
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """UPDATE indicators
+               SET target_value = %s, target_year = %s
+               WHERE id = %s
+               RETURNING code, name, target_value, target_year""",
+            (target_value, target_year, indicator_id),
+        )
+        row = cur.fetchone()
+        if not row:
+            conn.close()
+            return {"error": "Indicator not found"}
+        conn.commit()
+        cur.close()
         conn.close()
-        return {"error": "Indicator not found"}
-    conn.commit()
-    cur.close()
-    conn.close()
-    return {
-        "success": True,
-        "code": row[0],
-        "name": row[1],
-        "target_value": float(row[2]) if row[2] is not None else None,
-        "target_year": row[3],
-    }
+        return {
+            "success": True,
+            "code": row[0],
+            "name": row[1],
+            "target_value": float(row[2]) if row[2] is not None else None,
+            "target_year": row[3],
+        }
+    finally:
+        conn.close()
 
 
 # =====================================================
@@ -1003,61 +1041,64 @@ PROGRAM_FLAGSHIPS = {
 def overview_summary(year: int = 2026) -> dict:
     """Per-program-area snapshot for the Overview executive glance."""
     conn = get_db_connection()
-    cur = conn.cursor()
-    areas = []
-    for a in OVERVIEW_AREAS:
-        like = a["codes_like"]
-        like_clause = " OR ".join(["i.code LIKE %s"] * len(like))
+    try:
+        cur = conn.cursor()
+        areas = []
+        for a in OVERVIEW_AREAS:
+            like = a["codes_like"]
+            like_clause = " OR ".join(["i.code LIKE %s"] * len(like))
 
-        # Reporting completeness: distinct province/city locations with any
-        # committed data for this program area this year.
-        cur.execute(
-            f"""SELECT COUNT(DISTINCT h.location_id)
-                FROM health_data h
-                JOIN indicators i ON i.id = h.indicator_id
-                JOIN report_periods rp ON rp.id = h.period_id
-                JOIN locations l ON l.id = h.location_id
-                WHERE rp.year = %s
-                  AND l.level IN ('province', 'city_municipality')
-                  AND ({like_clause})""",
-            [year, *like],
-        )
-        reporting = cur.fetchone()[0] or 0
+            # Reporting completeness: distinct province/city locations with any
+            # committed data for this program area this year.
+            cur.execute(
+                f"""SELECT COUNT(DISTINCT h.location_id)
+                    FROM health_data h
+                    JOIN indicators i ON i.id = h.indicator_id
+                    JOIN report_periods rp ON rp.id = h.period_id
+                    JOIN locations l ON l.id = h.location_id
+                    WHERE rp.year = %s
+                      AND l.level IN ('province', 'city_municipality')
+                      AND ({like_clause})""",
+                [year, *like],
+            )
+            reporting = cur.fetchone()[0] or 0
 
-        # Flagship values across LGUs for its latest period this year.
-        cur.execute(
-            """SELECT h.value
-               FROM health_data h
-               JOIN indicators i ON i.id = h.indicator_id
-               JOIN locations l ON l.id = h.location_id
-               WHERE i.code = %s
-                 AND l.level IN ('province', 'city_municipality')
-                 AND h.period_id = (
-                     SELECT MAX(h2.period_id)
-                     FROM health_data h2
-                     JOIN indicators i2 ON i2.id = h2.indicator_id
-                     JOIN report_periods rp2 ON rp2.id = h2.period_id
-                     WHERE i2.code = %s AND rp2.year = %s
-                 )""",
-            [a["flagship"], a["flagship"], year],
-        )
-        vals = [float(v[0]) for v in cur.fetchall() if v[0] is not None]
-        avg = round(sum(vals) / len(vals), 4) if vals else None
+            # Flagship values across LGUs for its latest period this year.
+            cur.execute(
+                """SELECT h.value
+                   FROM health_data h
+                   JOIN indicators i ON i.id = h.indicator_id
+                   JOIN locations l ON l.id = h.location_id
+                   WHERE i.code = %s
+                     AND l.level IN ('province', 'city_municipality')
+                     AND h.period_id = (
+                         SELECT MAX(h2.period_id)
+                         FROM health_data h2
+                         JOIN indicators i2 ON i2.id = h2.indicator_id
+                         JOIN report_periods rp2 ON rp2.id = h2.period_id
+                         WHERE i2.code = %s AND rp2.year = %s
+                     )""",
+                [a["flagship"], a["flagship"], year],
+            )
+            vals = [float(v[0]) for v in cur.fetchall() if v[0] is not None]
+            avg = round(sum(vals) / len(vals), 4) if vals else None
 
-        areas.append({
-            "area": a["area"],
-            "flagship_code": a["flagship"],
-            "flagship_label": a["flagship_label"],
-            "regional_pct": avg,
-            "on_target": sum(1 for v in vals if v >= ON_TARGET_RATIO),
-            "below_target": sum(1 for v in vals if v < NEAR_TARGET_RATIO),
-            "locations_reporting": reporting,
-            "total_locations": OVERVIEW_TOTAL_LOCATIONS,
-        })
+            areas.append({
+                "area": a["area"],
+                "flagship_code": a["flagship"],
+                "flagship_label": a["flagship_label"],
+                "regional_pct": avg,
+                "on_target": sum(1 for v in vals if v >= ON_TARGET_RATIO),
+                "below_target": sum(1 for v in vals if v < NEAR_TARGET_RATIO),
+                "locations_reporting": reporting,
+                "total_locations": OVERVIEW_TOTAL_LOCATIONS,
+            })
 
-    cur.close()
-    conn.close()
-    return {"year": year, "total_locations": OVERVIEW_TOTAL_LOCATIONS, "areas": areas}
+        cur.close()
+        conn.close()
+        return {"year": year, "total_locations": OVERVIEW_TOTAL_LOCATIONS, "areas": areas}
+    finally:
+        conn.close()
 
 
 def overview_programs(year: int = 2026) -> dict:
@@ -1070,136 +1111,139 @@ def overview_programs(year: int = 2026) -> dict:
     status 'no_data'.
     """
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute(
-        "SELECT id, code, name FROM programs WHERE is_active = TRUE ORDER BY id"
-    )
-    program_rows = cur.fetchall()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id, code, name FROM programs WHERE is_active = TRUE ORDER BY id"
+        )
+        program_rows = cur.fetchall()
 
-    programs = []
-    for program_id, code, name in program_rows:
-        flagship = PROGRAM_FLAGSHIPS.get(code)
-        flagship_code = flagship[0] if flagship else None
-        flagship_label = flagship[1] if flagship else None
+        programs = []
+        for program_id, code, name in program_rows:
+            flagship = PROGRAM_FLAGSHIPS.get(code)
+            flagship_code = flagship[0] if flagship else None
+            flagship_label = flagship[1] if flagship else None
 
-        # Latest period this year for the headline metric. Tie it to the
-        # flagship indicator when configured (programs report on different
-        # frequencies, so the program-wide latest period may belong to a
-        # different indicator than the flagship).
-        if flagship_code:
+            # Latest period this year for the headline metric. Tie it to the
+            # flagship indicator when configured (programs report on different
+            # frequencies, so the program-wide latest period may belong to a
+            # different indicator than the flagship).
+            if flagship_code:
+                cur.execute(
+                    """SELECT h.period_id, rp.period_type, rp.label
+                       FROM health_data h
+                       JOIN indicators i ON i.id = h.indicator_id
+                       JOIN report_periods rp ON rp.id = h.period_id
+                       WHERE i.code = %s
+                         AND rp.year = %s
+                       ORDER BY h.period_id DESC
+                       LIMIT 1""",
+                    [flagship_code, year],
+                )
+            else:
+                cur.execute(
+                    """SELECT h.period_id, rp.period_type, rp.label
+                       FROM health_data h
+                       JOIN indicators i ON i.id = h.indicator_id
+                       JOIN report_periods rp ON rp.id = h.period_id
+                       WHERE i.program_id = %s
+                         AND i.formula_type = 'percentage'
+                         AND i.is_active = TRUE
+                         AND rp.year = %s
+                       ORDER BY h.period_id DESC
+                       LIMIT 1""",
+                    [program_id, year],
+                )
+            period = cur.fetchone()
+
+            if not period:
+                programs.append({
+                    "program_code": code,
+                    "program_name": name,
+                    "flagship_code": flagship_code,
+                    "flagship_label": flagship_label,
+                    "period_id": None,
+                    "period_label": None,
+                    "period_type": None,
+                    "regional_pct": None,
+                    "status": "no_data",
+                    "on_target": 0,
+                    "below_target": 0,
+                    "locations_reporting": 0,
+                    "total_locations": OVERVIEW_TOTAL_LOCATIONS,
+                })
+                continue
+
+            period_id, period_type, period_label = period
+
+            # Per-LGU headline values at that period.
+            if flagship_code:
+                cur.execute(
+                    """SELECT h.value
+                       FROM health_data h
+                       JOIN indicators i ON i.id = h.indicator_id
+                       JOIN locations l ON l.id = h.location_id
+                       WHERE i.code = %s
+                         AND h.period_id = %s
+                         AND l.level IN ('province', 'city_municipality')""",
+                    [flagship_code, period_id],
+                )
+            else:
+                # Fallback: average each LGU's % indicators for the program.
+                cur.execute(
+                    """SELECT AVG(h.value)
+                       FROM health_data h
+                       JOIN indicators i ON i.id = h.indicator_id
+                       JOIN locations l ON l.id = h.location_id
+                       WHERE i.program_id = %s
+                         AND i.formula_type = 'percentage'
+                         AND i.is_active = TRUE
+                         AND h.period_id = %s
+                         AND l.level IN ('province', 'city_municipality')
+                       GROUP BY l.id""",
+                    [program_id, period_id],
+                )
+            vals = [float(v[0]) for v in cur.fetchall() if v[0] is not None]
+            avg = round(sum(vals) / len(vals), 4) if vals else None
+
+            # Reporting completeness: distinct LGUs with any data this period.
             cur.execute(
-                """SELECT h.period_id, rp.period_type, rp.label
+                """SELECT COUNT(DISTINCT h.location_id)
                    FROM health_data h
                    JOIN indicators i ON i.id = h.indicator_id
-                   JOIN report_periods rp ON rp.id = h.period_id
-                   WHERE i.code = %s
-                     AND rp.year = %s
-                   ORDER BY h.period_id DESC
-                   LIMIT 1""",
-                [flagship_code, year],
-            )
-        else:
-            cur.execute(
-                """SELECT h.period_id, rp.period_type, rp.label
-                   FROM health_data h
-                   JOIN indicators i ON i.id = h.indicator_id
-                   JOIN report_periods rp ON rp.id = h.period_id
+                   JOIN locations l ON l.id = h.location_id
                    WHERE i.program_id = %s
-                     AND i.formula_type = 'percentage'
-                     AND i.is_active = TRUE
-                     AND rp.year = %s
-                   ORDER BY h.period_id DESC
-                   LIMIT 1""",
-                [program_id, year],
+                     AND h.period_id = %s
+                     AND l.level IN ('province', 'city_municipality')""",
+                [program_id, period_id],
             )
-        period = cur.fetchone()
+            reporting = cur.fetchone()[0] or 0
 
-        if not period:
             programs.append({
                 "program_code": code,
                 "program_name": name,
                 "flagship_code": flagship_code,
-                "flagship_label": flagship_label,
-                "period_id": None,
-                "period_label": None,
-                "period_type": None,
-                "regional_pct": None,
-                "status": "no_data",
-                "on_target": 0,
-                "below_target": 0,
-                "locations_reporting": 0,
+                "flagship_label": flagship_label or "Avg of % indicators",
+                "period_id": period_id,
+                "period_label": period_label,
+                "period_type": period_type,
+                "regional_pct": avg,
+                "status": status_for(avg),
+                "on_target": sum(1 for v in vals if v >= ON_TARGET_RATIO),
+                "below_target": sum(1 for v in vals if v < NEAR_TARGET_RATIO),
+                "locations_reporting": reporting,
                 "total_locations": OVERVIEW_TOTAL_LOCATIONS,
             })
-            continue
 
-        period_id, period_type, period_label = period
-
-        # Per-LGU headline values at that period.
-        if flagship_code:
-            cur.execute(
-                """SELECT h.value
-                   FROM health_data h
-                   JOIN indicators i ON i.id = h.indicator_id
-                   JOIN locations l ON l.id = h.location_id
-                   WHERE i.code = %s
-                     AND h.period_id = %s
-                     AND l.level IN ('province', 'city_municipality')""",
-                [flagship_code, period_id],
-            )
-        else:
-            # Fallback: average each LGU's % indicators for the program.
-            cur.execute(
-                """SELECT AVG(h.value)
-                   FROM health_data h
-                   JOIN indicators i ON i.id = h.indicator_id
-                   JOIN locations l ON l.id = h.location_id
-                   WHERE i.program_id = %s
-                     AND i.formula_type = 'percentage'
-                     AND i.is_active = TRUE
-                     AND h.period_id = %s
-                     AND l.level IN ('province', 'city_municipality')
-                   GROUP BY l.id""",
-                [program_id, period_id],
-            )
-        vals = [float(v[0]) for v in cur.fetchall() if v[0] is not None]
-        avg = round(sum(vals) / len(vals), 4) if vals else None
-
-        # Reporting completeness: distinct LGUs with any data this period.
-        cur.execute(
-            """SELECT COUNT(DISTINCT h.location_id)
-               FROM health_data h
-               JOIN indicators i ON i.id = h.indicator_id
-               JOIN locations l ON l.id = h.location_id
-               WHERE i.program_id = %s
-                 AND h.period_id = %s
-                 AND l.level IN ('province', 'city_municipality')""",
-            [program_id, period_id],
-        )
-        reporting = cur.fetchone()[0] or 0
-
-        programs.append({
-            "program_code": code,
-            "program_name": name,
-            "flagship_code": flagship_code,
-            "flagship_label": flagship_label or "Avg of % indicators",
-            "period_id": period_id,
-            "period_label": period_label,
-            "period_type": period_type,
-            "regional_pct": avg,
-            "status": status_for(avg),
-            "on_target": sum(1 for v in vals if v >= ON_TARGET_RATIO),
-            "below_target": sum(1 for v in vals if v < NEAR_TARGET_RATIO),
-            "locations_reporting": reporting,
+        cur.close()
+        conn.close()
+        return {
+            "year": year,
             "total_locations": OVERVIEW_TOTAL_LOCATIONS,
-        })
-
-    cur.close()
-    conn.close()
-    return {
-        "year": year,
-        "total_locations": OVERVIEW_TOTAL_LOCATIONS,
-        "programs": programs,
-    }
+            "programs": programs,
+        }
+    finally:
+        conn.close()
 
 
 def indicator_overview(indicator_code: str, year: int = 2026) -> dict:
@@ -1211,63 +1255,66 @@ def indicator_overview(indicator_code: str, year: int = 2026) -> dict:
     where the user picks which indicator each sub-area headlines.
     """
     conn = get_db_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    # Latest period this year that actually has data for this indicator.
-    cur.execute(
-        """SELECT h.period_id, rp.label
-           FROM health_data h
-           JOIN indicators i ON i.id = h.indicator_id
-           JOIN report_periods rp ON rp.id = h.period_id
-           WHERE i.code = %s AND rp.year = %s
-           ORDER BY h.period_id DESC
-           LIMIT 1""",
-        [indicator_code, year],
-    )
-    period = cur.fetchone()
+        # Latest period this year that actually has data for this indicator.
+        cur.execute(
+            """SELECT h.period_id, rp.label
+               FROM health_data h
+               JOIN indicators i ON i.id = h.indicator_id
+               JOIN report_periods rp ON rp.id = h.period_id
+               WHERE i.code = %s AND rp.year = %s
+               ORDER BY h.period_id DESC
+               LIMIT 1""",
+            [indicator_code, year],
+        )
+        period = cur.fetchone()
 
-    if not period:
+        if not period:
+            cur.close()
+            conn.close()
+            return {
+                "indicator_code": indicator_code,
+                "year": year,
+                "period_label": None,
+                "regional_pct": None,
+                "status": "no_data",
+                "on_target": 0,
+                "below_target": 0,
+                "locations_reporting": 0,
+                "total_locations": OVERVIEW_TOTAL_LOCATIONS,
+            }
+
+        period_id, period_label = period
+        cur.execute(
+            """SELECT h.value
+               FROM health_data h
+               JOIN indicators i ON i.id = h.indicator_id
+               JOIN locations l ON l.id = h.location_id
+               WHERE i.code = %s
+                 AND h.period_id = %s
+                 AND l.level IN ('province', 'city_municipality')""",
+            [indicator_code, period_id],
+        )
+        vals = [float(v[0]) for v in cur.fetchall() if v[0] is not None]
+        avg = round(sum(vals) / len(vals), 4) if vals else None
+
         cur.close()
         conn.close()
         return {
             "indicator_code": indicator_code,
             "year": year,
-            "period_label": None,
-            "regional_pct": None,
-            "status": "no_data",
-            "on_target": 0,
-            "below_target": 0,
-            "locations_reporting": 0,
+            "period_label": period_label,
+            "regional_pct": avg,
+            "status": status_for(avg),
+            "on_target": sum(1 for v in vals if v >= ON_TARGET_RATIO),
+            "below_target": sum(1 for v in vals if v < NEAR_TARGET_RATIO),
+            "locations_reporting": len(vals),
             "total_locations": OVERVIEW_TOTAL_LOCATIONS,
         }
-
-    period_id, period_label = period
-    cur.execute(
-        """SELECT h.value
-           FROM health_data h
-           JOIN indicators i ON i.id = h.indicator_id
-           JOIN locations l ON l.id = h.location_id
-           WHERE i.code = %s
-             AND h.period_id = %s
-             AND l.level IN ('province', 'city_municipality')""",
-        [indicator_code, period_id],
-    )
-    vals = [float(v[0]) for v in cur.fetchall() if v[0] is not None]
-    avg = round(sum(vals) / len(vals), 4) if vals else None
-
-    cur.close()
-    conn.close()
-    return {
-        "indicator_code": indicator_code,
-        "year": year,
-        "period_label": period_label,
-        "regional_pct": avg,
-        "status": status_for(avg),
-        "on_target": sum(1 for v in vals if v >= ON_TARGET_RATIO),
-        "below_target": sum(1 for v in vals if v < NEAR_TARGET_RATIO),
-        "locations_reporting": len(vals),
-        "total_locations": OVERVIEW_TOTAL_LOCATIONS,
-    }
+    finally:
+        conn.close()
 
 
 def _reporters_at(cur, indicator_code: str, period_id: int) -> set:
@@ -1297,56 +1344,59 @@ def indicators_overview(codes: list, year: int = 2026) -> dict:
     card that lists every sub-area KPI at once.
     """
     conn = get_db_connection()
-    cur = conn.cursor()
-    results = {}
-    for code in codes:
-        cur.execute(
-            """SELECT h.period_id, rp.label
-               FROM health_data h
-               JOIN indicators i ON i.id = h.indicator_id
-               JOIN report_periods rp ON rp.id = h.period_id
-               WHERE i.code = %s AND rp.year = %s
-               ORDER BY h.period_id DESC
-               LIMIT 1""",
-            [code, year],
-        )
-        period = cur.fetchone()
-        if not period:
+    try:
+        cur = conn.cursor()
+        results = {}
+        for code in codes:
+            cur.execute(
+                """SELECT h.period_id, rp.label
+                   FROM health_data h
+                   JOIN indicators i ON i.id = h.indicator_id
+                   JOIN report_periods rp ON rp.id = h.period_id
+                   WHERE i.code = %s AND rp.year = %s
+                   ORDER BY h.period_id DESC
+                   LIMIT 1""",
+                [code, year],
+            )
+            period = cur.fetchone()
+            if not period:
+                results[code] = {
+                    "indicator_code": code,
+                    "period_label": None,
+                    "regional_pct": None,
+                    "status": "no_data",
+                    "locations_reporting": 0,
+                    "total_locations": OVERVIEW_TOTAL_LOCATIONS,
+                }
+                continue
+
+            period_id, period_label = period
+            cur.execute(
+                """SELECT h.value
+                   FROM health_data h
+                   JOIN indicators i ON i.id = h.indicator_id
+                   JOIN locations l ON l.id = h.location_id
+                   WHERE i.code = %s
+                     AND h.period_id = %s
+                     AND l.level IN ('province', 'city_municipality')""",
+                [code, period_id],
+            )
+            vals = [float(v[0]) for v in cur.fetchall() if v[0] is not None]
+            avg = round(sum(vals) / len(vals), 4) if vals else None
             results[code] = {
                 "indicator_code": code,
-                "period_label": None,
-                "regional_pct": None,
-                "status": "no_data",
-                "locations_reporting": 0,
+                "period_label": period_label,
+                "regional_pct": avg,
+                "status": status_for(avg),
+                "locations_reporting": len(vals),
                 "total_locations": OVERVIEW_TOTAL_LOCATIONS,
             }
-            continue
 
-        period_id, period_label = period
-        cur.execute(
-            """SELECT h.value
-               FROM health_data h
-               JOIN indicators i ON i.id = h.indicator_id
-               JOIN locations l ON l.id = h.location_id
-               WHERE i.code = %s
-                 AND h.period_id = %s
-                 AND l.level IN ('province', 'city_municipality')""",
-            [code, period_id],
-        )
-        vals = [float(v[0]) for v in cur.fetchall() if v[0] is not None]
-        avg = round(sum(vals) / len(vals), 4) if vals else None
-        results[code] = {
-            "indicator_code": code,
-            "period_label": period_label,
-            "regional_pct": avg,
-            "status": status_for(avg),
-            "locations_reporting": len(vals),
-            "total_locations": OVERVIEW_TOTAL_LOCATIONS,
-        }
-
-    cur.close()
-    conn.close()
-    return {"year": year, "indicators": results}
+        cur.close()
+        conn.close()
+        return {"year": year, "indicators": results}
+    finally:
+        conn.close()
 
 
 def needs_attention(indicator_code: str, year: int = 2026, bottom_n: int = 5) -> dict:
@@ -1364,81 +1414,84 @@ def needs_attention(indicator_code: str, year: int = 2026, bottom_n: int = 5) ->
         "missing" — that would be a false alarm.)
     """
     conn = get_db_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    # Two most recent periods this year with data for this indicator
-    # (frequency-agnostic — latest first).
-    cur.execute(
-        """SELECT DISTINCT h.period_id, rp.label
-           FROM health_data h
-           JOIN indicators i ON i.id = h.indicator_id
-           JOIN report_periods rp ON rp.id = h.period_id
-           WHERE i.code = %s AND rp.year = %s
-           ORDER BY h.period_id DESC
-           LIMIT 2""",
-        [indicator_code, year],
-    )
-    periods = cur.fetchall()
+        # Two most recent periods this year with data for this indicator
+        # (frequency-agnostic — latest first).
+        cur.execute(
+            """SELECT DISTINCT h.period_id, rp.label
+               FROM health_data h
+               JOIN indicators i ON i.id = h.indicator_id
+               JOIN report_periods rp ON rp.id = h.period_id
+               WHERE i.code = %s AND rp.year = %s
+               ORDER BY h.period_id DESC
+               LIMIT 2""",
+            [indicator_code, year],
+        )
+        periods = cur.fetchall()
 
-    if not periods:
+        if not periods:
+            cur.close()
+            conn.close()
+            return {
+                "indicator_code": indicator_code,
+                "year": year,
+                "period_label": None,
+                "prior_period_label": None,
+                "bottom": [],
+                "over_100": [],
+                "dropped": [],
+                "reporting_count": 0,
+                "total_locations": OVERVIEW_TOTAL_LOCATIONS,
+            }
+
+        period_id, period_label = periods[0]
+        cur.execute(
+            """SELECT l.name, l.is_huc, h.value
+               FROM health_data h
+               JOIN indicators i ON i.id = h.indicator_id
+               JOIN locations l ON l.id = h.location_id
+               WHERE i.code = %s
+                 AND h.period_id = %s
+                 AND l.level IN ('province', 'city_municipality')""",
+            [indicator_code, period_id],
+        )
+        rows = [
+            {"location": name.strip(), "is_huc": is_huc, "pct": float(value)}
+            for name, is_huc, value in cur.fetchall()
+            if value is not None
+        ]
+
+        reported = {r["location"] for r in rows}
+        bottom = sorted(
+            (r for r in rows if r["pct"] < NEAR_TARGET_RATIO), key=lambda r: r["pct"]
+        )[:bottom_n]
+        over_100 = sorted(
+            (r for r in rows if r["pct"] > OVER_REPORT_RATIO), key=lambda r: -r["pct"]
+        )
+
+        # LGUs that reported the prior period but not the latest one.
+        prior_period_label = None
+        dropped = []
+        if len(periods) > 1:
+            prior_id, prior_period_label = periods[1]
+            prior_reporters = _reporters_at(cur, indicator_code, prior_id)
+            dropped = sorted(prior_reporters - reported)
+
         cur.close()
         conn.close()
+
         return {
             "indicator_code": indicator_code,
             "year": year,
-            "period_label": None,
-            "prior_period_label": None,
-            "bottom": [],
-            "over_100": [],
-            "dropped": [],
-            "reporting_count": 0,
+            "period_label": period_label,
+            "prior_period_label": prior_period_label,
+            "bottom": bottom,
+            "over_100": over_100,
+            "dropped": dropped,
+            "reporting_count": len(reported),
             "total_locations": OVERVIEW_TOTAL_LOCATIONS,
         }
-
-    period_id, period_label = periods[0]
-    cur.execute(
-        """SELECT l.name, l.is_huc, h.value
-           FROM health_data h
-           JOIN indicators i ON i.id = h.indicator_id
-           JOIN locations l ON l.id = h.location_id
-           WHERE i.code = %s
-             AND h.period_id = %s
-             AND l.level IN ('province', 'city_municipality')""",
-        [indicator_code, period_id],
-    )
-    rows = [
-        {"location": name.strip(), "is_huc": is_huc, "pct": float(value)}
-        for name, is_huc, value in cur.fetchall()
-        if value is not None
-    ]
-
-    reported = {r["location"] for r in rows}
-    bottom = sorted(
-        (r for r in rows if r["pct"] < NEAR_TARGET_RATIO), key=lambda r: r["pct"]
-    )[:bottom_n]
-    over_100 = sorted(
-        (r for r in rows if r["pct"] > OVER_REPORT_RATIO), key=lambda r: -r["pct"]
-    )
-
-    # LGUs that reported the prior period but not the latest one.
-    prior_period_label = None
-    dropped = []
-    if len(periods) > 1:
-        prior_id, prior_period_label = periods[1]
-        prior_reporters = _reporters_at(cur, indicator_code, prior_id)
-        dropped = sorted(prior_reporters - reported)
-
-    cur.close()
-    conn.close()
-
-    return {
-        "indicator_code": indicator_code,
-        "year": year,
-        "period_label": period_label,
-        "prior_period_label": prior_period_label,
-        "bottom": bottom,
-        "over_100": over_100,
-        "dropped": dropped,
-        "reporting_count": len(reported),
-        "total_locations": OVERVIEW_TOTAL_LOCATIONS,
-    }
+    finally:
+        conn.close()

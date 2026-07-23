@@ -57,6 +57,17 @@ always agree (a future CI check will enforce it).
   template's own "Check Data" cells (surfacing genuine DOH data gaps the parser was blind to).
 
 ### Fixed
+- **Database connections no longer leak when a query raises** — nearly every endpoint and
+  service function followed `conn = get_db_connection()` … `conn.close()` with no
+  try/finally, so any exception between the two (bad parameter, constraint violation,
+  transient DB hiccup) abandoned the connection. With no connection pool, a burst of errors
+  could exhaust Postgres `max_connections` and take the API down. All 39 such sites across
+  `main.py`, `analytics.py`, `commit.py`, `auth.py`, `audit.py`, and `parser.py` are now
+  wrapped in try/finally so the connection is always released; `get_template_report`'s
+  empty-data fallback also reuses the open connection instead of opening a second one.
+  No behavior change on the happy path. (Connection *pooling* — the other half of the audit
+  recommendation — is deliberately left as a proposal: pool sizing interacts with gunicorn
+  worker count and Postgres limits, a deployment decision for Joseph.)
 - **Registration no longer passes the password in the URL** — `POST /api/register` used to
   take username/password as query parameters, so plaintext passwords landed in server access
   logs, browser history, and proxy logs. Credentials now travel in a validated JSON body

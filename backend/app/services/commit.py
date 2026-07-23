@@ -32,80 +32,83 @@ def get_batch_summary(batch_id: str) -> dict:
     Call this before approving so the user can review.
     """
     conn = get_db_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    # Total rows in batch
-    cur.execute(
-        "SELECT COUNT(*) FROM staging_health_data WHERE batch_id = %s",
-        (batch_id,)
-    )
-    total = cur.fetchone()[0]
+        # Total rows in batch
+        cur.execute(
+            "SELECT COUNT(*) FROM staging_health_data WHERE batch_id = %s",
+            (batch_id,)
+        )
+        total = cur.fetchone()[0]
 
-    if total == 0:
+        if total == 0:
+            conn.close()
+            return {"error": f"Batch {batch_id} not found or already processed"}
+
+        # Passed vs failed validation
+        cur.execute(
+            """SELECT validation_status, COUNT(*)
+               FROM staging_health_data
+               WHERE batch_id = %s
+               GROUP BY validation_status""",
+            (batch_id,)
+        )
+        status_counts = dict(cur.fetchall())
+
+        # Conflicts
+        cur.execute(
+            """SELECT COUNT(*)
+               FROM staging_health_data
+               WHERE batch_id = %s
+               AND conflict_status = 'pending_review'""",
+            (batch_id,)
+        )
+        conflicts = cur.fetchone()[0]
+
+        # Sample of what is in this batch
+        cur.execute(
+            """SELECT
+                   l.name as location,
+                   i.code as indicator,
+                   s.value,
+                   s.validation_status,
+                   s.conflict_status,
+                   s.existing_value
+               FROM staging_health_data s
+               JOIN locations l ON l.id = s.location_id
+               JOIN indicators i ON i.id = s.indicator_id
+               WHERE s.batch_id = %s
+               ORDER BY l.name, i.code
+               LIMIT 20""",
+            (batch_id,)
+        )
+        sample = cur.fetchall()
+
+        cur.close()
         conn.close()
-        return {"error": f"Batch {batch_id} not found or already processed"}
 
-    # Passed vs failed validation
-    cur.execute(
-        """SELECT validation_status, COUNT(*)
-           FROM staging_health_data
-           WHERE batch_id = %s
-           GROUP BY validation_status""",
-        (batch_id,)
-    )
-    status_counts = dict(cur.fetchall())
-
-    # Conflicts
-    cur.execute(
-        """SELECT COUNT(*)
-           FROM staging_health_data
-           WHERE batch_id = %s
-           AND conflict_status = 'pending_review'""",
-        (batch_id,)
-    )
-    conflicts = cur.fetchone()[0]
-
-    # Sample of what is in this batch
-    cur.execute(
-        """SELECT
-               l.name as location,
-               i.code as indicator,
-               s.value,
-               s.validation_status,
-               s.conflict_status,
-               s.existing_value
-           FROM staging_health_data s
-           JOIN locations l ON l.id = s.location_id
-           JOIN indicators i ON i.id = s.indicator_id
-           WHERE s.batch_id = %s
-           ORDER BY l.name, i.code
-           LIMIT 20""",
-        (batch_id,)
-    )
-    sample = cur.fetchall()
-
-    cur.close()
-    conn.close()
-
-    return {
-        "batch_id": batch_id,
-        "total_rows": total,
-        "passed": status_counts.get("passed", 0),
-        "failed": status_counts.get("failed", 0),
-        "conflicts": conflicts,
-        "can_approve": status_counts.get("failed", 0) == 0,
-        "sample": [
-            {
-                "location": row[0],
-                "indicator": row[1],
-                "value": row[2],
-                "validation_status": row[3],
-                "conflict_status": row[4],
-                "existing_value": row[5]
-            }
-            for row in sample
-        ]
-    }
+        return {
+            "batch_id": batch_id,
+            "total_rows": total,
+            "passed": status_counts.get("passed", 0),
+            "failed": status_counts.get("failed", 0),
+            "conflicts": conflicts,
+            "can_approve": status_counts.get("failed", 0) == 0,
+            "sample": [
+                {
+                    "location": row[0],
+                    "indicator": row[1],
+                    "value": row[2],
+                    "validation_status": row[3],
+                    "conflict_status": row[4],
+                    "existing_value": row[5]
+                }
+                for row in sample
+            ]
+        }
+    finally:
+        conn.close()
 
 
 # =====================================================
@@ -119,81 +122,87 @@ def get_conflicts(batch_id: str) -> list:
     Shows existing value vs incoming value side by side.
     """
     conn = get_db_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    cur.execute(
-        """SELECT
-               s.id,
-               l.name as location,
-               i.code as indicator,
-               i.name as indicator_name,
-               s.existing_value,
-               s.value as incoming_value,
-               s.conflict_status
-           FROM staging_health_data s
-           JOIN locations l ON l.id = s.location_id
-           JOIN indicators i ON i.id = s.indicator_id
-           WHERE s.batch_id = %s
-           AND s.conflict_status = 'pending_review'
-           ORDER BY l.name, i.code""",
-        (batch_id,)
-    )
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
+        cur.execute(
+            """SELECT
+                   s.id,
+                   l.name as location,
+                   i.code as indicator,
+                   i.name as indicator_name,
+                   s.existing_value,
+                   s.value as incoming_value,
+                   s.conflict_status
+               FROM staging_health_data s
+               JOIN locations l ON l.id = s.location_id
+               JOIN indicators i ON i.id = s.indicator_id
+               WHERE s.batch_id = %s
+               AND s.conflict_status = 'pending_review'
+               ORDER BY l.name, i.code""",
+            (batch_id,)
+        )
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
 
-    return [
-        {
-            "staging_id": row[0],
-            "location": row[1],
-            "indicator_code": row[2],
-            "indicator_name": row[3],
-            "existing_value": float(row[4]) if row[4] is not None else None,
-            "incoming_value": float(row[5]) if row[5] is not None else None,
-            "is_percentage": str(row[2] or "").endswith("_PCT"),
-            "conflict_status": row[6],
-        }
-        for row in rows
-    ]
+        return [
+            {
+                "staging_id": row[0],
+                "location": row[1],
+                "indicator_code": row[2],
+                "indicator_name": row[3],
+                "existing_value": float(row[4]) if row[4] is not None else None,
+                "incoming_value": float(row[5]) if row[5] is not None else None,
+                "is_percentage": str(row[2] or "").endswith("_PCT"),
+                "conflict_status": row[6],
+            }
+            for row in rows
+        ]
+    finally:
+        conn.close()
 
 
 def get_staged_rows(batch_id: str, limit: int = 500) -> list:
     """All values in a batch (new/changed only — unchanged are not staged)."""
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute(
-        """SELECT
-               s.id,
-               l.name as location,
-               i.code as indicator,
-               s.value,
-               s.validation_status,
-               s.conflict_status,
-               s.existing_value
-           FROM staging_health_data s
-           JOIN locations l ON l.id = s.location_id
-           JOIN indicators i ON i.id = s.indicator_id
-           WHERE s.batch_id = %s
-           ORDER BY l.name, i.code
-           LIMIT %s""",
-        (batch_id, limit),
-    )
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    return [
-        {
-            "staging_id": row[0],
-            "location": row[1],
-            "indicator_code": row[2],
-            "value": float(row[3]) if row[3] is not None else None,
-            "validation_status": row[4],
-            "conflict_status": row[5],
-            "existing_value": float(row[6]) if row[6] is not None else None,
-            "is_percentage": str(row[2] or "").endswith("_PCT"),
-        }
-        for row in rows
-    ]
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """SELECT
+                   s.id,
+                   l.name as location,
+                   i.code as indicator,
+                   s.value,
+                   s.validation_status,
+                   s.conflict_status,
+                   s.existing_value
+               FROM staging_health_data s
+               JOIN locations l ON l.id = s.location_id
+               JOIN indicators i ON i.id = s.indicator_id
+               WHERE s.batch_id = %s
+               ORDER BY l.name, i.code
+               LIMIT %s""",
+            (batch_id, limit),
+        )
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return [
+            {
+                "staging_id": row[0],
+                "location": row[1],
+                "indicator_code": row[2],
+                "value": float(row[3]) if row[3] is not None else None,
+                "validation_status": row[4],
+                "conflict_status": row[5],
+                "existing_value": float(row[6]) if row[6] is not None else None,
+                "is_percentage": str(row[2] or "").endswith("_PCT"),
+            }
+            for row in rows
+        ]
+    finally:
+        conn.close()
 
 
 # =====================================================
@@ -218,28 +227,31 @@ def resolve_conflict(
         return {"error": "Decision must be 'accept' or 'reject'"}
 
     conn = get_db_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    new_status = "accepted" if decision == "accept" else "rejected"
+        new_status = "accepted" if decision == "accept" else "rejected"
 
-    cur.execute(
-        """UPDATE staging_health_data
-           SET conflict_status = %s,
-               approved_by = %s,
-               approved_at = %s
-           WHERE id = %s""",
-        (new_status, resolved_by, datetime.now(), staging_id)
-    )
+        cur.execute(
+            """UPDATE staging_health_data
+               SET conflict_status = %s,
+                   approved_by = %s,
+                   approved_at = %s
+               WHERE id = %s""",
+            (new_status, resolved_by, datetime.now(), staging_id)
+        )
 
-    conn.commit()
-    cur.close()
-    conn.close()
+        conn.commit()
+        cur.close()
+        conn.close()
 
-    return {
-        "staging_id": staging_id,
-        "decision": decision,
-        "new_status": new_status
-    }
+        return {
+            "staging_id": staging_id,
+            "decision": decision,
+            "new_status": new_status
+        }
+    finally:
+        conn.close()
 
 
 def resolve_conflicts_bulk(
@@ -254,42 +266,45 @@ def resolve_conflicts_bulk(
 
     new_status = "accepted" if decision == "accept" else "rejected"
     conn = get_db_connection()
-    cur = conn.cursor()
-    now = datetime.now()
+    try:
+        cur = conn.cursor()
+        now = datetime.now()
 
-    if staging_ids:
-        cur.execute(
-            """UPDATE staging_health_data
-               SET conflict_status = %s,
-                   approved_by = %s,
-                   approved_at = %s
-               WHERE batch_id = %s
-                 AND conflict_status = 'pending_review'
-                 AND id = ANY(%s)""",
-            (new_status, resolved_by, now, batch_id, staging_ids),
-        )
-    else:
-        cur.execute(
-            """UPDATE staging_health_data
-               SET conflict_status = %s,
-                   approved_by = %s,
-                   approved_at = %s
-               WHERE batch_id = %s
-                 AND conflict_status = 'pending_review'""",
-            (new_status, resolved_by, now, batch_id),
-        )
+        if staging_ids:
+            cur.execute(
+                """UPDATE staging_health_data
+                   SET conflict_status = %s,
+                       approved_by = %s,
+                       approved_at = %s
+                   WHERE batch_id = %s
+                     AND conflict_status = 'pending_review'
+                     AND id = ANY(%s)""",
+                (new_status, resolved_by, now, batch_id, staging_ids),
+            )
+        else:
+            cur.execute(
+                """UPDATE staging_health_data
+                   SET conflict_status = %s,
+                       approved_by = %s,
+                       approved_at = %s
+                   WHERE batch_id = %s
+                     AND conflict_status = 'pending_review'""",
+                (new_status, resolved_by, now, batch_id),
+            )
 
-    updated = cur.rowcount
-    conn.commit()
-    cur.close()
-    conn.close()
+        updated = cur.rowcount
+        conn.commit()
+        cur.close()
+        conn.close()
 
-    return {
-        "batch_id": batch_id,
-        "decision": decision,
-        "new_status": new_status,
-        "updated": updated,
-    }
+        return {
+            "batch_id": batch_id,
+            "decision": decision,
+            "new_status": new_status,
+            "updated": updated,
+        }
+    finally:
+        conn.close()
 
 
 # =====================================================
@@ -310,97 +325,133 @@ def approve_batch(batch_id: str, approved_by=None, force=False):
     - New data is inserted fresh
     """
     conn = get_db_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    # Check for unresolved conflicts
-    cur.execute(
-        """SELECT COUNT(*) FROM staging_health_data
-           WHERE batch_id = %s
-           AND conflict_status = 'pending_review'""",
-        (batch_id,)
-    )
-    unresolved = cur.fetchone()[0]
-    if unresolved > 0 and not force:
-        return {
-            "success": False,
-            "error": f"{unresolved} conflicts still pending review. Resolve all conflicts before approving."
-        }
+        # Check for unresolved conflicts
+        cur.execute(
+            """SELECT COUNT(*) FROM staging_health_data
+               WHERE batch_id = %s
+               AND conflict_status = 'pending_review'""",
+            (batch_id,)
+        )
+        unresolved = cur.fetchone()[0]
+        if unresolved > 0 and not force:
+            return {
+                "success": False,
+                "error": f"{unresolved} conflicts still pending review. Resolve all conflicts before approving."
+            }
 
-    # Check for failed validation
-    cur.execute(
-        """SELECT COUNT(*) FROM staging_health_data
-           WHERE batch_id = %s
-           AND validation_status = 'failed'""",
-        (batch_id,)
-    )
-    failed = cur.fetchone()[0]
-    if failed > 0 and not force:
-        conn.close()
-        return {
-            "success": False,
-            "error": f"{failed} rows failed DQC validation. "
-                     f"Cannot approve a batch with validation errors."
-        }
+        # Check for failed validation
+        cur.execute(
+            """SELECT COUNT(*) FROM staging_health_data
+               WHERE batch_id = %s
+               AND validation_status = 'failed'""",
+            (batch_id,)
+        )
+        failed = cur.fetchone()[0]
+        if failed > 0 and not force:
+            conn.close()
+            return {
+                "success": False,
+                "error": f"{failed} rows failed DQC validation. "
+                         f"Cannot approve a batch with validation errors."
+            }
 
-    # Get all rows to commit
-    # NOTE: We do NOT filter out NULL values here in SQL.
-    # NULL handling happens in Python below so we can:
-    #   1. Count how many were blank (skipped_null)
-    #   2. Protect previously-committed real values from being overwritten
-    cur.execute(
-        """SELECT
-               indicator_id, location_id, period_id,
-               value, is_computed, source_file,
-               conflict_status
-           FROM staging_health_data
-           WHERE batch_id = %s
-           AND conflict_status != 'rejected'""",
-        (batch_id,)
-    )
-    rows = cur.fetchall()
+        # Get all rows to commit
+        # NOTE: We do NOT filter out NULL values here in SQL.
+        # NULL handling happens in Python below so we can:
+        #   1. Count how many were blank (skipped_null)
+        #   2. Protect previously-committed real values from being overwritten
+        cur.execute(
+            """SELECT
+                   indicator_id, location_id, period_id,
+                   value, is_computed, source_file,
+                   conflict_status
+               FROM staging_health_data
+               WHERE batch_id = %s
+               AND conflict_status != 'rejected'""",
+            (batch_id,)
+        )
+        rows = cur.fetchall()
 
-    inserted = 0
-    updated = 0
-    skipped = 0
-    skipped_null = 0    # blank cells from Excel — intentionally not written
-    auto_resolved = 0   # pending_review conflicts auto-accepted under force=True
+        inserted = 0
+        updated = 0
+        skipped = 0
+        skipped_null = 0    # blank cells from Excel — intentionally not written
+        auto_resolved = 0   # pending_review conflicts auto-accepted under force=True
 
-    for row in rows:
-        (indicator_id, location_id, period_id,
-         value, is_computed, source_file,
-         conflict_status) = row
+        for row in rows:
+            (indicator_id, location_id, period_id,
+             value, is_computed, source_file,
+             conflict_status) = row
 
-        # Skip blank values (NULL from Excel empty cells).
-        # Protects existing committed data from being overwritten with blanks.
-        if value is None:
-            skipped_null += 1
-            continue
+            # Skip blank values (NULL from Excel empty cells).
+            # Protects existing committed data from being overwritten with blanks.
+            if value is None:
+                skipped_null += 1
+                continue
 
-        # When force=True (the UI's "Approve and Commit" path), unresolved
-        # conflicts are treated as accepted — use the incoming value.
-        # Without this, pending_review rows fall through every branch below
-        # and silently never reach health_data — which leaves stale data
-        # (including stale NULLs from previous buggy uploads) in place.
-        effective_status = conflict_status
-        if force and conflict_status == "pending_review":
-            effective_status = "accepted"
-            auto_resolved += 1
+            # When force=True (the UI's "Approve and Commit" path), unresolved
+            # conflicts are treated as accepted — use the incoming value.
+            # Without this, pending_review rows fall through every branch below
+            # and silently never reach health_data — which leaves stale data
+            # (including stale NULLs from previous buggy uploads) in place.
+            effective_status = conflict_status
+            if force and conflict_status == "pending_review":
+                effective_status = "accepted"
+                auto_resolved += 1
 
-        if effective_status == "accepted":
-            # Overwrite existing row (or insert if somehow absent)
-            cur.execute(
-                """UPDATE health_data
-                   SET value = %s,
-                       uploaded_by = %s,
-                       uploaded_at = %s,
-                       source_file = %s
-                   WHERE indicator_id = %s
-                   AND location_id = %s
-                   AND period_id = %s""",
-                (value, approved_by, datetime.now(), source_file,
-                 indicator_id, location_id, period_id)
-            )
-            if cur.rowcount == 0:
+            if effective_status == "accepted":
+                # Overwrite existing row (or insert if somehow absent)
+                cur.execute(
+                    """UPDATE health_data
+                       SET value = %s,
+                           uploaded_by = %s,
+                           uploaded_at = %s,
+                           source_file = %s
+                       WHERE indicator_id = %s
+                       AND location_id = %s
+                       AND period_id = %s""",
+                    (value, approved_by, datetime.now(), source_file,
+                     indicator_id, location_id, period_id)
+                )
+                if cur.rowcount == 0:
+                    insert_sql = (
+                        """INSERT INTO health_data (
+                               indicator_id, location_id, period_id,
+                               value, is_computed,
+                               uploaded_by, uploaded_at, source_file
+                           ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
+                    )
+                    insert_params = (
+                        indicator_id, location_id, period_id,
+                        value, is_computed,
+                        approved_by, datetime.now(), source_file,
+                    )
+                    if _savepoint_execute(cur, insert_sql, insert_params):
+                        inserted += 1
+                    else:
+                        cur.execute(
+                            """UPDATE health_data
+                               SET value = %s,
+                                   uploaded_by = %s,
+                                   uploaded_at = %s,
+                                   source_file = %s
+                               WHERE indicator_id = %s
+                               AND location_id = %s
+                               AND period_id = %s""",
+                            (value, approved_by, datetime.now(), source_file,
+                             indicator_id, location_id, period_id),
+                        )
+                        if cur.rowcount:
+                            updated += 1
+                        else:
+                            skipped += 1
+                else:
+                    updated += 1
+
+            elif effective_status == "none":
                 insert_sql = (
                     """INSERT INTO health_data (
                            indicator_id, location_id, period_id,
@@ -432,65 +483,32 @@ def approve_batch(batch_id: str, approved_by=None, force=False):
                         updated += 1
                     else:
                         skipped += 1
-            else:
-                updated += 1
 
-        elif effective_status == "none":
-            insert_sql = (
-                """INSERT INTO health_data (
-                       indicator_id, location_id, period_id,
-                       value, is_computed,
-                       uploaded_by, uploaded_at, source_file
-                   ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
-            )
-            insert_params = (
-                indicator_id, location_id, period_id,
-                value, is_computed,
-                approved_by, datetime.now(), source_file,
-            )
-            if _savepoint_execute(cur, insert_sql, insert_params):
-                inserted += 1
-            else:
-                cur.execute(
-                    """UPDATE health_data
-                       SET value = %s,
-                           uploaded_by = %s,
-                           uploaded_at = %s,
-                           source_file = %s
-                       WHERE indicator_id = %s
-                       AND location_id = %s
-                       AND period_id = %s""",
-                    (value, approved_by, datetime.now(), source_file,
-                     indicator_id, location_id, period_id),
-                )
-                if cur.rowcount:
-                    updated += 1
-                else:
-                    skipped += 1
+        # Mark batch as approved in staging
+        cur.execute(
+            """UPDATE staging_health_data
+               SET approved_by = %s,
+                   approved_at = %s
+               WHERE batch_id = %s""",
+            (approved_by, datetime.now(), batch_id)
+        )
 
-    # Mark batch as approved in staging
-    cur.execute(
-        """UPDATE staging_health_data
-           SET approved_by = %s,
-               approved_at = %s
-           WHERE batch_id = %s""",
-        (approved_by, datetime.now(), batch_id)
-    )
+        conn.commit()
+        cur.close()
+        conn.close()
 
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return {
-        "success": True,
-        "batch_id": batch_id,
-        "inserted": inserted,
-        "updated": updated,
-        "auto_resolved": auto_resolved,  # pending_review conflicts auto-accepted under force=True
-        "skipped": skipped,              # DB insert errors
-        "skipped_null": skipped_null,    # Blank cells from Excel — intentionally not written
-        "total_committed": inserted + updated
-    }
+        return {
+            "success": True,
+            "batch_id": batch_id,
+            "inserted": inserted,
+            "updated": updated,
+            "auto_resolved": auto_resolved,  # pending_review conflicts auto-accepted under force=True
+            "skipped": skipped,              # DB insert errors
+            "skipped_null": skipped_null,    # Blank cells from Excel — intentionally not written
+            "total_committed": inserted + updated
+        }
+    finally:
+        conn.close()
 
 
 # =====================================================

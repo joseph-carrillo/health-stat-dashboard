@@ -680,215 +680,240 @@ def parse_file(
 
     # --- Connect to database ---
     conn = get_db_connection()
-    cur = conn.cursor()
-
-    # --- Generate a unique batch ID for this upload ---
-    batch_id = str(uuid.uuid4())
-
-    # --- Get period ID (create annual / missing periods on demand) ---
     try:
-        period_id = ensure_period_id(cur, conn, year, period_type, period_value)
-    except RuntimeError as exc:
-        cur.close()
-        conn.close()
-        return {"success": False, "error": str(exc)}
+        cur = conn.cursor()
 
-    psgc_col = config["psgc_column"]
-    data_start = config["data_start_row"]
-    loc_col = config.get("location_column")
+        # --- Generate a unique batch ID for this upload ---
+        batch_id = str(uuid.uuid4())
 
-    rows_processed = 0
-    rows_staged = 0
-    rows_skipped_unchanged = 0
-    all_issues = []
-    errors = []
-    preview = []
-
-    for sheet_spec in sheet_specs:
+        # --- Get period ID (create annual / missing periods on demand) ---
         try:
-            df = pd.read_excel(
-                file_path,
-                sheet_name=sheet_spec["sheet_name"],
-                header=config["header_row"],
-                dtype=str,
-            )
-        except Exception as e:
+            period_id = ensure_period_id(cur, conn, year, period_type, period_value)
+        except RuntimeError as exc:
+            cur.close()
             conn.close()
-            return {
-                "success": False,
-                "error": (
-                    f"Could not read sheet '{sheet_spec['sheet_name']}': {str(e)}"
-                ),
-            }
+            return {"success": False, "error": str(exc)}
 
-        col_defs = sheet_spec["columns"]
-        dqc_rules = sheet_spec["dqc_rules"]
+        psgc_col = config["psgc_column"]
+        data_start = config["data_start_row"]
+        loc_col = config.get("location_column")
 
-        # --- Process each row ---
-        # Blank-PSGC rows can appear MID-SHEET (province summary/total rows,
-        # visual separators between regions, etc.). We skip them individually
-        # rather than break — otherwise an LGU placed after a separator (e.g.
-        # City of Bacolod HUC, which sits below the Siquijor block in the
-        # FHSIS template) is silently dropped.
-        MAX_CONSECUTIVE_BLANKS = 15
-        consecutive_blanks = 0
+        rows_processed = 0
+        rows_staged = 0
+        rows_skipped_unchanged = 0
+        all_issues = []
+        errors = []
+        preview = []
 
-        for row_idx in range(data_start, len(df)):
-            row = df.iloc[row_idx]
-            psgc_raw = row.iloc[psgc_col]
-            location_id, resolved_psgc = resolve_location_row(cur, config, row, psgc_raw)
-
-            if not location_id:
-                if is_blank(psgc_raw) and (
-                    loc_col is None or is_blank(row.iloc[loc_col])
-                ):
-                    consecutive_blanks += 1
-                    if consecutive_blanks >= MAX_CONSECUTIVE_BLANKS:
-                        break
-                    continue
-                if is_annotation_row(row, col_defs):
-                    continue
-                location_label = (
-                    str(row.iloc[loc_col]).strip()
-                    if loc_col is not None and not is_blank(row.iloc[loc_col])
-                    else str(psgc_raw)
+        for sheet_spec in sheet_specs:
+            try:
+                df = pd.read_excel(
+                    file_path,
+                    sheet_name=sheet_spec["sheet_name"],
+                    header=config["header_row"],
+                    dtype=str,
                 )
-                errors.append({
-                    "row": row_idx,
-                    "sheet": sheet_spec["sheet_name"],
-                    "psgc": str(psgc_raw),
-                    "location": location_label,
-                    "error": "Location not found (check PSGC or location name)",
-                })
-                rows_processed += 1
-                continue
+            except Exception as e:
+                conn.close()
+                return {
+                    "success": False,
+                    "error": (
+                        f"Could not read sheet '{sheet_spec['sheet_name']}': {str(e)}"
+                    ),
+                }
 
+            col_defs = sheet_spec["columns"]
+            dqc_rules = sheet_spec["dqc_rules"]
+
+            # --- Process each row ---
+            # Blank-PSGC rows can appear MID-SHEET (province summary/total rows,
+            # visual separators between regions, etc.). We skip them individually
+            # rather than break — otherwise an LGU placed after a separator (e.g.
+            # City of Bacolod HUC, which sits below the Siquijor block in the
+            # FHSIS template) is silently dropped.
+            MAX_CONSECUTIVE_BLANKS = 15
             consecutive_blanks = 0
-            psgc_raw = resolved_psgc
 
-            rows_processed += 1
+            for row_idx in range(data_start, len(df)):
+                row = df.iloc[row_idx]
+                psgc_raw = row.iloc[psgc_col]
+                location_id, resolved_psgc = resolve_location_row(cur, config, row, psgc_raw)
 
-            row_values = {}
-
-            for col_def in col_defs:
-                if col_def["is_computed"]:
-                    continue
-                col_idx = col_def["index"]
-                indicator_code = col_def["indicator_code"]
-                raw_value = safe_float(row.iloc[col_idx])
-                row_values[indicator_code] = raw_value
-
-            for col_def in col_defs:
-                if not col_def["is_computed"]:
-                    continue
-                indicator_code = col_def["indicator_code"]
-                formula = col_def.get("formula", "")
-                computed_value = compute_value(formula, row_values)
-                row_values[indicator_code] = computed_value
-
-            row_issues = run_dqc_rules(
-                [{"indicator_code": k, "value": v}
-                 for k, v in row_values.items()],
-                dqc_rules
-            )
-            if row_issues:
-                for issue in row_issues:
-                    issue["row"] = row_idx
-                    issue["sheet"] = sheet_spec["sheet_name"]
-                    issue["psgc"] = psgc_raw
-                all_issues.extend(row_issues)
-
-            validation_status = "failed" if row_issues else "passed"
-
-            for indicator_code, value in row_values.items():
-                indicator_id = get_indicator_id(cur, indicator_code)
-                if not indicator_id:
+                if not location_id:
+                    if is_blank(psgc_raw) and (
+                        loc_col is None or is_blank(row.iloc[loc_col])
+                    ):
+                        consecutive_blanks += 1
+                        if consecutive_blanks >= MAX_CONSECUTIVE_BLANKS:
+                            break
+                        continue
+                    if is_annotation_row(row, col_defs):
+                        continue
+                    location_label = (
+                        str(row.iloc[loc_col]).strip()
+                        if loc_col is not None and not is_blank(row.iloc[loc_col])
+                        else str(psgc_raw)
+                    )
                     errors.append({
                         "row": row_idx,
                         "sheet": sheet_spec["sheet_name"],
-                        "indicator_code": indicator_code,
-                        "error": "Indicator not found in database"
-                    })
-                    continue
-
-                cur.execute(
-                    """SELECT value FROM health_data
-                       WHERE indicator_id = %s
-                       AND location_id = %s
-                       AND period_id = %s""",
-                    (indicator_id, location_id, period_id)
-                )
-                existing = cur.fetchone()
-                existing_value = existing[0] if existing else None
-
-                if (
-                    existing_value is not None
-                    and _staging_values_match(
-                        existing_value, value, indicator_code
-                    )
-                ):
-                    rows_skipped_unchanged += 1
-                    continue
-
-                if existing_value is not None:
-                    conflict_status = "pending_review"
-                else:
-                    conflict_status = "none"
-
-                is_computed = next(
-                    (c["is_computed"] for c in col_defs
-                     if c["indicator_code"] == indicator_code),
-                    False
-                )
-
-                if not dry_run:
-                    cur.execute(
-                        """INSERT INTO staging_health_data (
-                            batch_id, indicator_id, location_id, period_id,
-                            value, validation_status, conflict_status,
-                            existing_value, is_computed, uploaded_by, source_file
-                        ) VALUES (
-                            %s, %s, %s, %s,
-                            %s, %s, %s,
-                            %s, %s, %s, %s
-                        )""",
-                        (
-                            batch_id, indicator_id, location_id, period_id,
-                            value, validation_status, conflict_status,
-                            existing_value, is_computed, uploaded_by,
-                            Path(file_path).name
-                        )
-                    )
-                rows_staged += 1
-
-                if len(preview) < 25:
-                    preview.append({
                         "psgc": str(psgc_raw),
-                        "indicator_code": indicator_code,
-                        "value": value,
-                        "validation_status": validation_status,
-                        "conflict_status": conflict_status,
-                        "existing_value": (
-                            float(existing_value)
-                            if existing_value is not None else None
-                        ),
+                        "location": location_label,
+                        "error": "Location not found (check PSGC or location name)",
                     })
+                    rows_processed += 1
+                    continue
 
-    if not dry_run:
-        conn.commit()
-    cur.close()
-    conn.close()
+                consecutive_blanks = 0
+                psgc_raw = resolved_psgc
 
-    can_stage = len(errors) == 0 and rows_staged > 0
+                rows_processed += 1
 
-    if not dry_run and rows_staged == 0:
-        if rows_skipped_unchanged > 0 and len(errors) == 0:
+                row_values = {}
+
+                for col_def in col_defs:
+                    if col_def["is_computed"]:
+                        continue
+                    col_idx = col_def["index"]
+                    indicator_code = col_def["indicator_code"]
+                    raw_value = safe_float(row.iloc[col_idx])
+                    row_values[indicator_code] = raw_value
+
+                for col_def in col_defs:
+                    if not col_def["is_computed"]:
+                        continue
+                    indicator_code = col_def["indicator_code"]
+                    formula = col_def.get("formula", "")
+                    computed_value = compute_value(formula, row_values)
+                    row_values[indicator_code] = computed_value
+
+                row_issues = run_dqc_rules(
+                    [{"indicator_code": k, "value": v}
+                     for k, v in row_values.items()],
+                    dqc_rules
+                )
+                if row_issues:
+                    for issue in row_issues:
+                        issue["row"] = row_idx
+                        issue["sheet"] = sheet_spec["sheet_name"]
+                        issue["psgc"] = psgc_raw
+                    all_issues.extend(row_issues)
+
+                validation_status = "failed" if row_issues else "passed"
+
+                for indicator_code, value in row_values.items():
+                    indicator_id = get_indicator_id(cur, indicator_code)
+                    if not indicator_id:
+                        errors.append({
+                            "row": row_idx,
+                            "sheet": sheet_spec["sheet_name"],
+                            "indicator_code": indicator_code,
+                            "error": "Indicator not found in database"
+                        })
+                        continue
+
+                    cur.execute(
+                        """SELECT value FROM health_data
+                           WHERE indicator_id = %s
+                           AND location_id = %s
+                           AND period_id = %s""",
+                        (indicator_id, location_id, period_id)
+                    )
+                    existing = cur.fetchone()
+                    existing_value = existing[0] if existing else None
+
+                    if (
+                        existing_value is not None
+                        and _staging_values_match(
+                            existing_value, value, indicator_code
+                        )
+                    ):
+                        rows_skipped_unchanged += 1
+                        continue
+
+                    if existing_value is not None:
+                        conflict_status = "pending_review"
+                    else:
+                        conflict_status = "none"
+
+                    is_computed = next(
+                        (c["is_computed"] for c in col_defs
+                         if c["indicator_code"] == indicator_code),
+                        False
+                    )
+
+                    if not dry_run:
+                        cur.execute(
+                            """INSERT INTO staging_health_data (
+                                batch_id, indicator_id, location_id, period_id,
+                                value, validation_status, conflict_status,
+                                existing_value, is_computed, uploaded_by, source_file
+                            ) VALUES (
+                                %s, %s, %s, %s,
+                                %s, %s, %s,
+                                %s, %s, %s, %s
+                            )""",
+                            (
+                                batch_id, indicator_id, location_id, period_id,
+                                value, validation_status, conflict_status,
+                                existing_value, is_computed, uploaded_by,
+                                Path(file_path).name
+                            )
+                        )
+                    rows_staged += 1
+
+                    if len(preview) < 25:
+                        preview.append({
+                            "psgc": str(psgc_raw),
+                            "indicator_code": indicator_code,
+                            "value": value,
+                            "validation_status": validation_status,
+                            "conflict_status": conflict_status,
+                            "existing_value": (
+                                float(existing_value)
+                                if existing_value is not None else None
+                            ),
+                        })
+
+        if not dry_run:
+            conn.commit()
+        cur.close()
+        conn.close()
+
+        can_stage = len(errors) == 0 and rows_staged > 0
+
+        if not dry_run and rows_staged == 0:
+            if rows_skipped_unchanged > 0 and len(errors) == 0:
+                return {
+                    "success": False,
+                    "error": (
+                        f"No changes to stage — {rows_skipped_unchanged} value(s) "
+                        "already match live data for this period. "
+                        "Run Validate Only to confirm; nothing was saved."
+                    ),
+                    "batch_id": None,
+                    "dry_run": dry_run,
+                    "template_id": template_id,
+                    "period": period_info["period_label"],
+                    "rows_processed": rows_processed,
+                    "rows_staged": rows_staged,
+                    "rows_skipped_unchanged": rows_skipped_unchanged,
+                    "can_stage": False,
+                    "dqc_issues": len(all_issues),
+                    "errors": len(errors),
+                    "issues_detail": all_issues,
+                    "errors_detail": errors,
+                    "preview": preview,
+                }
+            hint = "Indicators may not be seeded for this template."
+            if errors:
+                first = errors[0]
+                hint = first.get("error") or first.get("indicator_code") or hint
             return {
                 "success": False,
                 "error": (
-                    f"No changes to stage — {rows_skipped_unchanged} value(s) "
-                    "already match live data for this period. "
-                    "Run Validate Only to confirm; nothing was saved."
+                    f"No data was staged ({rows_processed} rows parsed, 0 saved). "
+                    f"{hint}"
                 ),
                 "batch_id": None,
                 "dry_run": dry_run,
@@ -904,47 +929,25 @@ def parse_file(
                 "errors_detail": errors,
                 "preview": preview,
             }
-        hint = "Indicators may not be seeded for this template."
-        if errors:
-            first = errors[0]
-            hint = first.get("error") or first.get("indicator_code") or hint
+
         return {
-            "success": False,
-            "error": (
-                f"No data was staged ({rows_processed} rows parsed, 0 saved). "
-                f"{hint}"
-            ),
-            "batch_id": None,
+            "success": True,
+            "batch_id": None if dry_run else batch_id,
             "dry_run": dry_run,
             "template_id": template_id,
             "period": period_info["period_label"],
             "rows_processed": rows_processed,
             "rows_staged": rows_staged,
             "rows_skipped_unchanged": rows_skipped_unchanged,
-            "can_stage": False,
+            "can_stage": can_stage,
             "dqc_issues": len(all_issues),
             "errors": len(errors),
             "issues_detail": all_issues,
             "errors_detail": errors,
             "preview": preview,
         }
-
-    return {
-        "success": True,
-        "batch_id": None if dry_run else batch_id,
-        "dry_run": dry_run,
-        "template_id": template_id,
-        "period": period_info["period_label"],
-        "rows_processed": rows_processed,
-        "rows_staged": rows_staged,
-        "rows_skipped_unchanged": rows_skipped_unchanged,
-        "can_stage": can_stage,
-        "dqc_issues": len(all_issues),
-        "errors": len(errors),
-        "issues_detail": all_issues,
-        "errors_detail": errors,
-        "preview": preview,
-    }
+    finally:
+        conn.close()
 
 
 # =====================================================

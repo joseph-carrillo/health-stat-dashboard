@@ -36,11 +36,14 @@ def ensure_audit_table():
     the new table without a full schema rebuild.
     """
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute(AUDIT_TABLE_SQL)
-    conn.commit()
-    cur.close()
-    conn.close()
+    try:
+        cur = conn.cursor()
+        cur.execute(AUDIT_TABLE_SQL)
+        conn.commit()
+        cur.close()
+        conn.close()
+    finally:
+        conn.close()
 
 
 def write_audit(
@@ -92,27 +95,30 @@ def write_audit(
 def get_audit_log(limit: int = 100) -> list:
     """Return the most recent audit entries."""
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute(
-        """SELECT id, actor_username, action, entity_type,
-                  entity_id, details, created_at
-           FROM audit_log
-           ORDER BY created_at DESC
-           LIMIT %s""",
-        (limit,),
-    )
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    return [
-        {
-            "id": r[0],
-            "actor": r[1],
-            "action": r[2],
-            "entity_type": r[3],
-            "entity_id": r[4],
-            "details": r[5],
-            "created_at": str(r[6]),
-        }
-        for r in rows
-    ]
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """SELECT id, actor_username, action, entity_type,
+                      entity_id, details, created_at
+               FROM audit_log
+               ORDER BY created_at DESC
+               LIMIT %s""",
+            (limit,),
+        )
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return [
+            {
+                "id": r[0],
+                "actor": r[1],
+                "action": r[2],
+                "entity_type": r[3],
+                "entity_id": r[4],
+                "details": r[5],
+                "created_at": str(r[6]),
+            }
+            for r in rows
+        ]
+    finally:
+        conn.close()

@@ -129,42 +129,48 @@ def decode_token(token: str) -> dict:
 def get_user(username: str) -> dict:
     """Get user from database by username."""
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute(
-        """SELECT id, username, hashed_password,
-                  role, program_code, is_active
-           FROM users
-           WHERE username = %s""",
-        (username,)
-    )
-    row = cur.fetchone()
-    cur.close()
-    conn.close()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """SELECT id, username, hashed_password,
+                      role, program_code, is_active
+               FROM users
+               WHERE username = %s""",
+            (username,)
+        )
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
 
-    if not row:
-        return None
+        if not row:
+            return None
 
-    return {
-        "id": row[0],
-        "username": row[1],
-        "hashed_password": row[2],
-        "role": row[3],
-        "program_code": row[4],
-        "is_active": row[5]
-    }
+        return {
+            "id": row[0],
+            "username": row[1],
+            "hashed_password": row[2],
+            "role": row[3],
+            "program_code": row[4],
+            "is_active": row[5]
+        }
+    finally:
+        conn.close()
 
 
 def _upgrade_password_hash(user_id: int, new_hash: str) -> None:
     """Persist a re-hashed password (bcrypt -> argon2 migration)."""
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute(
-        "UPDATE users SET hashed_password = %s WHERE id = %s",
-        (new_hash, user_id),
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE users SET hashed_password = %s WHERE id = %s",
+            (new_hash, user_id),
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+    finally:
+        conn.close()
 
 
 def authenticate_user(username: str,
@@ -194,11 +200,14 @@ def get_role_permissions(role: str) -> dict:
 def update_last_login(user_id: int) -> None:
     """Stamp the user's last_login with the current time."""
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute(
-        "UPDATE users SET last_login = %s WHERE id = %s",
-        (datetime.now(), user_id),
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE users SET last_login = %s WHERE id = %s",
+            (datetime.now(), user_id),
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+    finally:
+        conn.close()
