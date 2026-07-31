@@ -250,6 +250,16 @@ export const TEMPLATES = [
     label: "Family Planning — Current Users / Method Mix",
     program_code: "FAMILY_PLANNING",
   },
+  {
+    id: "ohc_infant_visit",
+    label: "Oral Health — Infants, First Oral Visit",
+    program_code: "ORAL_HEALTH",
+  },
+  {
+    id: "ohc_general_population",
+    label: "Oral Health — General Population, Visit Coverage by Age Band",
+    program_code: "ORAL_HEALTH",
+  },
 ];
 
 export const MONTHS = [

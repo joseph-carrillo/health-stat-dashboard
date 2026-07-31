@@ -1,0 +1,74 @@
+{
+  "template_id": "OHC_INFANT_VISIT",
+  "template_version": "2026",
+  "program_code": "ORAL_HEALTH",
+  "source_file_pattern": "ohc_1st_visit",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 0,
+  "stop_at_blank_psgc": false,
+  "period_filter_column": 3,
+  "period_labels": {
+    "1": "1st Quarter",
+    "2": "2nd Quarter",
+    "3": "3rd Quarter",
+    "4": "4th Quarter"
+  },
+  "display": {
+    "label": "Oral Health \u2014 Infants, First Oral Visit (quarterly)",
+    "dqc_highlight": true,
+    "id_columns": [
+      {
+        "key": "psgc",
+        "label": "PSGC"
+      },
+      {
+        "key": "location",
+        "label": "Region/PHIC"
+      }
+    ]
+  },
+  "upload": {
+    "sub_program": "Oral Health",
+    "file_number": 1
+  },
+  "sheet_map": {
+    "1": "Quarterly",
+    "2": "Quarterly",
+    "3": "Quarterly",
+    "4": "Quarterly"
+  },
+  "columns": [
+    {
+      "index": 4,
+      "indicator_code": "OHC_INF_POP",
+      "is_computed": false
+    },
+    {
+      "index": 5,
+      "indicator_code": "OHC_INF_MALE",
+      "is_computed": false
+    },
+    {
+      "index": 6,
+      "indicator_code": "OHC_INF_FEMALE",
+      "is_computed": false
+    },
+    {
+      "index": 7,
+      "indicator_code": "OHC_INF_TOTAL",
+      "is_computed": true,
+      "formula": "OHC_INF_MALE + OHC_INF_FEMALE"
+    },
+    {
+      "index": 8,
+      "indicator_code": "OHC_INF_PCT",
+      "is_computed": true,
+      "formula": "OHC_INF_TOTAL / OHC_INF_POP"
+    }
+  ],
+  "dqc_rules": [],
+  "notes": "Oral Health \u2014 infants 0-11 months, first oral visit only. Only 5 geographic rows per period (NIR + 3 provinces + Bacolod HUC), no city/municipality breakdown, unlike other programs. All 4 quarters are stacked as row-blocks within the single 'Quarterly' tab (col 3 = 'Quarter' text '1st Quarter'..'4th Quarter') \u2014 period_filter_column/period_labels scope each upload to that quarter's 5 rows (same D6 mechanism as Family Planning). Percentage is always recomputed from raw counts (Total/Population), matching the project's standing rule of never trusting a source-computed % \u2014 this sheet's own % formula is correct, unlike Quarterly_1's (see ohc_general_population.json), but recomputing costs nothing and stays consistent. Quarterly only: the workbook's own Annual tab is not ingested (an annual view is derived from the quarterly data already stored)."
+}

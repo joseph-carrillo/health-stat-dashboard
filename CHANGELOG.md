@@ -31,6 +31,22 @@ always agree (a future CI check will enforce it).
   (335 = 5 groups × 67 locations), 0 parser errors/DQC issues, all 335 grand-total cells
   independently recomputed from raw method columns and cross-checked against the sheet's own
   cached totals (zero mismatches). 8 new tests for the row_filter mechanism.
+- **Oral Health program built** (second D6 target, extends row_filter to two stacked row
+  dimensions at once): 141 indicators (`OHC_*`) — infants 0-11 months first-visit-only
+  (`ohc_infant_visit.json`, 5 indicators) + general population across 8 age bands including 3
+  pregnant-women brackets, First Visit and Completed-2-Visits each split facility/non-facility
+  (`ohc_general_population.json`, 136 indicators via a primary sheet_map entry + 7 extra_sheets
+  entries, one per remaining age band, each combining a static age-band `row_filter` with the
+  shared quarter `period_filter_column`). Percentages are always recomputed from raw counts, not
+  the source's own cells — `Quarterly_1`'s percentage columns 2–4 in the chain each divide by the
+  *previous percentage cell* instead of by population, a cascading bug confirmed on every row
+  (one cached cell reads 236,957.3%). Added a Completed-2-Visits ≤ First-Visit DQC check per
+  facility/non-facility per age band — not present in the source at all. Dry-run verified against
+  the real file: exact row counts, 0 parser errors/DQC issues, all 160 raw-input totals
+  independently recomputed and cross-checked (zero mismatches), 0 real Completed>First-Visit
+  violations in the data. Flagged, not blocking: the 3 pregnant-women bands' population
+  denominator looks like general female population, not an estimated-pregnancies count — raw
+  counts are ingested as-is, but that specific percentage may not mean what its label says.
 - **Rate & ratio indicators are now first-class (D1/D2, ADR-023 — proposed).** New
   `display_unit()` helper; `/api/trend`, `/api/coverage`, and `/api/indicators` expose
   `rate_multiplier`/`unit`; rates are stored already-multiplied (62.5 = "62.5 per 100,000")

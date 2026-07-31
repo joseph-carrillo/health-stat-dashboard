@@ -1,0 +1,1051 @@
+{
+  "template_id": "OHC_GENERAL_POPULATION",
+  "template_version": "2026",
+  "program_code": "ORAL_HEALTH",
+  "source_file_pattern": "ohc_1st_visit",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 0,
+  "stop_at_blank_psgc": false,
+  "period_filter_column": 4,
+  "period_labels": {
+    "1": "1st Quarter",
+    "2": "2nd Quarter",
+    "3": "3rd Quarter",
+    "4": "4th Quarter"
+  },
+  "row_filter": [
+    {
+      "column": 3,
+      "equals": "1-4 years old"
+    }
+  ],
+  "display": {
+    "label": "Oral Health \u2014 General Population, Visit Coverage by Age Band (quarterly)",
+    "dqc_highlight": true,
+    "id_columns": [
+      {
+        "key": "psgc",
+        "label": "PSGC"
+      },
+      {
+        "key": "location",
+        "label": "Region/PHIC"
+      }
+    ]
+  },
+  "upload": {
+    "sub_program": "Oral Health",
+    "file_number": 2
+  },
+  "sheet_map": {
+    "1": "Quarterly_1",
+    "2": "Quarterly_1",
+    "3": "Quarterly_1",
+    "4": "Quarterly_1"
+  },
+  "columns": [
+    {
+      "index": 5,
+      "indicator_code": "OHC_G1_4_POP",
+      "is_computed": false
+    },
+    {
+      "index": 6,
+      "indicator_code": "OHC_G1_4_FVFAC_MALE",
+      "is_computed": false
+    },
+    {
+      "index": 7,
+      "indicator_code": "OHC_G1_4_FVFAC_FEMALE",
+      "is_computed": false
+    },
+    {
+      "index": 8,
+      "indicator_code": "OHC_G1_4_FVFAC_TOTAL",
+      "is_computed": true,
+      "formula": "OHC_G1_4_FVFAC_MALE + OHC_G1_4_FVFAC_FEMALE"
+    },
+    {
+      "index": 9,
+      "indicator_code": "OHC_G1_4_FVFAC_PCT",
+      "is_computed": true,
+      "formula": "OHC_G1_4_FVFAC_TOTAL / OHC_G1_4_POP"
+    },
+    {
+      "index": 10,
+      "indicator_code": "OHC_G1_4_FVNONFAC_MALE",
+      "is_computed": false
+    },
+    {
+      "index": 11,
+      "indicator_code": "OHC_G1_4_FVNONFAC_FEMALE",
+      "is_computed": false
+    },
+    {
+      "index": 12,
+      "indicator_code": "OHC_G1_4_FVNONFAC_TOTAL",
+      "is_computed": true,
+      "formula": "OHC_G1_4_FVNONFAC_MALE + OHC_G1_4_FVNONFAC_FEMALE"
+    },
+    {
+      "index": 13,
+      "indicator_code": "OHC_G1_4_FVNONFAC_PCT",
+      "is_computed": true,
+      "formula": "OHC_G1_4_FVNONFAC_TOTAL / OHC_G1_4_POP"
+    },
+    {
+      "index": 14,
+      "indicator_code": "OHC_G1_4_C2FAC_MALE",
+      "is_computed": false
+    },
+    {
+      "index": 15,
+      "indicator_code": "OHC_G1_4_C2FAC_FEMALE",
+      "is_computed": false
+    },
+    {
+      "index": 16,
+      "indicator_code": "OHC_G1_4_C2FAC_TOTAL",
+      "is_computed": true,
+      "formula": "OHC_G1_4_C2FAC_MALE + OHC_G1_4_C2FAC_FEMALE"
+    },
+    {
+      "index": 17,
+      "indicator_code": "OHC_G1_4_C2FAC_PCT",
+      "is_computed": true,
+      "formula": "OHC_G1_4_C2FAC_TOTAL / OHC_G1_4_POP"
+    },
+    {
+      "index": 18,
+      "indicator_code": "OHC_G1_4_C2NONFAC_MALE",
+      "is_computed": false
+    },
+    {
+      "index": 19,
+      "indicator_code": "OHC_G1_4_C2NONFAC_FEMALE",
+      "is_computed": false
+    },
+    {
+      "index": 20,
+      "indicator_code": "OHC_G1_4_C2NONFAC_TOTAL",
+      "is_computed": true,
+      "formula": "OHC_G1_4_C2NONFAC_MALE + OHC_G1_4_C2NONFAC_FEMALE"
+    },
+    {
+      "index": 21,
+      "indicator_code": "OHC_G1_4_C2NONFAC_PCT",
+      "is_computed": true,
+      "formula": "OHC_G1_4_C2NONFAC_TOTAL / OHC_G1_4_POP"
+    }
+  ],
+  "dqc_rules": [
+    {
+      "rule_type": "reconciliation",
+      "mode": "at_most",
+      "parts": [
+        "OHC_G1_4_C2FAC_TOTAL"
+      ],
+      "whole": "OHC_G1_4_FVFAC_TOTAL",
+      "message": "Completed 2 Visits (Facility) exceeds First Visit (Facility)",
+      "hint": "A client can't complete a 2nd oral visit without a 1st. If Completed exceeds First Visit, a count is wrong: check the source file and re-upload."
+    },
+    {
+      "rule_type": "reconciliation",
+      "mode": "at_most",
+      "parts": [
+        "OHC_G1_4_C2NONFAC_TOTAL"
+      ],
+      "whole": "OHC_G1_4_FVNONFAC_TOTAL",
+      "message": "Completed 2 Visits (Non-facility) exceeds First Visit (Non-facility)",
+      "hint": "A client can't complete a 2nd oral visit without a 1st. If Completed exceeds First Visit, a count is wrong: check the source file and re-upload."
+    }
+  ],
+  "extra_sheets": [
+    {
+      "sheet_name": "Quarterly_1",
+      "row_filter": [
+        {
+          "column": 3,
+          "equals": "5-9 years old"
+        }
+      ],
+      "columns": [
+        {
+          "index": 5,
+          "indicator_code": "OHC_G5_9_POP",
+          "is_computed": false
+        },
+        {
+          "index": 6,
+          "indicator_code": "OHC_G5_9_FVFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 7,
+          "indicator_code": "OHC_G5_9_FVFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 8,
+          "indicator_code": "OHC_G5_9_FVFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_G5_9_FVFAC_MALE + OHC_G5_9_FVFAC_FEMALE"
+        },
+        {
+          "index": 9,
+          "indicator_code": "OHC_G5_9_FVFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_G5_9_FVFAC_TOTAL / OHC_G5_9_POP"
+        },
+        {
+          "index": 10,
+          "indicator_code": "OHC_G5_9_FVNONFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 11,
+          "indicator_code": "OHC_G5_9_FVNONFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 12,
+          "indicator_code": "OHC_G5_9_FVNONFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_G5_9_FVNONFAC_MALE + OHC_G5_9_FVNONFAC_FEMALE"
+        },
+        {
+          "index": 13,
+          "indicator_code": "OHC_G5_9_FVNONFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_G5_9_FVNONFAC_TOTAL / OHC_G5_9_POP"
+        },
+        {
+          "index": 14,
+          "indicator_code": "OHC_G5_9_C2FAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 15,
+          "indicator_code": "OHC_G5_9_C2FAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 16,
+          "indicator_code": "OHC_G5_9_C2FAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_G5_9_C2FAC_MALE + OHC_G5_9_C2FAC_FEMALE"
+        },
+        {
+          "index": 17,
+          "indicator_code": "OHC_G5_9_C2FAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_G5_9_C2FAC_TOTAL / OHC_G5_9_POP"
+        },
+        {
+          "index": 18,
+          "indicator_code": "OHC_G5_9_C2NONFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 19,
+          "indicator_code": "OHC_G5_9_C2NONFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 20,
+          "indicator_code": "OHC_G5_9_C2NONFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_G5_9_C2NONFAC_MALE + OHC_G5_9_C2NONFAC_FEMALE"
+        },
+        {
+          "index": 21,
+          "indicator_code": "OHC_G5_9_C2NONFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_G5_9_C2NONFAC_TOTAL / OHC_G5_9_POP"
+        }
+      ],
+      "dqc_rules": [
+        {
+          "rule_type": "reconciliation",
+          "mode": "at_most",
+          "parts": [
+            "OHC_G5_9_C2FAC_TOTAL"
+          ],
+          "whole": "OHC_G5_9_FVFAC_TOTAL",
+          "message": "Completed 2 Visits (Facility) exceeds First Visit (Facility)",
+          "hint": "A client can't complete a 2nd oral visit without a 1st. If Completed exceeds First Visit, a count is wrong: check the source file and re-upload."
+        },
+        {
+          "rule_type": "reconciliation",
+          "mode": "at_most",
+          "parts": [
+            "OHC_G5_9_C2NONFAC_TOTAL"
+          ],
+          "whole": "OHC_G5_9_FVNONFAC_TOTAL",
+          "message": "Completed 2 Visits (Non-facility) exceeds First Visit (Non-facility)",
+          "hint": "A client can't complete a 2nd oral visit without a 1st. If Completed exceeds First Visit, a count is wrong: check the source file and re-upload."
+        }
+      ]
+    },
+    {
+      "sheet_name": "Quarterly_1",
+      "row_filter": [
+        {
+          "column": 3,
+          "equals": "10-19 years old"
+        }
+      ],
+      "columns": [
+        {
+          "index": 5,
+          "indicator_code": "OHC_G10_19_POP",
+          "is_computed": false
+        },
+        {
+          "index": 6,
+          "indicator_code": "OHC_G10_19_FVFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 7,
+          "indicator_code": "OHC_G10_19_FVFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 8,
+          "indicator_code": "OHC_G10_19_FVFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_G10_19_FVFAC_MALE + OHC_G10_19_FVFAC_FEMALE"
+        },
+        {
+          "index": 9,
+          "indicator_code": "OHC_G10_19_FVFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_G10_19_FVFAC_TOTAL / OHC_G10_19_POP"
+        },
+        {
+          "index": 10,
+          "indicator_code": "OHC_G10_19_FVNONFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 11,
+          "indicator_code": "OHC_G10_19_FVNONFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 12,
+          "indicator_code": "OHC_G10_19_FVNONFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_G10_19_FVNONFAC_MALE + OHC_G10_19_FVNONFAC_FEMALE"
+        },
+        {
+          "index": 13,
+          "indicator_code": "OHC_G10_19_FVNONFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_G10_19_FVNONFAC_TOTAL / OHC_G10_19_POP"
+        },
+        {
+          "index": 14,
+          "indicator_code": "OHC_G10_19_C2FAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 15,
+          "indicator_code": "OHC_G10_19_C2FAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 16,
+          "indicator_code": "OHC_G10_19_C2FAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_G10_19_C2FAC_MALE + OHC_G10_19_C2FAC_FEMALE"
+        },
+        {
+          "index": 17,
+          "indicator_code": "OHC_G10_19_C2FAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_G10_19_C2FAC_TOTAL / OHC_G10_19_POP"
+        },
+        {
+          "index": 18,
+          "indicator_code": "OHC_G10_19_C2NONFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 19,
+          "indicator_code": "OHC_G10_19_C2NONFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 20,
+          "indicator_code": "OHC_G10_19_C2NONFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_G10_19_C2NONFAC_MALE + OHC_G10_19_C2NONFAC_FEMALE"
+        },
+        {
+          "index": 21,
+          "indicator_code": "OHC_G10_19_C2NONFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_G10_19_C2NONFAC_TOTAL / OHC_G10_19_POP"
+        }
+      ],
+      "dqc_rules": [
+        {
+          "rule_type": "reconciliation",
+          "mode": "at_most",
+          "parts": [
+            "OHC_G10_19_C2FAC_TOTAL"
+          ],
+          "whole": "OHC_G10_19_FVFAC_TOTAL",
+          "message": "Completed 2 Visits (Facility) exceeds First Visit (Facility)",
+          "hint": "A client can't complete a 2nd oral visit without a 1st. If Completed exceeds First Visit, a count is wrong: check the source file and re-upload."
+        },
+        {
+          "rule_type": "reconciliation",
+          "mode": "at_most",
+          "parts": [
+            "OHC_G10_19_C2NONFAC_TOTAL"
+          ],
+          "whole": "OHC_G10_19_FVNONFAC_TOTAL",
+          "message": "Completed 2 Visits (Non-facility) exceeds First Visit (Non-facility)",
+          "hint": "A client can't complete a 2nd oral visit without a 1st. If Completed exceeds First Visit, a count is wrong: check the source file and re-upload."
+        }
+      ]
+    },
+    {
+      "sheet_name": "Quarterly_1",
+      "row_filter": [
+        {
+          "column": 3,
+          "equals": "20-59 years old"
+        }
+      ],
+      "columns": [
+        {
+          "index": 5,
+          "indicator_code": "OHC_G20_59_POP",
+          "is_computed": false
+        },
+        {
+          "index": 6,
+          "indicator_code": "OHC_G20_59_FVFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 7,
+          "indicator_code": "OHC_G20_59_FVFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 8,
+          "indicator_code": "OHC_G20_59_FVFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_G20_59_FVFAC_MALE + OHC_G20_59_FVFAC_FEMALE"
+        },
+        {
+          "index": 9,
+          "indicator_code": "OHC_G20_59_FVFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_G20_59_FVFAC_TOTAL / OHC_G20_59_POP"
+        },
+        {
+          "index": 10,
+          "indicator_code": "OHC_G20_59_FVNONFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 11,
+          "indicator_code": "OHC_G20_59_FVNONFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 12,
+          "indicator_code": "OHC_G20_59_FVNONFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_G20_59_FVNONFAC_MALE + OHC_G20_59_FVNONFAC_FEMALE"
+        },
+        {
+          "index": 13,
+          "indicator_code": "OHC_G20_59_FVNONFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_G20_59_FVNONFAC_TOTAL / OHC_G20_59_POP"
+        },
+        {
+          "index": 14,
+          "indicator_code": "OHC_G20_59_C2FAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 15,
+          "indicator_code": "OHC_G20_59_C2FAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 16,
+          "indicator_code": "OHC_G20_59_C2FAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_G20_59_C2FAC_MALE + OHC_G20_59_C2FAC_FEMALE"
+        },
+        {
+          "index": 17,
+          "indicator_code": "OHC_G20_59_C2FAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_G20_59_C2FAC_TOTAL / OHC_G20_59_POP"
+        },
+        {
+          "index": 18,
+          "indicator_code": "OHC_G20_59_C2NONFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 19,
+          "indicator_code": "OHC_G20_59_C2NONFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 20,
+          "indicator_code": "OHC_G20_59_C2NONFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_G20_59_C2NONFAC_MALE + OHC_G20_59_C2NONFAC_FEMALE"
+        },
+        {
+          "index": 21,
+          "indicator_code": "OHC_G20_59_C2NONFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_G20_59_C2NONFAC_TOTAL / OHC_G20_59_POP"
+        }
+      ],
+      "dqc_rules": [
+        {
+          "rule_type": "reconciliation",
+          "mode": "at_most",
+          "parts": [
+            "OHC_G20_59_C2FAC_TOTAL"
+          ],
+          "whole": "OHC_G20_59_FVFAC_TOTAL",
+          "message": "Completed 2 Visits (Facility) exceeds First Visit (Facility)",
+          "hint": "A client can't complete a 2nd oral visit without a 1st. If Completed exceeds First Visit, a count is wrong: check the source file and re-upload."
+        },
+        {
+          "rule_type": "reconciliation",
+          "mode": "at_most",
+          "parts": [
+            "OHC_G20_59_C2NONFAC_TOTAL"
+          ],
+          "whole": "OHC_G20_59_FVNONFAC_TOTAL",
+          "message": "Completed 2 Visits (Non-facility) exceeds First Visit (Non-facility)",
+          "hint": "A client can't complete a 2nd oral visit without a 1st. If Completed exceeds First Visit, a count is wrong: check the source file and re-upload."
+        }
+      ]
+    },
+    {
+      "sheet_name": "Quarterly_1",
+      "row_filter": [
+        {
+          "column": 3,
+          "equals": "60 years old and above"
+        }
+      ],
+      "columns": [
+        {
+          "index": 5,
+          "indicator_code": "OHC_G60PLUS_POP",
+          "is_computed": false
+        },
+        {
+          "index": 6,
+          "indicator_code": "OHC_G60PLUS_FVFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 7,
+          "indicator_code": "OHC_G60PLUS_FVFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 8,
+          "indicator_code": "OHC_G60PLUS_FVFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_G60PLUS_FVFAC_MALE + OHC_G60PLUS_FVFAC_FEMALE"
+        },
+        {
+          "index": 9,
+          "indicator_code": "OHC_G60PLUS_FVFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_G60PLUS_FVFAC_TOTAL / OHC_G60PLUS_POP"
+        },
+        {
+          "index": 10,
+          "indicator_code": "OHC_G60PLUS_FVNONFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 11,
+          "indicator_code": "OHC_G60PLUS_FVNONFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 12,
+          "indicator_code": "OHC_G60PLUS_FVNONFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_G60PLUS_FVNONFAC_MALE + OHC_G60PLUS_FVNONFAC_FEMALE"
+        },
+        {
+          "index": 13,
+          "indicator_code": "OHC_G60PLUS_FVNONFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_G60PLUS_FVNONFAC_TOTAL / OHC_G60PLUS_POP"
+        },
+        {
+          "index": 14,
+          "indicator_code": "OHC_G60PLUS_C2FAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 15,
+          "indicator_code": "OHC_G60PLUS_C2FAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 16,
+          "indicator_code": "OHC_G60PLUS_C2FAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_G60PLUS_C2FAC_MALE + OHC_G60PLUS_C2FAC_FEMALE"
+        },
+        {
+          "index": 17,
+          "indicator_code": "OHC_G60PLUS_C2FAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_G60PLUS_C2FAC_TOTAL / OHC_G60PLUS_POP"
+        },
+        {
+          "index": 18,
+          "indicator_code": "OHC_G60PLUS_C2NONFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 19,
+          "indicator_code": "OHC_G60PLUS_C2NONFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 20,
+          "indicator_code": "OHC_G60PLUS_C2NONFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_G60PLUS_C2NONFAC_MALE + OHC_G60PLUS_C2NONFAC_FEMALE"
+        },
+        {
+          "index": 21,
+          "indicator_code": "OHC_G60PLUS_C2NONFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_G60PLUS_C2NONFAC_TOTAL / OHC_G60PLUS_POP"
+        }
+      ],
+      "dqc_rules": [
+        {
+          "rule_type": "reconciliation",
+          "mode": "at_most",
+          "parts": [
+            "OHC_G60PLUS_C2FAC_TOTAL"
+          ],
+          "whole": "OHC_G60PLUS_FVFAC_TOTAL",
+          "message": "Completed 2 Visits (Facility) exceeds First Visit (Facility)",
+          "hint": "A client can't complete a 2nd oral visit without a 1st. If Completed exceeds First Visit, a count is wrong: check the source file and re-upload."
+        },
+        {
+          "rule_type": "reconciliation",
+          "mode": "at_most",
+          "parts": [
+            "OHC_G60PLUS_C2NONFAC_TOTAL"
+          ],
+          "whole": "OHC_G60PLUS_FVNONFAC_TOTAL",
+          "message": "Completed 2 Visits (Non-facility) exceeds First Visit (Non-facility)",
+          "hint": "A client can't complete a 2nd oral visit without a 1st. If Completed exceeds First Visit, a count is wrong: check the source file and re-upload."
+        }
+      ]
+    },
+    {
+      "sheet_name": "Quarterly_1",
+      "row_filter": [
+        {
+          "column": 3,
+          "equals": "10-14 years old (pregnant)"
+        }
+      ],
+      "columns": [
+        {
+          "index": 5,
+          "indicator_code": "OHC_PREG_10_14_POP",
+          "is_computed": false
+        },
+        {
+          "index": 6,
+          "indicator_code": "OHC_PREG_10_14_FVFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 7,
+          "indicator_code": "OHC_PREG_10_14_FVFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 8,
+          "indicator_code": "OHC_PREG_10_14_FVFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_PREG_10_14_FVFAC_MALE + OHC_PREG_10_14_FVFAC_FEMALE"
+        },
+        {
+          "index": 9,
+          "indicator_code": "OHC_PREG_10_14_FVFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_PREG_10_14_FVFAC_TOTAL / OHC_PREG_10_14_POP"
+        },
+        {
+          "index": 10,
+          "indicator_code": "OHC_PREG_10_14_FVNONFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 11,
+          "indicator_code": "OHC_PREG_10_14_FVNONFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 12,
+          "indicator_code": "OHC_PREG_10_14_FVNONFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_PREG_10_14_FVNONFAC_MALE + OHC_PREG_10_14_FVNONFAC_FEMALE"
+        },
+        {
+          "index": 13,
+          "indicator_code": "OHC_PREG_10_14_FVNONFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_PREG_10_14_FVNONFAC_TOTAL / OHC_PREG_10_14_POP"
+        },
+        {
+          "index": 14,
+          "indicator_code": "OHC_PREG_10_14_C2FAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 15,
+          "indicator_code": "OHC_PREG_10_14_C2FAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 16,
+          "indicator_code": "OHC_PREG_10_14_C2FAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_PREG_10_14_C2FAC_MALE + OHC_PREG_10_14_C2FAC_FEMALE"
+        },
+        {
+          "index": 17,
+          "indicator_code": "OHC_PREG_10_14_C2FAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_PREG_10_14_C2FAC_TOTAL / OHC_PREG_10_14_POP"
+        },
+        {
+          "index": 18,
+          "indicator_code": "OHC_PREG_10_14_C2NONFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 19,
+          "indicator_code": "OHC_PREG_10_14_C2NONFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 20,
+          "indicator_code": "OHC_PREG_10_14_C2NONFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_PREG_10_14_C2NONFAC_MALE + OHC_PREG_10_14_C2NONFAC_FEMALE"
+        },
+        {
+          "index": 21,
+          "indicator_code": "OHC_PREG_10_14_C2NONFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_PREG_10_14_C2NONFAC_TOTAL / OHC_PREG_10_14_POP"
+        }
+      ],
+      "dqc_rules": [
+        {
+          "rule_type": "reconciliation",
+          "mode": "at_most",
+          "parts": [
+            "OHC_PREG_10_14_C2FAC_TOTAL"
+          ],
+          "whole": "OHC_PREG_10_14_FVFAC_TOTAL",
+          "message": "Completed 2 Visits (Facility) exceeds First Visit (Facility)",
+          "hint": "A client can't complete a 2nd oral visit without a 1st. If Completed exceeds First Visit, a count is wrong: check the source file and re-upload."
+        },
+        {
+          "rule_type": "reconciliation",
+          "mode": "at_most",
+          "parts": [
+            "OHC_PREG_10_14_C2NONFAC_TOTAL"
+          ],
+          "whole": "OHC_PREG_10_14_FVNONFAC_TOTAL",
+          "message": "Completed 2 Visits (Non-facility) exceeds First Visit (Non-facility)",
+          "hint": "A client can't complete a 2nd oral visit without a 1st. If Completed exceeds First Visit, a count is wrong: check the source file and re-upload."
+        }
+      ]
+    },
+    {
+      "sheet_name": "Quarterly_1",
+      "row_filter": [
+        {
+          "column": 3,
+          "equals": "15-19 years old (pregnant)"
+        }
+      ],
+      "columns": [
+        {
+          "index": 5,
+          "indicator_code": "OHC_PREG_15_19_POP",
+          "is_computed": false
+        },
+        {
+          "index": 6,
+          "indicator_code": "OHC_PREG_15_19_FVFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 7,
+          "indicator_code": "OHC_PREG_15_19_FVFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 8,
+          "indicator_code": "OHC_PREG_15_19_FVFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_PREG_15_19_FVFAC_MALE + OHC_PREG_15_19_FVFAC_FEMALE"
+        },
+        {
+          "index": 9,
+          "indicator_code": "OHC_PREG_15_19_FVFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_PREG_15_19_FVFAC_TOTAL / OHC_PREG_15_19_POP"
+        },
+        {
+          "index": 10,
+          "indicator_code": "OHC_PREG_15_19_FVNONFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 11,
+          "indicator_code": "OHC_PREG_15_19_FVNONFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 12,
+          "indicator_code": "OHC_PREG_15_19_FVNONFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_PREG_15_19_FVNONFAC_MALE + OHC_PREG_15_19_FVNONFAC_FEMALE"
+        },
+        {
+          "index": 13,
+          "indicator_code": "OHC_PREG_15_19_FVNONFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_PREG_15_19_FVNONFAC_TOTAL / OHC_PREG_15_19_POP"
+        },
+        {
+          "index": 14,
+          "indicator_code": "OHC_PREG_15_19_C2FAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 15,
+          "indicator_code": "OHC_PREG_15_19_C2FAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 16,
+          "indicator_code": "OHC_PREG_15_19_C2FAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_PREG_15_19_C2FAC_MALE + OHC_PREG_15_19_C2FAC_FEMALE"
+        },
+        {
+          "index": 17,
+          "indicator_code": "OHC_PREG_15_19_C2FAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_PREG_15_19_C2FAC_TOTAL / OHC_PREG_15_19_POP"
+        },
+        {
+          "index": 18,
+          "indicator_code": "OHC_PREG_15_19_C2NONFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 19,
+          "indicator_code": "OHC_PREG_15_19_C2NONFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 20,
+          "indicator_code": "OHC_PREG_15_19_C2NONFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_PREG_15_19_C2NONFAC_MALE + OHC_PREG_15_19_C2NONFAC_FEMALE"
+        },
+        {
+          "index": 21,
+          "indicator_code": "OHC_PREG_15_19_C2NONFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_PREG_15_19_C2NONFAC_TOTAL / OHC_PREG_15_19_POP"
+        }
+      ],
+      "dqc_rules": [
+        {
+          "rule_type": "reconciliation",
+          "mode": "at_most",
+          "parts": [
+            "OHC_PREG_15_19_C2FAC_TOTAL"
+          ],
+          "whole": "OHC_PREG_15_19_FVFAC_TOTAL",
+          "message": "Completed 2 Visits (Facility) exceeds First Visit (Facility)",
+          "hint": "A client can't complete a 2nd oral visit without a 1st. If Completed exceeds First Visit, a count is wrong: check the source file and re-upload."
+        },
+        {
+          "rule_type": "reconciliation",
+          "mode": "at_most",
+          "parts": [
+            "OHC_PREG_15_19_C2NONFAC_TOTAL"
+          ],
+          "whole": "OHC_PREG_15_19_FVNONFAC_TOTAL",
+          "message": "Completed 2 Visits (Non-facility) exceeds First Visit (Non-facility)",
+          "hint": "A client can't complete a 2nd oral visit without a 1st. If Completed exceeds First Visit, a count is wrong: check the source file and re-upload."
+        }
+      ]
+    },
+    {
+      "sheet_name": "Quarterly_1",
+      "row_filter": [
+        {
+          "column": 3,
+          "equals": "20-49 years old (pregnant)"
+        }
+      ],
+      "columns": [
+        {
+          "index": 5,
+          "indicator_code": "OHC_PREG_20_49_POP",
+          "is_computed": false
+        },
+        {
+          "index": 6,
+          "indicator_code": "OHC_PREG_20_49_FVFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 7,
+          "indicator_code": "OHC_PREG_20_49_FVFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 8,
+          "indicator_code": "OHC_PREG_20_49_FVFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_PREG_20_49_FVFAC_MALE + OHC_PREG_20_49_FVFAC_FEMALE"
+        },
+        {
+          "index": 9,
+          "indicator_code": "OHC_PREG_20_49_FVFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_PREG_20_49_FVFAC_TOTAL / OHC_PREG_20_49_POP"
+        },
+        {
+          "index": 10,
+          "indicator_code": "OHC_PREG_20_49_FVNONFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 11,
+          "indicator_code": "OHC_PREG_20_49_FVNONFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 12,
+          "indicator_code": "OHC_PREG_20_49_FVNONFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_PREG_20_49_FVNONFAC_MALE + OHC_PREG_20_49_FVNONFAC_FEMALE"
+        },
+        {
+          "index": 13,
+          "indicator_code": "OHC_PREG_20_49_FVNONFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_PREG_20_49_FVNONFAC_TOTAL / OHC_PREG_20_49_POP"
+        },
+        {
+          "index": 14,
+          "indicator_code": "OHC_PREG_20_49_C2FAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 15,
+          "indicator_code": "OHC_PREG_20_49_C2FAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 16,
+          "indicator_code": "OHC_PREG_20_49_C2FAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_PREG_20_49_C2FAC_MALE + OHC_PREG_20_49_C2FAC_FEMALE"
+        },
+        {
+          "index": 17,
+          "indicator_code": "OHC_PREG_20_49_C2FAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_PREG_20_49_C2FAC_TOTAL / OHC_PREG_20_49_POP"
+        },
+        {
+          "index": 18,
+          "indicator_code": "OHC_PREG_20_49_C2NONFAC_MALE",
+          "is_computed": false
+        },
+        {
+          "index": 19,
+          "indicator_code": "OHC_PREG_20_49_C2NONFAC_FEMALE",
+          "is_computed": false
+        },
+        {
+          "index": 20,
+          "indicator_code": "OHC_PREG_20_49_C2NONFAC_TOTAL",
+          "is_computed": true,
+          "formula": "OHC_PREG_20_49_C2NONFAC_MALE + OHC_PREG_20_49_C2NONFAC_FEMALE"
+        },
+        {
+          "index": 21,
+          "indicator_code": "OHC_PREG_20_49_C2NONFAC_PCT",
+          "is_computed": true,
+          "formula": "OHC_PREG_20_49_C2NONFAC_TOTAL / OHC_PREG_20_49_POP"
+        }
+      ],
+      "dqc_rules": [
+        {
+          "rule_type": "reconciliation",
+          "mode": "at_most",
+          "parts": [
+            "OHC_PREG_20_49_C2FAC_TOTAL"
+          ],
+          "whole": "OHC_PREG_20_49_FVFAC_TOTAL",
+          "message": "Completed 2 Visits (Facility) exceeds First Visit (Facility)",
+          "hint": "A client can't complete a 2nd oral visit without a 1st. If Completed exceeds First Visit, a count is wrong: check the source file and re-upload."
+        },
+        {
+          "rule_type": "reconciliation",
+          "mode": "at_most",
+          "parts": [
+            "OHC_PREG_20_49_C2NONFAC_TOTAL"
+          ],
+          "whole": "OHC_PREG_20_49_FVNONFAC_TOTAL",
+          "message": "Completed 2 Visits (Non-facility) exceeds First Visit (Non-facility)",
+          "hint": "A client can't complete a 2nd oral visit without a 1st. If Completed exceeds First Visit, a count is wrong: check the source file and re-upload."
+        }
+      ]
+    }
+  ],
+  "notes": "Oral Health \u2014 general population (1-4y through 60+, plus 3 pregnant-women age bands), First Visit and Completed-2-Visits, each split facility/non-facility. 5 geographic rows per period (NIR + 3 provinces + Bacolod HUC). Both the Age Group (col 3) and Quarter (col 4) dimensions are stacked as rows within one 'Quarterly_1' tab \u2014 the primary sheet_map plus each extra_sheets entry uses row_filter for its age band, composed automatically with the shared period_filter_column/period_labels for the quarter (D6 mechanism, see parser.py). Percentages are ALWAYS recomputed from raw counts, never the source's own % cells: Quarterly_1's percentage columns 2-4 in the chain (Non-facility First Visit %, Facility Completed-2 %, Non-facility Completed-2 %) each divide by the PREVIOUS percentage cell instead of by population in the source \u2014 a cascading bug confirmed on every row (FLAG 2), e.g. one cached cell reads 236,957.3%. Added a Completed-2-Visits <= First-Visit DQC check per facility/non-facility per band \u2014 not present in the source at all (FLAG 6). FLAG 4 (unresolved, needs the DOH encoder): the 3 pregnant-women bands' 'Projected Population' looks like it may actually be general female population of that age range, not an estimated-pregnancies count (roughly half of the matching general age band, verified for Negros Occidental Q1) \u2014 raw counts are ingested as-is, but the % for those 3 bands specifically may not mean what its label says. Quarterly only: the workbook's own Annual_1 tab is not ingested (its column indices shift by 1 vs Quarterly_1 since it lacks a Quarter column; an annual view is derived from the quarterly data already stored)."
+}

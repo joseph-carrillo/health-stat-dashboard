@@ -81,6 +81,13 @@ PROGRAMS = [
             {"name": "Family Planning"},
         ],
     },
+    {
+        "code": "ORAL_HEALTH",
+        "name": "Oral Health Care and Services",
+        "sub_programs": [
+            {"name": "Oral Health"},
+        ],
+    },
 ]
 
 
