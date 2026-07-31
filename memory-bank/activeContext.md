@@ -1,37 +1,70 @@
 # activeContext.md
 
 ## Current Session Goal (next session)
-**Two decision queues are waiting on Joseph — build capacity is not the constraint.**
+**D6 is no longer a decision — it's built (ADR-026, PROPOSED).** Session 14 designed and shipped
+the row-stacked parsing mechanism, then used it to build Family Planning (320 ind) and Oral
+Health (141 ind). **10 of 11 program areas now have all currently-buildable content done** —
+only Morbidity (D7/D10, its own mini-phase) and two NCD sub-files (Eye Health, Meds) remain.
 
-**NEW after Session 13 — the 4 security decisions in ADR-025.** A hardening pass fixed everything
-that didn't need his judgement (audit-log logging, register credentials out of the URL, DB
-connection release at 39 sites, `eval()` → AST evaluator). What's left needs him:
+**Three ratify/reverse asks are now stacked up** — everything built since Session 10 rides on
+them: **ADR-023** (rates stored already-multiplied), **ADR-024** (D4 reconciliation DQC), and
+now **ADR-026** (D6 row_filter mechanism). None have blocked building on top of them so far, but
+they're proposed-not-locked and worth a real yes/no from Joseph rather than staying open
+indefinitely.
+
+**Still open from Session 13 — the 4 security decisions in ADR-025**, untouched this session:
 **(a)** `approve_batch(force=True)` — unreviewed conflicts currently overwrite production on
 approve, so the ADR-004 review gate is optional in practice (data-integrity policy);
 **(b)** JWT localStorage → httpOnly cookie before public go-live; **(c)** connection pooling
 (deploy sizing); **(d)** program-scoping the staging read endpoints. Plus a free one-liner:
-`main.py`'s API version says `0.1.0`, should be `0.9.0`. And two housekeeping questions — the
-untracked 2026-07-18 audit transcript in the repo root, and three unexplained SBI-looking `.xlsx`
-files loose in `backend/data/`.
-
-**Still true from Session 12 — all config-only programs are DONE.** 8 of 11 program areas have every
-currently-buildable template built + validated + dry-run-verified. **Everything remaining is a
-one-way-door schema/parser decision or a DOH/encoder action — do NOT start these without Joseph's
-direction.** Standing rules still hold: Opus 4.8 orchestrator / Sonnet 5 sub-agents; conserve
-tokens; commit+push per green unit; ping after each finished program.
+`main.py`'s API version says `0.1.0`, should be `0.9.0`.
 
 **First moves next session:**
-1. **Get two one-liners from Joseph:** ratify/reverse **ADR-023** (rates stored already-multiplied)
-   and **ADR-024** (D4 reconciliation DQC). Everything built rides on them.
-2. **Recommended next target: D6 (row-stacked parsing)** — one `row_filter` mechanism unblocks
-   THREE programs (NCD Eye Health = age-as-rows, Oral Health = quarters+age, Family Planning =
-   quarters). **Design the mechanism and run it past Joseph BEFORE wiring configs.**
-3. Then, each with a decision/answer: **D5 → NCD Meds**; **Morbidity** (D7/D10, last); **STH
-   cascade** (encoder denominator answer); **Schisto / WASH Sanitation** (DOH fixes).
+1. **NCD Eye Health** — apply the now-built D6 mechanism the same way Oral Health did (age-as-
+   rows instead of quarter-as-rows). A normal build, not a design question anymore.
+2. **The verification-automation idea Joseph asked to brainstorm** got used ad hoc (an
+   independent openpyxl reconciliation script, not a hand spot-check, for both FP and Oral
+   Health) but never turned into the reusable tool he actually asked for. Worth doing properly —
+   see `project_state.md` "Open work" #5. He named manual verification as his biggest source of
+   burnout; this is the direct fix.
+3. Then: **D5 → NCD Meds**; **Morbidity** (D7/D10, last); **STH cascade** (encoder denominator
+   answer); **Schisto / WASH Sanitation** (DOH fixes).
 Full per-item plan: `session-handoff.md` "Next Session"; open-work priority: `project_state.md`.
 
-**Also open (not build-order):** UI golden-path check of Sessions 9–12 then real uploads; go-live
-Step 3 (ports 80/443 pending with IT); ESR Google Sheets setup (parked).
+**Also open (not build-order):** UI golden-path check of everything built so far (all dry-run,
+nothing in `health_data` yet) then real uploads; go-live Step 3 (ports 80/443 pending with IT);
+ESR Google Sheets setup (parked); Oral Health's pregnant-band population-denominator question
+(needs the DOH encoder — see Session 14 log).
+
+## 2026-07-31 session 14 (OFFICE `RESUDesktop2`) — D6 built; Family Planning + Oral Health
+Startup was 29 commits behind (office hadn't been used since 2026-07-09) — pulled clean,
+backfilled 796 missing indicators via `bootstrap_db.py`. Joseph asked for a parser-coverage
+audit and to brainstorm automating his manual-verification burnout, then redirected straight to
+building: "lets run FP", then "i have the file added FP and oral health, please check and start
+the build". Design proposal (the row_filter mechanism + two known source bugs to route around)
+got a go-ahead but not a line-by-line schema review — logged as ADR-026, PROPOSED, matching how
+ADR-023/024 were handled.
+
+Built the D6 row-stacked-parsing mechanism (`parser.py`'s `resolve_period_row_filter`/
+`apply_row_filter`, new opt-in `period_filter_column`/`period_labels`/`row_filter` config keys,
+fully backward compatible — regression-tested against the full existing suite, every existing
+config re-validated, a live dry-run against a real CHILD_CARE file unchanged). Used it to build
+**Family Planning** (`fe5e988`, 320 `FP_*` indicators, 5 sheet-groups sharing one quarter-
+filtered tab each; skips the workbook's own broken Annual rollup and its dead-on-arrival "Demand
+Satisfied" KPI) and **Oral Health** (`5d48aa8`, 141 `OHC_*` indicators, proving the mechanism
+generalizes to two simultaneous stacked row dimensions — quarter AND age group — via 7
+`extra_sheets` entries; recomputes percentages from raw counts since 3 of the source's own %
+columns have a cascading formula bug; added a Completed-2-Visits ≤ First-Visit DQC check the
+source lacks entirely).
+
+Verification went further than prior sessions' spot-checks: for both programs, an independent
+openpyxl-only reconciliation (bypassing the parser) recomputed every grand-total cell from raw
+inputs and diffed against the source's own cached totals — 335/335 and 160/160 matched, zero
+mismatches, on top of exact row counts and 0 parser errors/DQC from the dry-runs themselves.
+(Caught a bug in that verification script itself mid-check — a column-index off-by-one — before
+trusting it; the shipped config was correct throughout.) 85 tests pass (77+8 new), ruff/eslint
+clean. All dry-run, nothing written to `health_data`. Docs synced this shutdown: ROADMAP, root
+CLAUDE.md, ADR-026, CHANGELOG (added at commit time).
 
 ## 2026-07-23 session 13 (HOME `_hansell_`) — security hardening; orphaned-audit close-out
 Joseph: "work on unfinished/open items that don't require my attention or approval," then left
@@ -267,6 +300,13 @@ See `working-agreement.md` (burnout → "manage, don't grind").
    OAuth + granular permissions, the auth-gated PHRIC cluster-page variant.
 
 ## Watch out for
+- **D6 row-stacked parsing (session 14, ADR-026)** — when a source workbook stacks a period or
+  category as row-values within one tab instead of one tab per period, use the new
+  `period_filter_column`/`period_labels` (auto, period-driven) and `row_filter` (static
+  condition list) config keys rather than inventing a new mechanism — see `fp_method_mix.json`
+  (period only) and `ohc_general_population.json` (period + a static age-band filter per
+  `extra_sheets` entry) as the two worked examples. Both keys are additive/opt-in; a config that
+  doesn't set them behaves exactly as before.
 - **This machine's hostname is `RESUDesktop2` = the OFFICE desktop** (confirmed 2026-07-09,
   Session 7 — Joseph confirmed directly since neither `secrets/` nor a git stash was present to
   infer it from). `hostname` (or `PowerShell`'s `$env:COMPUTERNAME`) is a fast, reliable way to

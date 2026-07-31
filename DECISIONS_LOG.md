@@ -485,3 +485,68 @@ before anything was verified, committed, or logged in memory — this ADR closes
 standing propose→approve→build cadence. Justified narrowly by his explicit instruction and by
 scope discipline: every fix is behavior-preserving on the happy path, test-covered, and revertible
 as a single commit. Everything requiring judgement was left untouched and is listed above.
+
+## ADR-026 — D6: row-stacked period/category parsing via `row_filter` (2026-07-31) — **PROPOSED, reversible**
+
+**Status:** Proposed. Joseph approved building Family Planning and Oral Health directly ("lets
+run FP", "i have the file added FP and oral health, please check and start the build") after a
+design proposal covering the mechanism's shape and the two known source-data bugs to route
+around; he did not review the exact config-schema keys line by line. Flagging for ratification
+per the project's standing practice for unreviewed design calls (see ADR-023/024).
+
+**Context:** Every config built before this session assumed `sheet_map` maps one reporting
+period to one Excel tab, and one row (from `data_start_row` to the next long blank run) is one
+location for that tab. Family Planning and Oral Health both break this: their source workbooks
+stack every quarter as a repeating 5-to-67-row block *within a single tab* rather than one tab
+per quarter (Oral Health's general-population sheet stacks a *second* dimension, age group, the
+same way). Neither could be built without extending the parser's row-selection model — this was
+flagged as decision **D6** as far back as the 2026-07-06 consolidated summary and left
+deliberately unbuilt until a program actually needed it.
+
+**Decision — implemented this session:**
+1. **New optional config keys, all backward compatible (absent = zero behavior change):**
+   `period_filter_column` (int) + `period_labels` (`{"1": "Q1", ...}`) on a config auto-derive a
+   row filter for whichever period is being uploaded; `row_filter` (a list of
+   `{"column": idx, "equals": value}` conditions) on the primary config or an individual
+   `extra_sheets` entry adds a *static* filter (e.g. one age band) that composes with the
+   auto-derived period filter. Implemented as two small, independently unit-tested pure
+   functions — `resolve_period_row_filter()` and `apply_row_filter()` — called from
+   `parse_file()`'s existing sheet-read loop; when neither key is present the loop is byte-for-
+   byte the same as before (verified: full existing test suite green, every existing config
+   re-validated, a live dry-run regression against a real CHILD_CARE file unchanged).
+2. **Family Planning** (`fp_method_mix.json`) uses only the period filter — 5 sheet-groups
+   (Current User Beginning/New Acceptor/Other Acceptor/Drop Out/Current User Ending) share one
+   physical tab per group across all 4 quarters, discriminated by a `Quarter` column.
+3. **Oral Health** (`ohc_general_population.json`) composes the period filter with a static
+   age-band filter, one `extra_sheets` entry per age band (8 bands total) against the same
+   `Quarterly_1` tab — proving the mechanism generalizes to two simultaneous stacked dimensions,
+   not just one.
+4. **Scope cut, deliberate:** neither build ingests its workbook's own Annual rollup tab.
+   Family Planning's `CUB_A` silently references Q4 instead of Q1 for "beginning of year" (a
+   dated, confirmed source bug); Oral Health's `Annual_1` shifts every column index by one versus
+   `Quarterly_1` (no Quarter column). Building only the corrected quarterly data and deriving an
+   annual *view* from what's already stored (the established pattern for every quarterly program
+   to date) sidesteps both issues rather than requiring D6 to also solve them. If a literal
+   Annual-tab upload is ever wanted, that's a new, separate decision.
+
+**Verification (both programs, real files, dry-run only — nothing written to `health_data`):**
+exact expected row counts (Family Planning: 335 = 5 groups × 67 locations; Oral Health general
+population: 40 = 8 bands × 5 locations), 0 parser errors, 0 DQC issues. Went beyond a hand
+spot-check: wrote a one-off independent reconciliation using `openpyxl` directly (not reusing any
+parser code) that recomputed every grand-total cell from raw inputs and diffed it against the
+sheet's own cached total — 335/335 match for Family Planning, 160/160 for Oral Health's four
+visit-type totals, zero mismatches in both.
+
+**Rejected alternative:** a `row_group_column`/generalized "virtual sheet" abstraction that
+would let one `sheet_map` entry expand into N virtual reads automatically (one per distinct
+category value) instead of requiring an explicit `extra_sheets` entry per age band. Rejected for
+now as more machinery than two programs justify — the explicit-entry-per-band approach reads
+plainly in the JSON (each age band's columns are still visible, not synthesized), matches the
+existing `extra_sheets` mental model, and cost nothing extra since Oral Health only has 8 bands.
+Revisit if a third D6-shaped program needs many more categories than that.
+
+**Left open, not blocked by this decision:** NCD Eye Health needs the same mechanism applied
+(not yet done — next natural D6 program); Oral Health's 3 pregnant-women age bands have a
+separate, unrelated data-interpretation question (population denominator looks like general
+female population, not a pregnancy estimate) that D6 doesn't touch — raw counts ship regardless,
+flagged for the DOH encoder.

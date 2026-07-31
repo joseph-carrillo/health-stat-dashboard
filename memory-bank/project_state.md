@@ -29,6 +29,58 @@ Each machine has its own Docker DB. After cloning/pulling on a machine:
   `staging_health_data` only — **does not touch the new `esr_reports` table**, which has one
   real test row from this session's browser verification, `id=1` "Test Measles Cluster").
 
+## Session 14 (2026-07-31, OFFICE `RESUDesktop2`) — D6 implemented; Family Planning + Oral Health built
+Startup was 29 commits behind (last office session was 2026-07-09) — pulled clean, ran
+`bootstrap_db.py` to backfill 796 indicators this machine's DB was missing. Joseph then asked for
+a parser-coverage audit ("is the parser available for all programs? list what's done/lacking")
+and to brainstorm automating the manual spot-check verification that's his biggest source of
+burnout — proposed a full-population reconciliation script instead of hand-picked cell checks,
+recommended building it, then he redirected straight to "lets run FP" before that got scoped as
+its own deliverable (the *practice* happened this session — see Verification below — but no
+standalone reusable script shipped yet).
+
+Family Planning and Oral Health were both blocked on **D6** (row-stacked period/category
+parsing — flagged since the 2026-07-06 consolidated summary, never built). Proposed the
+mechanism + two known source bugs to route around before building; Joseph approved with "lets
+run FP", then "i have the file added FP and oral health, please check and start the build".
+Full design rationale: **ADR-026** (PROPOSED — flagged for ratification, same as ADR-023/024,
+since Joseph approved the goal but didn't review the exact schema keys).
+
+**Shipped — 2 commits, each verified + pushed separately:**
+- **`fe5e988` Family Planning** — new parser mechanism (`period_filter_column`/`period_labels`/
+  `row_filter` config keys; `parser.py`'s `resolve_period_row_filter`/`apply_row_filter`, fully
+  backward compatible — every existing config re-validated unchanged, full test suite green, a
+  live dry-run regression against a real CHILD_CARE file unaffected) + 320 `FP_*` indicators
+  (`fp_method_mix.json`, 5 sheet-groups × 15 methods × 3 age brackets). Quarterly only — skips
+  the workbook's own Annual rollup (`CUB_A` silently references Q4 instead of Q1 in the source,
+  a dated confirmed bug) and excludes "Demand Satisfied" (denominator never populated, %
+  structurally guaranteed 0). 8 new tests for the row_filter mechanism.
+- **`5d48aa8` Oral Health** — 141 `OHC_*` indicators, two configs: `ohc_infant_visit.json` (5
+  ind) + `ohc_general_population.json` (136 ind, 8 age bands via a primary sheet_map entry + 7
+  `extra_sheets` entries, each composing the shared quarter filter with a static age-band
+  filter — proves D6 generalizes to two simultaneous stacked row dimensions). Percentages always
+  recomputed from raw counts, never the source's own cells (3 of its % columns cascade-divide by
+  the previous % cell instead of population — one cached cell reads 236,957%). Added a
+  Completed-2-Visits ≤ First-Visit DQC check (source has none). **Flagged, not blocking:** the 3
+  pregnant-women age bands' population denominator looks like general female population, not a
+  pregnancy estimate — needs the DOH encoder to confirm.
+- **Verification went beyond prior sessions' hand spot-checks**: for both programs, wrote a
+  one-off independent reconciliation using `openpyxl` directly (bypassing the parser entirely)
+  that recomputed every grand-total cell from raw inputs and diffed against the sheet's own
+  cached total — 335/335 match (Family Planning) and 160/160 match (Oral Health), zero
+  mismatches, on top of exact row counts and 0 parser errors/DQC issues from the dry-runs
+  themselves. (Caught and fixed one bug in my own verification script mid-check — a column-index
+  off-by-one — before trusting its output; the config itself was correct throughout.)
+- 85 backend tests pass (77 + 8 new), ruff + eslint clean. **All dry-run — nothing written to
+  `health_data`/`staging_health_data`.**
+- **Indicator counts now: 1,613 across 10 of 11 program areas** (CHILD_CARE 247, MATERNAL_CARE
+  319, INFECTIOUS_DISEASE 260, NCD 143, VITAL_STATS 52, DEMOGRAPHICS 50, GERIATRIC 49, WASH 11,
+  **FAMILY_PLANNING 320, ORAL_HEALTH 141**). Only Morbidity remains (D7/D10, its own mini-phase).
+
+**Docs synced this shutdown:** ROADMAP.md (D6 marked implemented, FP/Oral Health checked off,
+indicator counts), root CLAUDE.md (indicator count/program count), ADR-026, CHANGELOG
+`[Unreleased]` (both program entries added at commit time, not deferred to shutdown).
+
 ## Session 13 (2026-07-23, HOME `_hansell_`) — security/robustness hardening; audit close-out
 Joseph: "work on unfinished/open items that don't require my attention or approval" (then left;
 returned mid-session, switched Fable 5 → Opus 4.8, asked if I'd been cut off — I had, mid-unit-4,
@@ -556,10 +608,8 @@ Three tracks now, running in parallel:
   `/health-statistics`, `/epidemiology-surveillance`, `/research`, `/laboratory`, public-state
   only (ADR-022). Login moved to `/login`.
 
-## Open work (priority order — updated at Session 13 shutdown)
-**All config-only programs are DONE.** Everything below needs a Joseph decision or a DOH/encoder
-action — do NOT start the schema/parser items without his direction.
-0. **The 4 security decisions from ADR-025** (session 13). Sharpest first:
+## Open work (priority order — updated at Session 14 shutdown)
+0. **The 4 security decisions from ADR-025** (session 13, still open). Sharpest first:
    **(a) `approve_batch(force=True)`** — approving a batch currently auto-accepts every unreviewed
    conflict and overwrites production values, making the ADR-004 review gate optional in practice;
    **(b) JWT localStorage → httpOnly cookie** before public go-live (ADR-003's own revisit trigger
@@ -568,23 +618,33 @@ action — do NOT start the schema/parser items without his direction.
    can read another program's staged rows by batch_id).
 0a. **Free one-liner:** `main.py` reports API version `0.1.0`; `package.json` (ADR-011's source of
    truth) says `0.9.0`.
-1. **Ratify/reverse ADR-023 (rates) + ADR-024 (D4)** — both PROPOSED; everything built rides on them.
-2. **D6 — row-stacked parsing (Joseph's likely next pick).** One `row_filter` mechanism unblocks
-   THREE programs: NCD Eye Health (age-as-rows), Oral Health (quarters+age), Family Planning
-   (quarters). **Design the mechanism and run the approach past Joseph before wiring configs.**
+1. **Ratify/reverse ADR-023 (rates), ADR-024 (D4), and now ADR-026 (D6, session 14)** — all
+   PROPOSED; everything built on the rate uplift, reconciliation DQC, and row-stacked parsing
+   rides on them.
+2. **NCD Eye Health** — apply D6 (age-as-rows) the same way Oral Health did; the mechanism exists
+   now, this is a normal build, not a design question.
 3. **D5 — per-column rollup override** → NCD Meds (build Jan–Nov; DOH must fix the 106-row Dec block).
 4. **Morbidity (LAST)** — D7/D10 disease-as-row `diseases` table + name→PSGC lookup. Own mini-phase.
-5. **STH cascade (File 2)** — blocked on encoder (Jane Galo): Confirmed/Treated % ÷ Screened vs
+5. **The automated full-population verification script Joseph asked to brainstorm (session 14)**
+   — he redirected to "run FP" before it got scoped as its own deliverable. The *technique* (an
+   independent openpyxl reconciliation, not a hand spot-check) was used ad hoc for both FP and
+   Oral Health this session; turning it into a reusable `scripts/verify_template.py` (config +
+   xlsx in, pass/fail + mismatch list out) was the actual ask and is still worth doing —
+   proposed as the direct fix for the manual-verification burden he named as his biggest source
+   of burnout.
+6. **STH cascade (File 2)** — blocked on encoder (Jane Galo): Confirmed/Treated % ÷ Screened vs
    Suspected. Build once answered.
-6. **Joseph's UI golden-path check of Sessions 9–12, then REAL uploads** — all dry-run so far.
-7. **Deferred D4 backfills** (mechanism done; add `dqc_rules` entries): Intra Partum DT/DO, NCD RF
+7. **Joseph's UI golden-path check, then REAL uploads** — everything built across sessions 9-14
+   is still dry-run only; nothing has been committed to `health_data` yet.
+8. **Deferred D4 backfills** (mechanism done; add `dqc_rules` entries): Intra Partum DT/DO, NCD RF
    cross-template, Leprosy Registered≥Confirmed≥Treated≥Completed, STH cascade.
-8. **Go-live Step 3** — waiting on IT for ports 80/443; server prep can start in parallel (RUNBOOK).
-9. **ESR Google Sheets setup** (parked; RUNBOOK). **PHRIC follow-ups** (auth-gated pages, data wiring).
-10. **Parked decisions**: stash@{0} Overview Card (HOME); small-cell cutoff; data dictionary;
-    one `is_sensitive` bit vs tiered RBAC (ADR-021).
-11. **Deferred refactors**: split `backend/main.py` + oversized frontend pages; cosmetic ESLint warns.
-12. **Blocked on DOH (not us):** WASH sanitation Q3/Q4 col, NCD Meds Dec block, Schisto clarifications;
+9. **Go-live Step 3** — waiting on IT for ports 80/443; server prep can start in parallel (RUNBOOK).
+10. **ESR Google Sheets setup** (parked; RUNBOOK). **PHRIC follow-ups** (auth-gated pages, data wiring).
+11. **Parked decisions**: stash@{0} Overview Card (HOME); small-cell cutoff; data dictionary;
+    one `is_sensitive` bit vs tiered RBAC (ADR-021); Oral Health's pregnant-band denominator
+    question (needs the DOH encoder, see session 14 log).
+12. **Deferred refactors**: split `backend/main.py` + oversized frontend pages; cosmetic ESLint warns.
+13. **Blocked on DOH (not us):** WASH sanitation Q3/Q4 col, NCD Meds Dec block, Schisto clarifications;
     data entry for Demographics facility/workforce, Geriatric SC-Immunization, Leprosy cases.
 
 ## Done this session (session 11), closed out
@@ -612,10 +672,12 @@ action — do NOT start the schema/parser items without his direction.
 - ✅ Go-live blockers narrowed from 3 to 1 (domain + SSH done; ports pending).
 
 ## Data currently in DB (per-machine — DBs are NOT git-synced, check on whichever machine you're on)
-**Office machine (confirmed 2026-07-09, Session 7):** `health_data` and `staging_health_data`
-both at 7,538 rows (CHILD_CARE test data), `esr_reports` has 1 real row (`id=1`, "Test Measles
-Cluster", from Session 6's live browser verification). Indicators: CHILD_CARE 247 +
-DEMOGRAPHICS 50 + INFECTIOUS_DISEASE 38 (all three confirmed seeded live this session).
+**Office machine (confirmed 2026-07-31, Session 14):** indicators fully caught up via
+`bootstrap_db.py` — **1,613 across 10 programs** (see Session 14 log above for the per-program
+breakdown). `health_data`/`staging_health_data` row counts not re-checked this session (no
+uploads happened, only dry-runs); last confirmed count (2026-07-09) was 7,538/7,538 CHILD_CARE
+test data — treat as stale, re-check before relying on it. `esr_reports` has 1 real row (`id=1`,
+"Test Measles Cluster") as of Session 6.
 **HOME machine (last confirmed 2026-07-04, may be stale — re-check there):** Jan 2026 monthly
 (CPAB/BCG/HepaB, DPT-HiB-HepB, OPV, IPV, PCV, MMR, FIC — 6,072 rows/92 indicators), Q1 2026
 quarterly (Nutrition, Sick — 295 rows/74 indicators), Annual 2026 (Nutrition MAM/SAM, SBI
@@ -624,6 +686,10 @@ NOTE: admin's password hash is argon2 on both machines (upgraded live during tes
 
 ## Git
 - Work goes **directly on `main`** (sole developer). Push when done.
+- **2026-07-31 session 14 (OFFICE, hostname `RESUDesktop2`):** 2 feature commits, each pushed
+  per-unit mid-session per standing cadence: `fe5e988` (Family Planning + D6 mechanism), `5d48aa8`
+  (Oral Health). This docs/memory sync is a separate commit on top, also pushed. Verified
+  local/origin match, no "ahead", after each push.
 - **2026-07-11 session 11 (HOME, hostname `_hansell_`):** CI fix (bad import + `httpx2` typo)
   committed and pushed directly as `10b6a7a` (no pending-code halt-and-ask needed — it was the
   only change, no docs/code split). Verified local/origin match, no "ahead".

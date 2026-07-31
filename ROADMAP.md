@@ -40,15 +40,20 @@
 - [ ] Remaining Immunization files (5–8) — when real data arrives
 
 ### Build out the other 10 programs (← active focus)
+**Session 14 (2026-07-31, OFFICE) built Family Planning + Oral Health** — the first two programs
+unblocked by **D6** (new row_filter parsing mechanism, see the D6 entry below). Indicator counts
+now: CHILD_CARE 247, MATERNAL_CARE 319, INFECTIOUS_DISEASE 260, NCD 143, DEMOGRAPHICS 50,
+VITAL_STATS 52, GERIATRIC 49, WASH 11, FAMILY_PLANNING 320, ORAL_HEALTH 141 — **1,613 total.
+10 of 11 program areas now have all currently-buildable content done; only Morbidity remains**
+(its own mini-phase, needs D7/D10). NCD Eye Health and NCD Meds are also still open (D6-style
+row parsing not yet applied to Eye Health; Meds needs D5 + a DOH source fix).
+
 **Session 12 (2026-07-12) built every remaining CONFIG-ONLY program** — Natality, Leprosy,
 Filariasis (CDR + morbidity), Rabies (5 split configs), STH deworming — plus the **D4
 reconciliation DQC rule type**, and closed Mortality's last render-check + Demographics' dry-run.
 All validated + dry-run parsed against real files + spot-checked against the sheets' own cells
-(dry-run only, nothing in the live DB, awaiting Joseph's UI golden-path check). Indicator counts
-now: CHILD_CARE 247, MATERNAL_CARE 319, INFECTIOUS_DISEASE 260, NCD 143, DEMOGRAPHICS 50,
-VITAL_STATS 52, GERIATRIC 49, WASH 11. **8 of 11 program areas now have all currently-buildable
-content done.** Everything still `[ ]` below needs a Joseph schema/parser decision (D5/D6/D7) or a
-DOH/encoder action. Recipe: `.claude/skills/add-template`.
+(dry-run only, nothing in the live DB, awaiting Joseph's UI golden-path check). Recipe:
+`.claude/skills/add-template`.
 - [x] Scaffold `backend/data/<PROGRAM_CODE>/` intake folders (10 programs)
 - [x] All 10 programs' `.xlsx` files dropped 2026-07-05 (46 files, 18 natural sub-groups)
 - [x] **Analysis phase complete: 18/18 sub-groups documented** in
@@ -102,10 +107,28 @@ DOH/encoder action. Recipe: `.claude/skills/add-template`.
       non-endemic; Leprosy a data-entry gap) — configs are correct + validated, verified via
       populations / structure. **Still blocked:** STH cascade (File 2 — encoder denominator
       question), Schistosomiasis (DOH scope clarifications).
-- [ ] **NCD Eye Health** — **blocked on D6** (age-as-rows). **NCD Meds** — **blocked on D5** +
-      DOH Dec-block fix.
-- [ ] **Family Planning** — **blocked on D6** (quarters stacked as row-blocks in one tab).
-- [ ] **Oral Health** — **blocked on D6** (quarters + age-bands stacked as rows).
+- [x] **Family Planning — BUILT (Session 14, 2026-07-31, OFFICE).** 320 `FP_*` indicators
+      (`fp_method_mix.json`), 5 sheet-groups (Current User Beginning/New Acceptor/Other
+      Acceptor/Drop Out/Current User Ending) × 15 methods × 3 age brackets. First program built
+      on **D6** (see below) — the source stacks all 4 quarters as row-blocks within each tab.
+      Quarterly only (workbook's own Annual rollup not ingested — its `CUB_A` sheet silently
+      references the wrong quarter in the source); "Demand Satisfied"/"Population" sheets
+      excluded (denominator never populated, % structurally guaranteed to read 0). Dry-run
+      verified: exact row counts, 0 errors/DQC, all 335 grand-total cells independently
+      recomputed and cross-checked against the sheet's own cached totals, zero mismatches.
+- [x] **Oral Health — BUILT (Session 14, 2026-07-31, OFFICE).** 141 `OHC_*` indicators, two
+      configs: `ohc_infant_visit.json` (5 ind, infants 0-11mo) + `ohc_general_population.json`
+      (136 ind, 8 age bands incl. 3 pregnant-women brackets, via a primary sheet_map entry + 7
+      `extra_sheets` entries — extends D6 to two stacked row dimensions, quarter AND age group,
+      at once). Percentages always recomputed from raw counts, never the source's own cells — 3
+      of its percentage columns cascade-divide by the previous percentage cell instead of
+      population (one cached cell reads 236,957%). Added a Completed-2-Visits ≤ First-Visit DQC
+      check (source has none at all). Dry-run verified: exact row counts, 0 errors/DQC, all 160
+      raw-input totals independently recomputed and cross-checked, zero mismatches. **Flagged,
+      not blocking:** the 3 pregnant-women bands' population denominator looks like general
+      female population, not an estimated-pregnancies count — needs the DOH encoder to confirm.
+- [ ] **NCD Eye Health** — **blocked on D6-style row-as-age-group parsing**, same mechanism as
+      Oral Health, not yet applied here. **NCD Meds** — **blocked on D5** + DOH Dec-block fix.
 - [ ] **Morbidity** — **blocked on D7/D10** (disease-as-row matrix; ~10,400 codes or a `diseases`
       table; no `psgc_column`). Its own mini-phase, last.
 
@@ -135,9 +158,14 @@ unblocks the most work. Full context per decision: `template_analysis/00_CONSOLI
 - **D5 — per-column rollup override (`rollup:"last"` vs default `"sum"`).** `ncd_meds_nir.xlsx`'s
   risk-assessment columns are year-to-date cumulative, not monthly flow — summing them would badly
   overstate. **Blocks: NCD Meds** (also needs the DOH Dec-block source fix).
-- **D6 — row-stacked dimension parsing.** `sheet_map` maps one period to one tab; several files
-  stack age-groups or quarters as row-blocks within a tab. **Blocks: NCD Eye Health (age-as-rows),
-  Oral Health (quarters+age stacked), Family Planning (quarters stacked).**
+- ~~**D6 — row-stacked dimension parsing.**~~ **IMPLEMENTED Session 14 (2026-07-31) as ADR-026,
+  PROPOSED — ratify or reverse.** New `period_filter_column`/`period_labels`/`row_filter` config
+  keys (`parser.py`'s `resolve_period_row_filter`/`apply_row_filter`) let a `sheet_map`/
+  `extra_sheets` entry scope a read to one period's (and optionally one row-group's) rows within
+  a shared physical tab — fully backward compatible, opt-in, zero behavior change for any
+  existing config (regression-tested). Used to build **Family Planning** (quarter-only stacking)
+  and **Oral Health** (quarter + age-group stacked together, via multiple `extra_sheets`
+  entries). **Still blocks: NCD Eye Health** (age-as-rows — same mechanism, not yet applied).
 - **D7/D10 — Morbidity disease-as-row schema.** Disease matrix (indicators on rows, not columns);
   ~10,400 codes (disease × age × sex) or a `diseases` reference table; no `psgc_column` (free-text
   location → name→PSGC lookup). Its own mini-phase, do last.

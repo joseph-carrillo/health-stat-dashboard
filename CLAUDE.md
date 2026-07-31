@@ -148,10 +148,11 @@ dev fallbacks. Compose injects them from `.env`; inside the network the host is 
 **Schema pattern:** Narrow/tall — one row per (indicator, location, period, value). Key tables:
 - `health_data` — production values; unique on `(indicator_id, location_id, period_id)`
 - `staging_health_data` — pre-approval staging with conflict tracking
-- `locations` (128 rows), `report_periods` (34 rows), `indicators` (~1,131 rows across 8 of the
-  11 program areas as of 2026-07-12: CHILD_CARE 247, MATERNAL_CARE 319, INFECTIOUS_DISEASE 260,
-  NCD 143, VITAL_STATS 52, DEMOGRAPHICS 50, GERIATRIC 49, WASH 11. Family Planning, Oral Health,
-  and Morbidity are still pending — each blocked on a schema/parser decision, see ROADMAP)
+- `locations` (128 rows), `report_periods` (34 rows), `indicators` (~1,613 rows across 10 of the
+  11 program areas as of 2026-07-31: CHILD_CARE 247, MATERNAL_CARE 319, INFECTIOUS_DISEASE 260,
+  NCD 143, VITAL_STATS 52, DEMOGRAPHICS 50, GERIATRIC 49, WASH 11, FAMILY_PLANNING 320,
+  ORAL_HEALTH 141. Only Morbidity is still pending — blocked on its own schema decision (D7/D10,
+  disease-as-row matrix), see ROADMAP)
 
 To reset/seed the DB from scratch (idempotent — safe to re-run):
 ```bash
