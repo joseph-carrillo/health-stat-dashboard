@@ -245,6 +245,11 @@ export const TEMPLATES = [
     label: "Vital Stats — Natality (Live Births / ABR / RABR)",
     program_code: "VITAL_STATS",
   },
+  {
+    id: "fp_method_mix",
+    label: "Family Planning — Current Users / Method Mix",
+    program_code: "FAMILY_PLANNING",
+  },
 ];
 
 export const MONTHS = [

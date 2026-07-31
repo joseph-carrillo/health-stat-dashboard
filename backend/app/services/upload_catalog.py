@@ -74,6 +74,13 @@ PROGRAMS = [
             {"name": "Natality"},
         ],
     },
+    {
+        "code": "FAMILY_PLANNING",
+        "name": "Family Planning Services",
+        "sub_programs": [
+            {"name": "Family Planning"},
+        ],
+    },
 ]
 
 

@@ -1,0 +1,1764 @@
+{
+  "template_id": "FP_METHOD_MIX",
+  "template_version": "2026",
+  "program_code": "FAMILY_PLANNING",
+  "source_file_pattern": "fp_nir",
+  "frequency": "quarterly",
+  "psgc_column": 0,
+  "location_column": 2,
+  "header_row": 0,
+  "data_start_row": 0,
+  "stop_at_blank_psgc": false,
+  "period_filter_column": 4,
+  "period_labels": {
+    "1": "Q1",
+    "2": "Q2",
+    "3": "Q3",
+    "4": "Q4"
+  },
+  "display": {
+    "label": "Family Planning \u2014 Current Users / Method Mix (quarterly)",
+    "dqc_highlight": true,
+    "id_columns": [
+      {
+        "key": "psgc",
+        "label": "PSGC"
+      },
+      {
+        "key": "location",
+        "label": "Region, Province/City, Municipality"
+      }
+    ]
+  },
+  "upload": {
+    "sub_program": "Family Planning",
+    "file_number": 1
+  },
+  "sheet_map": {
+    "1": "CUB_Qtr",
+    "2": "CUB_Qtr",
+    "3": "CUB_Qtr",
+    "4": "CUB_Qtr"
+  },
+  "columns": [
+    {
+      "index": 5,
+      "indicator_code": "FP_CUB_FSTR_BTL_1014",
+      "is_computed": false
+    },
+    {
+      "index": 6,
+      "indicator_code": "FP_CUB_FSTR_BTL_1519",
+      "is_computed": false
+    },
+    {
+      "index": 7,
+      "indicator_code": "FP_CUB_FSTR_BTL_2049",
+      "is_computed": false
+    },
+    {
+      "index": 8,
+      "indicator_code": "FP_CUB_FSTR_BTL_TOTAL",
+      "is_computed": true,
+      "formula": "FP_CUB_FSTR_BTL_1014 + FP_CUB_FSTR_BTL_1519 + FP_CUB_FSTR_BTL_2049"
+    },
+    {
+      "index": 9,
+      "indicator_code": "FP_CUB_MSTR_NSV_1014",
+      "is_computed": false
+    },
+    {
+      "index": 10,
+      "indicator_code": "FP_CUB_MSTR_NSV_1519",
+      "is_computed": false
+    },
+    {
+      "index": 11,
+      "indicator_code": "FP_CUB_MSTR_NSV_2049",
+      "is_computed": false
+    },
+    {
+      "index": 12,
+      "indicator_code": "FP_CUB_MSTR_NSV_TOTAL",
+      "is_computed": true,
+      "formula": "FP_CUB_MSTR_NSV_1014 + FP_CUB_MSTR_NSV_1519 + FP_CUB_MSTR_NSV_2049"
+    },
+    {
+      "index": 13,
+      "indicator_code": "FP_CUB_CONDOM_1014",
+      "is_computed": false
+    },
+    {
+      "index": 14,
+      "indicator_code": "FP_CUB_CONDOM_1519",
+      "is_computed": false
+    },
+    {
+      "index": 15,
+      "indicator_code": "FP_CUB_CONDOM_2049",
+      "is_computed": false
+    },
+    {
+      "index": 16,
+      "indicator_code": "FP_CUB_CONDOM_TOTAL",
+      "is_computed": true,
+      "formula": "FP_CUB_CONDOM_1014 + FP_CUB_CONDOM_1519 + FP_CUB_CONDOM_2049"
+    },
+    {
+      "index": 17,
+      "indicator_code": "FP_CUB_IUD_INT_1014",
+      "is_computed": false
+    },
+    {
+      "index": 18,
+      "indicator_code": "FP_CUB_IUD_INT_1519",
+      "is_computed": false
+    },
+    {
+      "index": 19,
+      "indicator_code": "FP_CUB_IUD_INT_2049",
+      "is_computed": false
+    },
+    {
+      "index": 20,
+      "indicator_code": "FP_CUB_IUD_INT_TOTAL",
+      "is_computed": true,
+      "formula": "FP_CUB_IUD_INT_1014 + FP_CUB_IUD_INT_1519 + FP_CUB_IUD_INT_2049"
+    },
+    {
+      "index": 21,
+      "indicator_code": "FP_CUB_IUD_PP_1014",
+      "is_computed": false
+    },
+    {
+      "index": 22,
+      "indicator_code": "FP_CUB_IUD_PP_1519",
+      "is_computed": false
+    },
+    {
+      "index": 23,
+      "indicator_code": "FP_CUB_IUD_PP_2049",
+      "is_computed": false
+    },
+    {
+      "index": 24,
+      "indicator_code": "FP_CUB_IUD_PP_TOTAL",
+      "is_computed": true,
+      "formula": "FP_CUB_IUD_PP_1014 + FP_CUB_IUD_PP_1519 + FP_CUB_IUD_PP_2049"
+    },
+    {
+      "index": 25,
+      "indicator_code": "FP_CUB_PILLS_POP_1014",
+      "is_computed": false
+    },
+    {
+      "index": 26,
+      "indicator_code": "FP_CUB_PILLS_POP_1519",
+      "is_computed": false
+    },
+    {
+      "index": 27,
+      "indicator_code": "FP_CUB_PILLS_POP_2049",
+      "is_computed": false
+    },
+    {
+      "index": 28,
+      "indicator_code": "FP_CUB_PILLS_POP_TOTAL",
+      "is_computed": true,
+      "formula": "FP_CUB_PILLS_POP_1014 + FP_CUB_PILLS_POP_1519 + FP_CUB_PILLS_POP_2049"
+    },
+    {
+      "index": 29,
+      "indicator_code": "FP_CUB_PILLS_COC_1014",
+      "is_computed": false
+    },
+    {
+      "index": 30,
+      "indicator_code": "FP_CUB_PILLS_COC_1519",
+      "is_computed": false
+    },
+    {
+      "index": 31,
+      "indicator_code": "FP_CUB_PILLS_COC_2049",
+      "is_computed": false
+    },
+    {
+      "index": 32,
+      "indicator_code": "FP_CUB_PILLS_COC_TOTAL",
+      "is_computed": true,
+      "formula": "FP_CUB_PILLS_COC_1014 + FP_CUB_PILLS_COC_1519 + FP_CUB_PILLS_COC_2049"
+    },
+    {
+      "index": 33,
+      "indicator_code": "FP_CUB_INJECTABLES_1014",
+      "is_computed": false
+    },
+    {
+      "index": 34,
+      "indicator_code": "FP_CUB_INJECTABLES_1519",
+      "is_computed": false
+    },
+    {
+      "index": 35,
+      "indicator_code": "FP_CUB_INJECTABLES_2049",
+      "is_computed": false
+    },
+    {
+      "index": 36,
+      "indicator_code": "FP_CUB_INJECTABLES_TOTAL",
+      "is_computed": true,
+      "formula": "FP_CUB_INJECTABLES_1014 + FP_CUB_INJECTABLES_1519 + FP_CUB_INJECTABLES_2049"
+    },
+    {
+      "index": 37,
+      "indicator_code": "FP_CUB_IMPLANTS_INT_1014",
+      "is_computed": false
+    },
+    {
+      "index": 38,
+      "indicator_code": "FP_CUB_IMPLANTS_INT_1519",
+      "is_computed": false
+    },
+    {
+      "index": 39,
+      "indicator_code": "FP_CUB_IMPLANTS_INT_2049",
+      "is_computed": false
+    },
+    {
+      "index": 40,
+      "indicator_code": "FP_CUB_IMPLANTS_INT_TOTAL",
+      "is_computed": true,
+      "formula": "FP_CUB_IMPLANTS_INT_1014 + FP_CUB_IMPLANTS_INT_1519 + FP_CUB_IMPLANTS_INT_2049"
+    },
+    {
+      "index": 41,
+      "indicator_code": "FP_CUB_IMPLANTS_PP_1014",
+      "is_computed": false
+    },
+    {
+      "index": 42,
+      "indicator_code": "FP_CUB_IMPLANTS_PP_1519",
+      "is_computed": false
+    },
+    {
+      "index": 43,
+      "indicator_code": "FP_CUB_IMPLANTS_PP_2049",
+      "is_computed": false
+    },
+    {
+      "index": 44,
+      "indicator_code": "FP_CUB_IMPLANTS_PP_TOTAL",
+      "is_computed": true,
+      "formula": "FP_CUB_IMPLANTS_PP_1014 + FP_CUB_IMPLANTS_PP_1519 + FP_CUB_IMPLANTS_PP_2049"
+    },
+    {
+      "index": 45,
+      "indicator_code": "FP_CUB_NM_CCM_1014",
+      "is_computed": false
+    },
+    {
+      "index": 46,
+      "indicator_code": "FP_CUB_NM_CCM_1519",
+      "is_computed": false
+    },
+    {
+      "index": 47,
+      "indicator_code": "FP_CUB_NM_CCM_2049",
+      "is_computed": false
+    },
+    {
+      "index": 48,
+      "indicator_code": "FP_CUB_NM_CCM_TOTAL",
+      "is_computed": true,
+      "formula": "FP_CUB_NM_CCM_1014 + FP_CUB_NM_CCM_1519 + FP_CUB_NM_CCM_2049"
+    },
+    {
+      "index": 49,
+      "indicator_code": "FP_CUB_NM_BBT_1014",
+      "is_computed": false
+    },
+    {
+      "index": 50,
+      "indicator_code": "FP_CUB_NM_BBT_1519",
+      "is_computed": false
+    },
+    {
+      "index": 51,
+      "indicator_code": "FP_CUB_NM_BBT_2049",
+      "is_computed": false
+    },
+    {
+      "index": 52,
+      "indicator_code": "FP_CUB_NM_BBT_TOTAL",
+      "is_computed": true,
+      "formula": "FP_CUB_NM_BBT_1014 + FP_CUB_NM_BBT_1519 + FP_CUB_NM_BBT_2049"
+    },
+    {
+      "index": 53,
+      "indicator_code": "FP_CUB_NM_STM_1014",
+      "is_computed": false
+    },
+    {
+      "index": 54,
+      "indicator_code": "FP_CUB_NM_STM_1519",
+      "is_computed": false
+    },
+    {
+      "index": 55,
+      "indicator_code": "FP_CUB_NM_STM_2049",
+      "is_computed": false
+    },
+    {
+      "index": 56,
+      "indicator_code": "FP_CUB_NM_STM_TOTAL",
+      "is_computed": true,
+      "formula": "FP_CUB_NM_STM_1014 + FP_CUB_NM_STM_1519 + FP_CUB_NM_STM_2049"
+    },
+    {
+      "index": 57,
+      "indicator_code": "FP_CUB_NM_SDM_1014",
+      "is_computed": false
+    },
+    {
+      "index": 58,
+      "indicator_code": "FP_CUB_NM_SDM_1519",
+      "is_computed": false
+    },
+    {
+      "index": 59,
+      "indicator_code": "FP_CUB_NM_SDM_2049",
+      "is_computed": false
+    },
+    {
+      "index": 60,
+      "indicator_code": "FP_CUB_NM_SDM_TOTAL",
+      "is_computed": true,
+      "formula": "FP_CUB_NM_SDM_1014 + FP_CUB_NM_SDM_1519 + FP_CUB_NM_SDM_2049"
+    },
+    {
+      "index": 61,
+      "indicator_code": "FP_CUB_NM_LAM_1014",
+      "is_computed": false
+    },
+    {
+      "index": 62,
+      "indicator_code": "FP_CUB_NM_LAM_1519",
+      "is_computed": false
+    },
+    {
+      "index": 63,
+      "indicator_code": "FP_CUB_NM_LAM_2049",
+      "is_computed": false
+    },
+    {
+      "index": 64,
+      "indicator_code": "FP_CUB_NM_LAM_TOTAL",
+      "is_computed": true,
+      "formula": "FP_CUB_NM_LAM_1014 + FP_CUB_NM_LAM_1519 + FP_CUB_NM_LAM_2049"
+    },
+    {
+      "index": 65,
+      "indicator_code": "FP_CUB_TOTAL_1014",
+      "is_computed": true,
+      "formula": "FP_CUB_FSTR_BTL_1014 + FP_CUB_MSTR_NSV_1014 + FP_CUB_CONDOM_1014 + FP_CUB_IUD_INT_1014 + FP_CUB_IUD_PP_1014 + FP_CUB_PILLS_POP_1014 + FP_CUB_PILLS_COC_1014 + FP_CUB_INJECTABLES_1014 + FP_CUB_IMPLANTS_INT_1014 + FP_CUB_IMPLANTS_PP_1014 + FP_CUB_NM_CCM_1014 + FP_CUB_NM_BBT_1014 + FP_CUB_NM_STM_1014 + FP_CUB_NM_SDM_1014 + FP_CUB_NM_LAM_1014"
+    },
+    {
+      "index": 66,
+      "indicator_code": "FP_CUB_TOTAL_1519",
+      "is_computed": true,
+      "formula": "FP_CUB_FSTR_BTL_1519 + FP_CUB_MSTR_NSV_1519 + FP_CUB_CONDOM_1519 + FP_CUB_IUD_INT_1519 + FP_CUB_IUD_PP_1519 + FP_CUB_PILLS_POP_1519 + FP_CUB_PILLS_COC_1519 + FP_CUB_INJECTABLES_1519 + FP_CUB_IMPLANTS_INT_1519 + FP_CUB_IMPLANTS_PP_1519 + FP_CUB_NM_CCM_1519 + FP_CUB_NM_BBT_1519 + FP_CUB_NM_STM_1519 + FP_CUB_NM_SDM_1519 + FP_CUB_NM_LAM_1519"
+    },
+    {
+      "index": 67,
+      "indicator_code": "FP_CUB_TOTAL_2049",
+      "is_computed": true,
+      "formula": "FP_CUB_FSTR_BTL_2049 + FP_CUB_MSTR_NSV_2049 + FP_CUB_CONDOM_2049 + FP_CUB_IUD_INT_2049 + FP_CUB_IUD_PP_2049 + FP_CUB_PILLS_POP_2049 + FP_CUB_PILLS_COC_2049 + FP_CUB_INJECTABLES_2049 + FP_CUB_IMPLANTS_INT_2049 + FP_CUB_IMPLANTS_PP_2049 + FP_CUB_NM_CCM_2049 + FP_CUB_NM_BBT_2049 + FP_CUB_NM_STM_2049 + FP_CUB_NM_SDM_2049 + FP_CUB_NM_LAM_2049"
+    },
+    {
+      "index": 68,
+      "indicator_code": "FP_CUB_TOTAL_ALL",
+      "is_computed": true,
+      "formula": "FP_CUB_FSTR_BTL_TOTAL + FP_CUB_MSTR_NSV_TOTAL + FP_CUB_CONDOM_TOTAL + FP_CUB_IUD_INT_TOTAL + FP_CUB_IUD_PP_TOTAL + FP_CUB_PILLS_POP_TOTAL + FP_CUB_PILLS_COC_TOTAL + FP_CUB_INJECTABLES_TOTAL + FP_CUB_IMPLANTS_INT_TOTAL + FP_CUB_IMPLANTS_PP_TOTAL + FP_CUB_NM_CCM_TOTAL + FP_CUB_NM_BBT_TOTAL + FP_CUB_NM_STM_TOTAL + FP_CUB_NM_SDM_TOTAL + FP_CUB_NM_LAM_TOTAL"
+    }
+  ],
+  "extra_sheets": [
+    {
+      "sheet_name": "NA_Qtr",
+      "columns": [
+        {
+          "index": 5,
+          "indicator_code": "FP_NA_FSTR_BTL_1014",
+          "is_computed": false
+        },
+        {
+          "index": 6,
+          "indicator_code": "FP_NA_FSTR_BTL_1519",
+          "is_computed": false
+        },
+        {
+          "index": 7,
+          "indicator_code": "FP_NA_FSTR_BTL_2049",
+          "is_computed": false
+        },
+        {
+          "index": 8,
+          "indicator_code": "FP_NA_FSTR_BTL_TOTAL",
+          "is_computed": true,
+          "formula": "FP_NA_FSTR_BTL_1014 + FP_NA_FSTR_BTL_1519 + FP_NA_FSTR_BTL_2049"
+        },
+        {
+          "index": 9,
+          "indicator_code": "FP_NA_MSTR_NSV_1014",
+          "is_computed": false
+        },
+        {
+          "index": 10,
+          "indicator_code": "FP_NA_MSTR_NSV_1519",
+          "is_computed": false
+        },
+        {
+          "index": 11,
+          "indicator_code": "FP_NA_MSTR_NSV_2049",
+          "is_computed": false
+        },
+        {
+          "index": 12,
+          "indicator_code": "FP_NA_MSTR_NSV_TOTAL",
+          "is_computed": true,
+          "formula": "FP_NA_MSTR_NSV_1014 + FP_NA_MSTR_NSV_1519 + FP_NA_MSTR_NSV_2049"
+        },
+        {
+          "index": 13,
+          "indicator_code": "FP_NA_CONDOM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 14,
+          "indicator_code": "FP_NA_CONDOM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 15,
+          "indicator_code": "FP_NA_CONDOM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 16,
+          "indicator_code": "FP_NA_CONDOM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_NA_CONDOM_1014 + FP_NA_CONDOM_1519 + FP_NA_CONDOM_2049"
+        },
+        {
+          "index": 17,
+          "indicator_code": "FP_NA_IUD_INT_1014",
+          "is_computed": false
+        },
+        {
+          "index": 18,
+          "indicator_code": "FP_NA_IUD_INT_1519",
+          "is_computed": false
+        },
+        {
+          "index": 19,
+          "indicator_code": "FP_NA_IUD_INT_2049",
+          "is_computed": false
+        },
+        {
+          "index": 20,
+          "indicator_code": "FP_NA_IUD_INT_TOTAL",
+          "is_computed": true,
+          "formula": "FP_NA_IUD_INT_1014 + FP_NA_IUD_INT_1519 + FP_NA_IUD_INT_2049"
+        },
+        {
+          "index": 21,
+          "indicator_code": "FP_NA_IUD_PP_1014",
+          "is_computed": false
+        },
+        {
+          "index": 22,
+          "indicator_code": "FP_NA_IUD_PP_1519",
+          "is_computed": false
+        },
+        {
+          "index": 23,
+          "indicator_code": "FP_NA_IUD_PP_2049",
+          "is_computed": false
+        },
+        {
+          "index": 24,
+          "indicator_code": "FP_NA_IUD_PP_TOTAL",
+          "is_computed": true,
+          "formula": "FP_NA_IUD_PP_1014 + FP_NA_IUD_PP_1519 + FP_NA_IUD_PP_2049"
+        },
+        {
+          "index": 25,
+          "indicator_code": "FP_NA_PILLS_POP_1014",
+          "is_computed": false
+        },
+        {
+          "index": 26,
+          "indicator_code": "FP_NA_PILLS_POP_1519",
+          "is_computed": false
+        },
+        {
+          "index": 27,
+          "indicator_code": "FP_NA_PILLS_POP_2049",
+          "is_computed": false
+        },
+        {
+          "index": 28,
+          "indicator_code": "FP_NA_PILLS_POP_TOTAL",
+          "is_computed": true,
+          "formula": "FP_NA_PILLS_POP_1014 + FP_NA_PILLS_POP_1519 + FP_NA_PILLS_POP_2049"
+        },
+        {
+          "index": 29,
+          "indicator_code": "FP_NA_PILLS_COC_1014",
+          "is_computed": false
+        },
+        {
+          "index": 30,
+          "indicator_code": "FP_NA_PILLS_COC_1519",
+          "is_computed": false
+        },
+        {
+          "index": 31,
+          "indicator_code": "FP_NA_PILLS_COC_2049",
+          "is_computed": false
+        },
+        {
+          "index": 32,
+          "indicator_code": "FP_NA_PILLS_COC_TOTAL",
+          "is_computed": true,
+          "formula": "FP_NA_PILLS_COC_1014 + FP_NA_PILLS_COC_1519 + FP_NA_PILLS_COC_2049"
+        },
+        {
+          "index": 33,
+          "indicator_code": "FP_NA_INJECTABLES_1014",
+          "is_computed": false
+        },
+        {
+          "index": 34,
+          "indicator_code": "FP_NA_INJECTABLES_1519",
+          "is_computed": false
+        },
+        {
+          "index": 35,
+          "indicator_code": "FP_NA_INJECTABLES_2049",
+          "is_computed": false
+        },
+        {
+          "index": 36,
+          "indicator_code": "FP_NA_INJECTABLES_TOTAL",
+          "is_computed": true,
+          "formula": "FP_NA_INJECTABLES_1014 + FP_NA_INJECTABLES_1519 + FP_NA_INJECTABLES_2049"
+        },
+        {
+          "index": 37,
+          "indicator_code": "FP_NA_IMPLANTS_INT_1014",
+          "is_computed": false
+        },
+        {
+          "index": 38,
+          "indicator_code": "FP_NA_IMPLANTS_INT_1519",
+          "is_computed": false
+        },
+        {
+          "index": 39,
+          "indicator_code": "FP_NA_IMPLANTS_INT_2049",
+          "is_computed": false
+        },
+        {
+          "index": 40,
+          "indicator_code": "FP_NA_IMPLANTS_INT_TOTAL",
+          "is_computed": true,
+          "formula": "FP_NA_IMPLANTS_INT_1014 + FP_NA_IMPLANTS_INT_1519 + FP_NA_IMPLANTS_INT_2049"
+        },
+        {
+          "index": 41,
+          "indicator_code": "FP_NA_IMPLANTS_PP_1014",
+          "is_computed": false
+        },
+        {
+          "index": 42,
+          "indicator_code": "FP_NA_IMPLANTS_PP_1519",
+          "is_computed": false
+        },
+        {
+          "index": 43,
+          "indicator_code": "FP_NA_IMPLANTS_PP_2049",
+          "is_computed": false
+        },
+        {
+          "index": 44,
+          "indicator_code": "FP_NA_IMPLANTS_PP_TOTAL",
+          "is_computed": true,
+          "formula": "FP_NA_IMPLANTS_PP_1014 + FP_NA_IMPLANTS_PP_1519 + FP_NA_IMPLANTS_PP_2049"
+        },
+        {
+          "index": 45,
+          "indicator_code": "FP_NA_NM_CCM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 46,
+          "indicator_code": "FP_NA_NM_CCM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 47,
+          "indicator_code": "FP_NA_NM_CCM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 48,
+          "indicator_code": "FP_NA_NM_CCM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_NA_NM_CCM_1014 + FP_NA_NM_CCM_1519 + FP_NA_NM_CCM_2049"
+        },
+        {
+          "index": 49,
+          "indicator_code": "FP_NA_NM_BBT_1014",
+          "is_computed": false
+        },
+        {
+          "index": 50,
+          "indicator_code": "FP_NA_NM_BBT_1519",
+          "is_computed": false
+        },
+        {
+          "index": 51,
+          "indicator_code": "FP_NA_NM_BBT_2049",
+          "is_computed": false
+        },
+        {
+          "index": 52,
+          "indicator_code": "FP_NA_NM_BBT_TOTAL",
+          "is_computed": true,
+          "formula": "FP_NA_NM_BBT_1014 + FP_NA_NM_BBT_1519 + FP_NA_NM_BBT_2049"
+        },
+        {
+          "index": 53,
+          "indicator_code": "FP_NA_NM_STM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 54,
+          "indicator_code": "FP_NA_NM_STM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 55,
+          "indicator_code": "FP_NA_NM_STM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 56,
+          "indicator_code": "FP_NA_NM_STM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_NA_NM_STM_1014 + FP_NA_NM_STM_1519 + FP_NA_NM_STM_2049"
+        },
+        {
+          "index": 57,
+          "indicator_code": "FP_NA_NM_SDM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 58,
+          "indicator_code": "FP_NA_NM_SDM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 59,
+          "indicator_code": "FP_NA_NM_SDM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 60,
+          "indicator_code": "FP_NA_NM_SDM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_NA_NM_SDM_1014 + FP_NA_NM_SDM_1519 + FP_NA_NM_SDM_2049"
+        },
+        {
+          "index": 61,
+          "indicator_code": "FP_NA_NM_LAM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 62,
+          "indicator_code": "FP_NA_NM_LAM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 63,
+          "indicator_code": "FP_NA_NM_LAM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 64,
+          "indicator_code": "FP_NA_NM_LAM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_NA_NM_LAM_1014 + FP_NA_NM_LAM_1519 + FP_NA_NM_LAM_2049"
+        },
+        {
+          "index": 65,
+          "indicator_code": "FP_NA_TOTAL_1014",
+          "is_computed": true,
+          "formula": "FP_NA_FSTR_BTL_1014 + FP_NA_MSTR_NSV_1014 + FP_NA_CONDOM_1014 + FP_NA_IUD_INT_1014 + FP_NA_IUD_PP_1014 + FP_NA_PILLS_POP_1014 + FP_NA_PILLS_COC_1014 + FP_NA_INJECTABLES_1014 + FP_NA_IMPLANTS_INT_1014 + FP_NA_IMPLANTS_PP_1014 + FP_NA_NM_CCM_1014 + FP_NA_NM_BBT_1014 + FP_NA_NM_STM_1014 + FP_NA_NM_SDM_1014 + FP_NA_NM_LAM_1014"
+        },
+        {
+          "index": 66,
+          "indicator_code": "FP_NA_TOTAL_1519",
+          "is_computed": true,
+          "formula": "FP_NA_FSTR_BTL_1519 + FP_NA_MSTR_NSV_1519 + FP_NA_CONDOM_1519 + FP_NA_IUD_INT_1519 + FP_NA_IUD_PP_1519 + FP_NA_PILLS_POP_1519 + FP_NA_PILLS_COC_1519 + FP_NA_INJECTABLES_1519 + FP_NA_IMPLANTS_INT_1519 + FP_NA_IMPLANTS_PP_1519 + FP_NA_NM_CCM_1519 + FP_NA_NM_BBT_1519 + FP_NA_NM_STM_1519 + FP_NA_NM_SDM_1519 + FP_NA_NM_LAM_1519"
+        },
+        {
+          "index": 67,
+          "indicator_code": "FP_NA_TOTAL_2049",
+          "is_computed": true,
+          "formula": "FP_NA_FSTR_BTL_2049 + FP_NA_MSTR_NSV_2049 + FP_NA_CONDOM_2049 + FP_NA_IUD_INT_2049 + FP_NA_IUD_PP_2049 + FP_NA_PILLS_POP_2049 + FP_NA_PILLS_COC_2049 + FP_NA_INJECTABLES_2049 + FP_NA_IMPLANTS_INT_2049 + FP_NA_IMPLANTS_PP_2049 + FP_NA_NM_CCM_2049 + FP_NA_NM_BBT_2049 + FP_NA_NM_STM_2049 + FP_NA_NM_SDM_2049 + FP_NA_NM_LAM_2049"
+        },
+        {
+          "index": 68,
+          "indicator_code": "FP_NA_TOTAL_ALL",
+          "is_computed": true,
+          "formula": "FP_NA_FSTR_BTL_TOTAL + FP_NA_MSTR_NSV_TOTAL + FP_NA_CONDOM_TOTAL + FP_NA_IUD_INT_TOTAL + FP_NA_IUD_PP_TOTAL + FP_NA_PILLS_POP_TOTAL + FP_NA_PILLS_COC_TOTAL + FP_NA_INJECTABLES_TOTAL + FP_NA_IMPLANTS_INT_TOTAL + FP_NA_IMPLANTS_PP_TOTAL + FP_NA_NM_CCM_TOTAL + FP_NA_NM_BBT_TOTAL + FP_NA_NM_STM_TOTAL + FP_NA_NM_SDM_TOTAL + FP_NA_NM_LAM_TOTAL"
+        }
+      ]
+    },
+    {
+      "sheet_name": "OA_Qtr ",
+      "columns": [
+        {
+          "index": 5,
+          "indicator_code": "FP_OA_FSTR_BTL_1014",
+          "is_computed": false
+        },
+        {
+          "index": 6,
+          "indicator_code": "FP_OA_FSTR_BTL_1519",
+          "is_computed": false
+        },
+        {
+          "index": 7,
+          "indicator_code": "FP_OA_FSTR_BTL_2049",
+          "is_computed": false
+        },
+        {
+          "index": 8,
+          "indicator_code": "FP_OA_FSTR_BTL_TOTAL",
+          "is_computed": true,
+          "formula": "FP_OA_FSTR_BTL_1014 + FP_OA_FSTR_BTL_1519 + FP_OA_FSTR_BTL_2049"
+        },
+        {
+          "index": 9,
+          "indicator_code": "FP_OA_MSTR_NSV_1014",
+          "is_computed": false
+        },
+        {
+          "index": 10,
+          "indicator_code": "FP_OA_MSTR_NSV_1519",
+          "is_computed": false
+        },
+        {
+          "index": 11,
+          "indicator_code": "FP_OA_MSTR_NSV_2049",
+          "is_computed": false
+        },
+        {
+          "index": 12,
+          "indicator_code": "FP_OA_MSTR_NSV_TOTAL",
+          "is_computed": true,
+          "formula": "FP_OA_MSTR_NSV_1014 + FP_OA_MSTR_NSV_1519 + FP_OA_MSTR_NSV_2049"
+        },
+        {
+          "index": 13,
+          "indicator_code": "FP_OA_CONDOM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 14,
+          "indicator_code": "FP_OA_CONDOM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 15,
+          "indicator_code": "FP_OA_CONDOM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 16,
+          "indicator_code": "FP_OA_CONDOM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_OA_CONDOM_1014 + FP_OA_CONDOM_1519 + FP_OA_CONDOM_2049"
+        },
+        {
+          "index": 17,
+          "indicator_code": "FP_OA_IUD_INT_1014",
+          "is_computed": false
+        },
+        {
+          "index": 18,
+          "indicator_code": "FP_OA_IUD_INT_1519",
+          "is_computed": false
+        },
+        {
+          "index": 19,
+          "indicator_code": "FP_OA_IUD_INT_2049",
+          "is_computed": false
+        },
+        {
+          "index": 20,
+          "indicator_code": "FP_OA_IUD_INT_TOTAL",
+          "is_computed": true,
+          "formula": "FP_OA_IUD_INT_1014 + FP_OA_IUD_INT_1519 + FP_OA_IUD_INT_2049"
+        },
+        {
+          "index": 21,
+          "indicator_code": "FP_OA_IUD_PP_1014",
+          "is_computed": false
+        },
+        {
+          "index": 22,
+          "indicator_code": "FP_OA_IUD_PP_1519",
+          "is_computed": false
+        },
+        {
+          "index": 23,
+          "indicator_code": "FP_OA_IUD_PP_2049",
+          "is_computed": false
+        },
+        {
+          "index": 24,
+          "indicator_code": "FP_OA_IUD_PP_TOTAL",
+          "is_computed": true,
+          "formula": "FP_OA_IUD_PP_1014 + FP_OA_IUD_PP_1519 + FP_OA_IUD_PP_2049"
+        },
+        {
+          "index": 25,
+          "indicator_code": "FP_OA_PILLS_POP_1014",
+          "is_computed": false
+        },
+        {
+          "index": 26,
+          "indicator_code": "FP_OA_PILLS_POP_1519",
+          "is_computed": false
+        },
+        {
+          "index": 27,
+          "indicator_code": "FP_OA_PILLS_POP_2049",
+          "is_computed": false
+        },
+        {
+          "index": 28,
+          "indicator_code": "FP_OA_PILLS_POP_TOTAL",
+          "is_computed": true,
+          "formula": "FP_OA_PILLS_POP_1014 + FP_OA_PILLS_POP_1519 + FP_OA_PILLS_POP_2049"
+        },
+        {
+          "index": 29,
+          "indicator_code": "FP_OA_PILLS_COC_1014",
+          "is_computed": false
+        },
+        {
+          "index": 30,
+          "indicator_code": "FP_OA_PILLS_COC_1519",
+          "is_computed": false
+        },
+        {
+          "index": 31,
+          "indicator_code": "FP_OA_PILLS_COC_2049",
+          "is_computed": false
+        },
+        {
+          "index": 32,
+          "indicator_code": "FP_OA_PILLS_COC_TOTAL",
+          "is_computed": true,
+          "formula": "FP_OA_PILLS_COC_1014 + FP_OA_PILLS_COC_1519 + FP_OA_PILLS_COC_2049"
+        },
+        {
+          "index": 33,
+          "indicator_code": "FP_OA_INJECTABLES_1014",
+          "is_computed": false
+        },
+        {
+          "index": 34,
+          "indicator_code": "FP_OA_INJECTABLES_1519",
+          "is_computed": false
+        },
+        {
+          "index": 35,
+          "indicator_code": "FP_OA_INJECTABLES_2049",
+          "is_computed": false
+        },
+        {
+          "index": 36,
+          "indicator_code": "FP_OA_INJECTABLES_TOTAL",
+          "is_computed": true,
+          "formula": "FP_OA_INJECTABLES_1014 + FP_OA_INJECTABLES_1519 + FP_OA_INJECTABLES_2049"
+        },
+        {
+          "index": 37,
+          "indicator_code": "FP_OA_IMPLANTS_INT_1014",
+          "is_computed": false
+        },
+        {
+          "index": 38,
+          "indicator_code": "FP_OA_IMPLANTS_INT_1519",
+          "is_computed": false
+        },
+        {
+          "index": 39,
+          "indicator_code": "FP_OA_IMPLANTS_INT_2049",
+          "is_computed": false
+        },
+        {
+          "index": 40,
+          "indicator_code": "FP_OA_IMPLANTS_INT_TOTAL",
+          "is_computed": true,
+          "formula": "FP_OA_IMPLANTS_INT_1014 + FP_OA_IMPLANTS_INT_1519 + FP_OA_IMPLANTS_INT_2049"
+        },
+        {
+          "index": 41,
+          "indicator_code": "FP_OA_IMPLANTS_PP_1014",
+          "is_computed": false
+        },
+        {
+          "index": 42,
+          "indicator_code": "FP_OA_IMPLANTS_PP_1519",
+          "is_computed": false
+        },
+        {
+          "index": 43,
+          "indicator_code": "FP_OA_IMPLANTS_PP_2049",
+          "is_computed": false
+        },
+        {
+          "index": 44,
+          "indicator_code": "FP_OA_IMPLANTS_PP_TOTAL",
+          "is_computed": true,
+          "formula": "FP_OA_IMPLANTS_PP_1014 + FP_OA_IMPLANTS_PP_1519 + FP_OA_IMPLANTS_PP_2049"
+        },
+        {
+          "index": 45,
+          "indicator_code": "FP_OA_NM_CCM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 46,
+          "indicator_code": "FP_OA_NM_CCM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 47,
+          "indicator_code": "FP_OA_NM_CCM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 48,
+          "indicator_code": "FP_OA_NM_CCM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_OA_NM_CCM_1014 + FP_OA_NM_CCM_1519 + FP_OA_NM_CCM_2049"
+        },
+        {
+          "index": 49,
+          "indicator_code": "FP_OA_NM_BBT_1014",
+          "is_computed": false
+        },
+        {
+          "index": 50,
+          "indicator_code": "FP_OA_NM_BBT_1519",
+          "is_computed": false
+        },
+        {
+          "index": 51,
+          "indicator_code": "FP_OA_NM_BBT_2049",
+          "is_computed": false
+        },
+        {
+          "index": 52,
+          "indicator_code": "FP_OA_NM_BBT_TOTAL",
+          "is_computed": true,
+          "formula": "FP_OA_NM_BBT_1014 + FP_OA_NM_BBT_1519 + FP_OA_NM_BBT_2049"
+        },
+        {
+          "index": 53,
+          "indicator_code": "FP_OA_NM_STM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 54,
+          "indicator_code": "FP_OA_NM_STM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 55,
+          "indicator_code": "FP_OA_NM_STM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 56,
+          "indicator_code": "FP_OA_NM_STM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_OA_NM_STM_1014 + FP_OA_NM_STM_1519 + FP_OA_NM_STM_2049"
+        },
+        {
+          "index": 57,
+          "indicator_code": "FP_OA_NM_SDM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 58,
+          "indicator_code": "FP_OA_NM_SDM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 59,
+          "indicator_code": "FP_OA_NM_SDM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 60,
+          "indicator_code": "FP_OA_NM_SDM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_OA_NM_SDM_1014 + FP_OA_NM_SDM_1519 + FP_OA_NM_SDM_2049"
+        },
+        {
+          "index": 61,
+          "indicator_code": "FP_OA_NM_LAM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 62,
+          "indicator_code": "FP_OA_NM_LAM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 63,
+          "indicator_code": "FP_OA_NM_LAM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 64,
+          "indicator_code": "FP_OA_NM_LAM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_OA_NM_LAM_1014 + FP_OA_NM_LAM_1519 + FP_OA_NM_LAM_2049"
+        },
+        {
+          "index": 65,
+          "indicator_code": "FP_OA_TOTAL_1014",
+          "is_computed": true,
+          "formula": "FP_OA_FSTR_BTL_1014 + FP_OA_MSTR_NSV_1014 + FP_OA_CONDOM_1014 + FP_OA_IUD_INT_1014 + FP_OA_IUD_PP_1014 + FP_OA_PILLS_POP_1014 + FP_OA_PILLS_COC_1014 + FP_OA_INJECTABLES_1014 + FP_OA_IMPLANTS_INT_1014 + FP_OA_IMPLANTS_PP_1014 + FP_OA_NM_CCM_1014 + FP_OA_NM_BBT_1014 + FP_OA_NM_STM_1014 + FP_OA_NM_SDM_1014 + FP_OA_NM_LAM_1014"
+        },
+        {
+          "index": 66,
+          "indicator_code": "FP_OA_TOTAL_1519",
+          "is_computed": true,
+          "formula": "FP_OA_FSTR_BTL_1519 + FP_OA_MSTR_NSV_1519 + FP_OA_CONDOM_1519 + FP_OA_IUD_INT_1519 + FP_OA_IUD_PP_1519 + FP_OA_PILLS_POP_1519 + FP_OA_PILLS_COC_1519 + FP_OA_INJECTABLES_1519 + FP_OA_IMPLANTS_INT_1519 + FP_OA_IMPLANTS_PP_1519 + FP_OA_NM_CCM_1519 + FP_OA_NM_BBT_1519 + FP_OA_NM_STM_1519 + FP_OA_NM_SDM_1519 + FP_OA_NM_LAM_1519"
+        },
+        {
+          "index": 67,
+          "indicator_code": "FP_OA_TOTAL_2049",
+          "is_computed": true,
+          "formula": "FP_OA_FSTR_BTL_2049 + FP_OA_MSTR_NSV_2049 + FP_OA_CONDOM_2049 + FP_OA_IUD_INT_2049 + FP_OA_IUD_PP_2049 + FP_OA_PILLS_POP_2049 + FP_OA_PILLS_COC_2049 + FP_OA_INJECTABLES_2049 + FP_OA_IMPLANTS_INT_2049 + FP_OA_IMPLANTS_PP_2049 + FP_OA_NM_CCM_2049 + FP_OA_NM_BBT_2049 + FP_OA_NM_STM_2049 + FP_OA_NM_SDM_2049 + FP_OA_NM_LAM_2049"
+        },
+        {
+          "index": 68,
+          "indicator_code": "FP_OA_TOTAL_ALL",
+          "is_computed": true,
+          "formula": "FP_OA_FSTR_BTL_TOTAL + FP_OA_MSTR_NSV_TOTAL + FP_OA_CONDOM_TOTAL + FP_OA_IUD_INT_TOTAL + FP_OA_IUD_PP_TOTAL + FP_OA_PILLS_POP_TOTAL + FP_OA_PILLS_COC_TOTAL + FP_OA_INJECTABLES_TOTAL + FP_OA_IMPLANTS_INT_TOTAL + FP_OA_IMPLANTS_PP_TOTAL + FP_OA_NM_CCM_TOTAL + FP_OA_NM_BBT_TOTAL + FP_OA_NM_STM_TOTAL + FP_OA_NM_SDM_TOTAL + FP_OA_NM_LAM_TOTAL"
+        }
+      ]
+    },
+    {
+      "sheet_name": "DO_Qtr",
+      "columns": [
+        {
+          "index": 5,
+          "indicator_code": "FP_DO_FSTR_BTL_1014",
+          "is_computed": false
+        },
+        {
+          "index": 6,
+          "indicator_code": "FP_DO_FSTR_BTL_1519",
+          "is_computed": false
+        },
+        {
+          "index": 7,
+          "indicator_code": "FP_DO_FSTR_BTL_2049",
+          "is_computed": false
+        },
+        {
+          "index": 8,
+          "indicator_code": "FP_DO_FSTR_BTL_TOTAL",
+          "is_computed": true,
+          "formula": "FP_DO_FSTR_BTL_1014 + FP_DO_FSTR_BTL_1519 + FP_DO_FSTR_BTL_2049"
+        },
+        {
+          "index": 9,
+          "indicator_code": "FP_DO_MSTR_NSV_1014",
+          "is_computed": false
+        },
+        {
+          "index": 10,
+          "indicator_code": "FP_DO_MSTR_NSV_1519",
+          "is_computed": false
+        },
+        {
+          "index": 11,
+          "indicator_code": "FP_DO_MSTR_NSV_2049",
+          "is_computed": false
+        },
+        {
+          "index": 12,
+          "indicator_code": "FP_DO_MSTR_NSV_TOTAL",
+          "is_computed": true,
+          "formula": "FP_DO_MSTR_NSV_1014 + FP_DO_MSTR_NSV_1519 + FP_DO_MSTR_NSV_2049"
+        },
+        {
+          "index": 13,
+          "indicator_code": "FP_DO_CONDOM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 14,
+          "indicator_code": "FP_DO_CONDOM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 15,
+          "indicator_code": "FP_DO_CONDOM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 16,
+          "indicator_code": "FP_DO_CONDOM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_DO_CONDOM_1014 + FP_DO_CONDOM_1519 + FP_DO_CONDOM_2049"
+        },
+        {
+          "index": 17,
+          "indicator_code": "FP_DO_IUD_INT_1014",
+          "is_computed": false
+        },
+        {
+          "index": 18,
+          "indicator_code": "FP_DO_IUD_INT_1519",
+          "is_computed": false
+        },
+        {
+          "index": 19,
+          "indicator_code": "FP_DO_IUD_INT_2049",
+          "is_computed": false
+        },
+        {
+          "index": 20,
+          "indicator_code": "FP_DO_IUD_INT_TOTAL",
+          "is_computed": true,
+          "formula": "FP_DO_IUD_INT_1014 + FP_DO_IUD_INT_1519 + FP_DO_IUD_INT_2049"
+        },
+        {
+          "index": 21,
+          "indicator_code": "FP_DO_IUD_PP_1014",
+          "is_computed": false
+        },
+        {
+          "index": 22,
+          "indicator_code": "FP_DO_IUD_PP_1519",
+          "is_computed": false
+        },
+        {
+          "index": 23,
+          "indicator_code": "FP_DO_IUD_PP_2049",
+          "is_computed": false
+        },
+        {
+          "index": 24,
+          "indicator_code": "FP_DO_IUD_PP_TOTAL",
+          "is_computed": true,
+          "formula": "FP_DO_IUD_PP_1014 + FP_DO_IUD_PP_1519 + FP_DO_IUD_PP_2049"
+        },
+        {
+          "index": 25,
+          "indicator_code": "FP_DO_PILLS_POP_1014",
+          "is_computed": false
+        },
+        {
+          "index": 26,
+          "indicator_code": "FP_DO_PILLS_POP_1519",
+          "is_computed": false
+        },
+        {
+          "index": 27,
+          "indicator_code": "FP_DO_PILLS_POP_2049",
+          "is_computed": false
+        },
+        {
+          "index": 28,
+          "indicator_code": "FP_DO_PILLS_POP_TOTAL",
+          "is_computed": true,
+          "formula": "FP_DO_PILLS_POP_1014 + FP_DO_PILLS_POP_1519 + FP_DO_PILLS_POP_2049"
+        },
+        {
+          "index": 29,
+          "indicator_code": "FP_DO_PILLS_COC_1014",
+          "is_computed": false
+        },
+        {
+          "index": 30,
+          "indicator_code": "FP_DO_PILLS_COC_1519",
+          "is_computed": false
+        },
+        {
+          "index": 31,
+          "indicator_code": "FP_DO_PILLS_COC_2049",
+          "is_computed": false
+        },
+        {
+          "index": 32,
+          "indicator_code": "FP_DO_PILLS_COC_TOTAL",
+          "is_computed": true,
+          "formula": "FP_DO_PILLS_COC_1014 + FP_DO_PILLS_COC_1519 + FP_DO_PILLS_COC_2049"
+        },
+        {
+          "index": 33,
+          "indicator_code": "FP_DO_INJECTABLES_1014",
+          "is_computed": false
+        },
+        {
+          "index": 34,
+          "indicator_code": "FP_DO_INJECTABLES_1519",
+          "is_computed": false
+        },
+        {
+          "index": 35,
+          "indicator_code": "FP_DO_INJECTABLES_2049",
+          "is_computed": false
+        },
+        {
+          "index": 36,
+          "indicator_code": "FP_DO_INJECTABLES_TOTAL",
+          "is_computed": true,
+          "formula": "FP_DO_INJECTABLES_1014 + FP_DO_INJECTABLES_1519 + FP_DO_INJECTABLES_2049"
+        },
+        {
+          "index": 37,
+          "indicator_code": "FP_DO_IMPLANTS_INT_1014",
+          "is_computed": false
+        },
+        {
+          "index": 38,
+          "indicator_code": "FP_DO_IMPLANTS_INT_1519",
+          "is_computed": false
+        },
+        {
+          "index": 39,
+          "indicator_code": "FP_DO_IMPLANTS_INT_2049",
+          "is_computed": false
+        },
+        {
+          "index": 40,
+          "indicator_code": "FP_DO_IMPLANTS_INT_TOTAL",
+          "is_computed": true,
+          "formula": "FP_DO_IMPLANTS_INT_1014 + FP_DO_IMPLANTS_INT_1519 + FP_DO_IMPLANTS_INT_2049"
+        },
+        {
+          "index": 41,
+          "indicator_code": "FP_DO_IMPLANTS_PP_1014",
+          "is_computed": false
+        },
+        {
+          "index": 42,
+          "indicator_code": "FP_DO_IMPLANTS_PP_1519",
+          "is_computed": false
+        },
+        {
+          "index": 43,
+          "indicator_code": "FP_DO_IMPLANTS_PP_2049",
+          "is_computed": false
+        },
+        {
+          "index": 44,
+          "indicator_code": "FP_DO_IMPLANTS_PP_TOTAL",
+          "is_computed": true,
+          "formula": "FP_DO_IMPLANTS_PP_1014 + FP_DO_IMPLANTS_PP_1519 + FP_DO_IMPLANTS_PP_2049"
+        },
+        {
+          "index": 45,
+          "indicator_code": "FP_DO_NM_CCM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 46,
+          "indicator_code": "FP_DO_NM_CCM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 47,
+          "indicator_code": "FP_DO_NM_CCM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 48,
+          "indicator_code": "FP_DO_NM_CCM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_DO_NM_CCM_1014 + FP_DO_NM_CCM_1519 + FP_DO_NM_CCM_2049"
+        },
+        {
+          "index": 49,
+          "indicator_code": "FP_DO_NM_BBT_1014",
+          "is_computed": false
+        },
+        {
+          "index": 50,
+          "indicator_code": "FP_DO_NM_BBT_1519",
+          "is_computed": false
+        },
+        {
+          "index": 51,
+          "indicator_code": "FP_DO_NM_BBT_2049",
+          "is_computed": false
+        },
+        {
+          "index": 52,
+          "indicator_code": "FP_DO_NM_BBT_TOTAL",
+          "is_computed": true,
+          "formula": "FP_DO_NM_BBT_1014 + FP_DO_NM_BBT_1519 + FP_DO_NM_BBT_2049"
+        },
+        {
+          "index": 53,
+          "indicator_code": "FP_DO_NM_STM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 54,
+          "indicator_code": "FP_DO_NM_STM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 55,
+          "indicator_code": "FP_DO_NM_STM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 56,
+          "indicator_code": "FP_DO_NM_STM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_DO_NM_STM_1014 + FP_DO_NM_STM_1519 + FP_DO_NM_STM_2049"
+        },
+        {
+          "index": 57,
+          "indicator_code": "FP_DO_NM_SDM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 58,
+          "indicator_code": "FP_DO_NM_SDM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 59,
+          "indicator_code": "FP_DO_NM_SDM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 60,
+          "indicator_code": "FP_DO_NM_SDM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_DO_NM_SDM_1014 + FP_DO_NM_SDM_1519 + FP_DO_NM_SDM_2049"
+        },
+        {
+          "index": 61,
+          "indicator_code": "FP_DO_NM_LAM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 62,
+          "indicator_code": "FP_DO_NM_LAM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 63,
+          "indicator_code": "FP_DO_NM_LAM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 64,
+          "indicator_code": "FP_DO_NM_LAM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_DO_NM_LAM_1014 + FP_DO_NM_LAM_1519 + FP_DO_NM_LAM_2049"
+        },
+        {
+          "index": 65,
+          "indicator_code": "FP_DO_TOTAL_1014",
+          "is_computed": true,
+          "formula": "FP_DO_FSTR_BTL_1014 + FP_DO_MSTR_NSV_1014 + FP_DO_CONDOM_1014 + FP_DO_IUD_INT_1014 + FP_DO_IUD_PP_1014 + FP_DO_PILLS_POP_1014 + FP_DO_PILLS_COC_1014 + FP_DO_INJECTABLES_1014 + FP_DO_IMPLANTS_INT_1014 + FP_DO_IMPLANTS_PP_1014 + FP_DO_NM_CCM_1014 + FP_DO_NM_BBT_1014 + FP_DO_NM_STM_1014 + FP_DO_NM_SDM_1014 + FP_DO_NM_LAM_1014"
+        },
+        {
+          "index": 66,
+          "indicator_code": "FP_DO_TOTAL_1519",
+          "is_computed": true,
+          "formula": "FP_DO_FSTR_BTL_1519 + FP_DO_MSTR_NSV_1519 + FP_DO_CONDOM_1519 + FP_DO_IUD_INT_1519 + FP_DO_IUD_PP_1519 + FP_DO_PILLS_POP_1519 + FP_DO_PILLS_COC_1519 + FP_DO_INJECTABLES_1519 + FP_DO_IMPLANTS_INT_1519 + FP_DO_IMPLANTS_PP_1519 + FP_DO_NM_CCM_1519 + FP_DO_NM_BBT_1519 + FP_DO_NM_STM_1519 + FP_DO_NM_SDM_1519 + FP_DO_NM_LAM_1519"
+        },
+        {
+          "index": 67,
+          "indicator_code": "FP_DO_TOTAL_2049",
+          "is_computed": true,
+          "formula": "FP_DO_FSTR_BTL_2049 + FP_DO_MSTR_NSV_2049 + FP_DO_CONDOM_2049 + FP_DO_IUD_INT_2049 + FP_DO_IUD_PP_2049 + FP_DO_PILLS_POP_2049 + FP_DO_PILLS_COC_2049 + FP_DO_INJECTABLES_2049 + FP_DO_IMPLANTS_INT_2049 + FP_DO_IMPLANTS_PP_2049 + FP_DO_NM_CCM_2049 + FP_DO_NM_BBT_2049 + FP_DO_NM_STM_2049 + FP_DO_NM_SDM_2049 + FP_DO_NM_LAM_2049"
+        },
+        {
+          "index": 68,
+          "indicator_code": "FP_DO_TOTAL_ALL",
+          "is_computed": true,
+          "formula": "FP_DO_FSTR_BTL_TOTAL + FP_DO_MSTR_NSV_TOTAL + FP_DO_CONDOM_TOTAL + FP_DO_IUD_INT_TOTAL + FP_DO_IUD_PP_TOTAL + FP_DO_PILLS_POP_TOTAL + FP_DO_PILLS_COC_TOTAL + FP_DO_INJECTABLES_TOTAL + FP_DO_IMPLANTS_INT_TOTAL + FP_DO_IMPLANTS_PP_TOTAL + FP_DO_NM_CCM_TOTAL + FP_DO_NM_BBT_TOTAL + FP_DO_NM_STM_TOTAL + FP_DO_NM_SDM_TOTAL + FP_DO_NM_LAM_TOTAL"
+        }
+      ]
+    },
+    {
+      "sheet_name": "CUE_Qtr",
+      "columns": [
+        {
+          "index": 5,
+          "indicator_code": "FP_CUE_FSTR_BTL_1014",
+          "is_computed": false
+        },
+        {
+          "index": 6,
+          "indicator_code": "FP_CUE_FSTR_BTL_1519",
+          "is_computed": false
+        },
+        {
+          "index": 7,
+          "indicator_code": "FP_CUE_FSTR_BTL_2049",
+          "is_computed": false
+        },
+        {
+          "index": 8,
+          "indicator_code": "FP_CUE_FSTR_BTL_TOTAL",
+          "is_computed": true,
+          "formula": "FP_CUE_FSTR_BTL_1014 + FP_CUE_FSTR_BTL_1519 + FP_CUE_FSTR_BTL_2049"
+        },
+        {
+          "index": 9,
+          "indicator_code": "FP_CUE_MSTR_NSV_1014",
+          "is_computed": false
+        },
+        {
+          "index": 10,
+          "indicator_code": "FP_CUE_MSTR_NSV_1519",
+          "is_computed": false
+        },
+        {
+          "index": 11,
+          "indicator_code": "FP_CUE_MSTR_NSV_2049",
+          "is_computed": false
+        },
+        {
+          "index": 12,
+          "indicator_code": "FP_CUE_MSTR_NSV_TOTAL",
+          "is_computed": true,
+          "formula": "FP_CUE_MSTR_NSV_1014 + FP_CUE_MSTR_NSV_1519 + FP_CUE_MSTR_NSV_2049"
+        },
+        {
+          "index": 13,
+          "indicator_code": "FP_CUE_CONDOM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 14,
+          "indicator_code": "FP_CUE_CONDOM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 15,
+          "indicator_code": "FP_CUE_CONDOM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 16,
+          "indicator_code": "FP_CUE_CONDOM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_CUE_CONDOM_1014 + FP_CUE_CONDOM_1519 + FP_CUE_CONDOM_2049"
+        },
+        {
+          "index": 17,
+          "indicator_code": "FP_CUE_IUD_INT_1014",
+          "is_computed": false
+        },
+        {
+          "index": 18,
+          "indicator_code": "FP_CUE_IUD_INT_1519",
+          "is_computed": false
+        },
+        {
+          "index": 19,
+          "indicator_code": "FP_CUE_IUD_INT_2049",
+          "is_computed": false
+        },
+        {
+          "index": 20,
+          "indicator_code": "FP_CUE_IUD_INT_TOTAL",
+          "is_computed": true,
+          "formula": "FP_CUE_IUD_INT_1014 + FP_CUE_IUD_INT_1519 + FP_CUE_IUD_INT_2049"
+        },
+        {
+          "index": 21,
+          "indicator_code": "FP_CUE_IUD_PP_1014",
+          "is_computed": false
+        },
+        {
+          "index": 22,
+          "indicator_code": "FP_CUE_IUD_PP_1519",
+          "is_computed": false
+        },
+        {
+          "index": 23,
+          "indicator_code": "FP_CUE_IUD_PP_2049",
+          "is_computed": false
+        },
+        {
+          "index": 24,
+          "indicator_code": "FP_CUE_IUD_PP_TOTAL",
+          "is_computed": true,
+          "formula": "FP_CUE_IUD_PP_1014 + FP_CUE_IUD_PP_1519 + FP_CUE_IUD_PP_2049"
+        },
+        {
+          "index": 25,
+          "indicator_code": "FP_CUE_PILLS_POP_1014",
+          "is_computed": false
+        },
+        {
+          "index": 26,
+          "indicator_code": "FP_CUE_PILLS_POP_1519",
+          "is_computed": false
+        },
+        {
+          "index": 27,
+          "indicator_code": "FP_CUE_PILLS_POP_2049",
+          "is_computed": false
+        },
+        {
+          "index": 28,
+          "indicator_code": "FP_CUE_PILLS_POP_TOTAL",
+          "is_computed": true,
+          "formula": "FP_CUE_PILLS_POP_1014 + FP_CUE_PILLS_POP_1519 + FP_CUE_PILLS_POP_2049"
+        },
+        {
+          "index": 29,
+          "indicator_code": "FP_CUE_PILLS_COC_1014",
+          "is_computed": false
+        },
+        {
+          "index": 30,
+          "indicator_code": "FP_CUE_PILLS_COC_1519",
+          "is_computed": false
+        },
+        {
+          "index": 31,
+          "indicator_code": "FP_CUE_PILLS_COC_2049",
+          "is_computed": false
+        },
+        {
+          "index": 32,
+          "indicator_code": "FP_CUE_PILLS_COC_TOTAL",
+          "is_computed": true,
+          "formula": "FP_CUE_PILLS_COC_1014 + FP_CUE_PILLS_COC_1519 + FP_CUE_PILLS_COC_2049"
+        },
+        {
+          "index": 33,
+          "indicator_code": "FP_CUE_INJECTABLES_1014",
+          "is_computed": false
+        },
+        {
+          "index": 34,
+          "indicator_code": "FP_CUE_INJECTABLES_1519",
+          "is_computed": false
+        },
+        {
+          "index": 35,
+          "indicator_code": "FP_CUE_INJECTABLES_2049",
+          "is_computed": false
+        },
+        {
+          "index": 36,
+          "indicator_code": "FP_CUE_INJECTABLES_TOTAL",
+          "is_computed": true,
+          "formula": "FP_CUE_INJECTABLES_1014 + FP_CUE_INJECTABLES_1519 + FP_CUE_INJECTABLES_2049"
+        },
+        {
+          "index": 37,
+          "indicator_code": "FP_CUE_IMPLANTS_INT_1014",
+          "is_computed": false
+        },
+        {
+          "index": 38,
+          "indicator_code": "FP_CUE_IMPLANTS_INT_1519",
+          "is_computed": false
+        },
+        {
+          "index": 39,
+          "indicator_code": "FP_CUE_IMPLANTS_INT_2049",
+          "is_computed": false
+        },
+        {
+          "index": 40,
+          "indicator_code": "FP_CUE_IMPLANTS_INT_TOTAL",
+          "is_computed": true,
+          "formula": "FP_CUE_IMPLANTS_INT_1014 + FP_CUE_IMPLANTS_INT_1519 + FP_CUE_IMPLANTS_INT_2049"
+        },
+        {
+          "index": 41,
+          "indicator_code": "FP_CUE_IMPLANTS_PP_1014",
+          "is_computed": false
+        },
+        {
+          "index": 42,
+          "indicator_code": "FP_CUE_IMPLANTS_PP_1519",
+          "is_computed": false
+        },
+        {
+          "index": 43,
+          "indicator_code": "FP_CUE_IMPLANTS_PP_2049",
+          "is_computed": false
+        },
+        {
+          "index": 44,
+          "indicator_code": "FP_CUE_IMPLANTS_PP_TOTAL",
+          "is_computed": true,
+          "formula": "FP_CUE_IMPLANTS_PP_1014 + FP_CUE_IMPLANTS_PP_1519 + FP_CUE_IMPLANTS_PP_2049"
+        },
+        {
+          "index": 45,
+          "indicator_code": "FP_CUE_NM_CCM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 46,
+          "indicator_code": "FP_CUE_NM_CCM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 47,
+          "indicator_code": "FP_CUE_NM_CCM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 48,
+          "indicator_code": "FP_CUE_NM_CCM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_CUE_NM_CCM_1014 + FP_CUE_NM_CCM_1519 + FP_CUE_NM_CCM_2049"
+        },
+        {
+          "index": 49,
+          "indicator_code": "FP_CUE_NM_BBT_1014",
+          "is_computed": false
+        },
+        {
+          "index": 50,
+          "indicator_code": "FP_CUE_NM_BBT_1519",
+          "is_computed": false
+        },
+        {
+          "index": 51,
+          "indicator_code": "FP_CUE_NM_BBT_2049",
+          "is_computed": false
+        },
+        {
+          "index": 52,
+          "indicator_code": "FP_CUE_NM_BBT_TOTAL",
+          "is_computed": true,
+          "formula": "FP_CUE_NM_BBT_1014 + FP_CUE_NM_BBT_1519 + FP_CUE_NM_BBT_2049"
+        },
+        {
+          "index": 53,
+          "indicator_code": "FP_CUE_NM_STM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 54,
+          "indicator_code": "FP_CUE_NM_STM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 55,
+          "indicator_code": "FP_CUE_NM_STM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 56,
+          "indicator_code": "FP_CUE_NM_STM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_CUE_NM_STM_1014 + FP_CUE_NM_STM_1519 + FP_CUE_NM_STM_2049"
+        },
+        {
+          "index": 57,
+          "indicator_code": "FP_CUE_NM_SDM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 58,
+          "indicator_code": "FP_CUE_NM_SDM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 59,
+          "indicator_code": "FP_CUE_NM_SDM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 60,
+          "indicator_code": "FP_CUE_NM_SDM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_CUE_NM_SDM_1014 + FP_CUE_NM_SDM_1519 + FP_CUE_NM_SDM_2049"
+        },
+        {
+          "index": 61,
+          "indicator_code": "FP_CUE_NM_LAM_1014",
+          "is_computed": false
+        },
+        {
+          "index": 62,
+          "indicator_code": "FP_CUE_NM_LAM_1519",
+          "is_computed": false
+        },
+        {
+          "index": 63,
+          "indicator_code": "FP_CUE_NM_LAM_2049",
+          "is_computed": false
+        },
+        {
+          "index": 64,
+          "indicator_code": "FP_CUE_NM_LAM_TOTAL",
+          "is_computed": true,
+          "formula": "FP_CUE_NM_LAM_1014 + FP_CUE_NM_LAM_1519 + FP_CUE_NM_LAM_2049"
+        },
+        {
+          "index": 65,
+          "indicator_code": "FP_CUE_TOTAL_1014",
+          "is_computed": true,
+          "formula": "FP_CUE_FSTR_BTL_1014 + FP_CUE_MSTR_NSV_1014 + FP_CUE_CONDOM_1014 + FP_CUE_IUD_INT_1014 + FP_CUE_IUD_PP_1014 + FP_CUE_PILLS_POP_1014 + FP_CUE_PILLS_COC_1014 + FP_CUE_INJECTABLES_1014 + FP_CUE_IMPLANTS_INT_1014 + FP_CUE_IMPLANTS_PP_1014 + FP_CUE_NM_CCM_1014 + FP_CUE_NM_BBT_1014 + FP_CUE_NM_STM_1014 + FP_CUE_NM_SDM_1014 + FP_CUE_NM_LAM_1014"
+        },
+        {
+          "index": 66,
+          "indicator_code": "FP_CUE_TOTAL_1519",
+          "is_computed": true,
+          "formula": "FP_CUE_FSTR_BTL_1519 + FP_CUE_MSTR_NSV_1519 + FP_CUE_CONDOM_1519 + FP_CUE_IUD_INT_1519 + FP_CUE_IUD_PP_1519 + FP_CUE_PILLS_POP_1519 + FP_CUE_PILLS_COC_1519 + FP_CUE_INJECTABLES_1519 + FP_CUE_IMPLANTS_INT_1519 + FP_CUE_IMPLANTS_PP_1519 + FP_CUE_NM_CCM_1519 + FP_CUE_NM_BBT_1519 + FP_CUE_NM_STM_1519 + FP_CUE_NM_SDM_1519 + FP_CUE_NM_LAM_1519"
+        },
+        {
+          "index": 67,
+          "indicator_code": "FP_CUE_TOTAL_2049",
+          "is_computed": true,
+          "formula": "FP_CUE_FSTR_BTL_2049 + FP_CUE_MSTR_NSV_2049 + FP_CUE_CONDOM_2049 + FP_CUE_IUD_INT_2049 + FP_CUE_IUD_PP_2049 + FP_CUE_PILLS_POP_2049 + FP_CUE_PILLS_COC_2049 + FP_CUE_INJECTABLES_2049 + FP_CUE_IMPLANTS_INT_2049 + FP_CUE_IMPLANTS_PP_2049 + FP_CUE_NM_CCM_2049 + FP_CUE_NM_BBT_2049 + FP_CUE_NM_STM_2049 + FP_CUE_NM_SDM_2049 + FP_CUE_NM_LAM_2049"
+        },
+        {
+          "index": 68,
+          "indicator_code": "FP_CUE_TOTAL_ALL",
+          "is_computed": true,
+          "formula": "FP_CUE_FSTR_BTL_TOTAL + FP_CUE_MSTR_NSV_TOTAL + FP_CUE_CONDOM_TOTAL + FP_CUE_IUD_INT_TOTAL + FP_CUE_IUD_PP_TOTAL + FP_CUE_PILLS_POP_TOTAL + FP_CUE_PILLS_COC_TOTAL + FP_CUE_INJECTABLES_TOTAL + FP_CUE_IMPLANTS_INT_TOTAL + FP_CUE_IMPLANTS_PP_TOTAL + FP_CUE_NM_CCM_TOTAL + FP_CUE_NM_BBT_TOTAL + FP_CUE_NM_STM_TOTAL + FP_CUE_NM_SDM_TOTAL + FP_CUE_NM_LAM_TOTAL"
+        }
+      ]
+    }
+  ],
+  "dqc_rules": [],
+  "notes": "Family Planning current-user/method-mix workbook \u2014 5 sheet-groups (Current User Beginning=primary via CUB_Qtr, New Acceptor/Other Acceptor/Drop Out/Current User Ending via extra_sheets) all sharing the same 69-column layout. All 4 quarters are stacked as row-blocks within each single tab rather than one tab per quarter (col 4 = 'Quarter' text 'Q1'..'Q4') \u2014 period_filter_column/period_labels scope each upload to just that quarter's 67 rows (D6 mechanism, see parser.py's resolve_period_row_filter/apply_row_filter). 'OA_Qtr ' has a literal trailing space in its real sheet name (FLAG FP-3) \u2014 confirmed via openpyxl, not a typo. Quarterly only: the workbook's own Annual rollup tabs (CUB_A etc.) are NOT ingested \u2014 CUB_A's 'Beginning of year' figure silently pulls Q4 instead of Q1 in the source (FLAG FP-1, dated 2026-03-03 change_log entry), so this avoids shipping that bug; an annual VIEW can be derived from the quarterly data already stored. 'Demand Satisfied' and 'Population' sheets are excluded entirely \u2014 FLAG FP-2: the % denominator input was added 2026-02-04 and never populated, so it is structurally guaranteed to report 0% for every row, and even once populated the formula is circular (denominator is defined in terms of the same current-user count it's meant to validate against). Flow-balance reconciliation (Beginning + New + Other - DropOut = Ending) is not checked yet \u2014 the existing 'reconciliation' DQC rule type only sums parts, it doesn't support subtraction, so this needs its own rule type before it can be added (deferred, matches the D4 backfill pattern used elsewhere)."
+}

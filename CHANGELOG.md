@@ -16,6 +16,21 @@ always agree (a future CI check will enforce it).
 ## [Unreleased]
 
 ### Added
+- **Family Planning program built** (D6, first row-stacked-parsing target): 320 indicators
+  (`FP_*`) across 5 sheet-groups (Current User Beginning/New Acceptor/Other Acceptor/Drop
+  Out/Current User Ending) × 15 contraceptive methods × 3 age brackets. New parser mechanism
+  (`period_filter_column`/`period_labels`/`row_filter`, `parser.py`'s
+  `resolve_period_row_filter`/`apply_row_filter`) lets a `sheet_map`/`extra_sheets` entry scope
+  a read to just one period's row-block when a workbook stacks every quarter as rows within a
+  single tab instead of one tab per quarter — fully backward compatible, opt-in via new config
+  keys, every existing config unaffected (regression-tested). Quarterly only: the workbook's own
+  Annual rollup tabs are not ingested (`CUB_A` silently references the wrong quarter in the
+  source — building on the corrected quarterly data avoids shipping that bug); "Demand
+  Satisfied"/"Population" sheets excluded (denominator never populated in the source, %
+  structurally guaranteed to read 0). Dry-run verified against the real file: exact row counts
+  (335 = 5 groups × 67 locations), 0 parser errors/DQC issues, all 335 grand-total cells
+  independently recomputed from raw method columns and cross-checked against the sheet's own
+  cached totals (zero mismatches). 8 new tests for the row_filter mechanism.
 - **Rate & ratio indicators are now first-class (D1/D2, ADR-023 — proposed).** New
   `display_unit()` helper; `/api/trend`, `/api/coverage`, and `/api/indicators` expose
   `rate_multiplier`/`unit`; rates are stored already-multiplied (62.5 = "62.5 per 100,000")

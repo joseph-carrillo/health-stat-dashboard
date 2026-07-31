@@ -178,6 +178,23 @@ def validate_config(config: dict) -> list:
         problems.append("'columns' must be a non-empty list")
         return problems
 
+    if "period_filter_column" in config and not config.get("period_labels"):
+        problems.append(
+            "'period_filter_column' is set but 'period_labels' is missing/empty"
+        )
+    for label, filters in [
+        ("row_filter", config.get("row_filter")),
+        *[
+            (f"extra_sheets[{i}].row_filter", extra.get("row_filter"))
+            for i, extra in enumerate(config.get("extra_sheets", []))
+        ],
+    ]:
+        if not filters:
+            continue
+        for cond in filters:
+            if "column" not in cond or "equals" not in cond:
+                problems.append(f"{label}: each condition needs 'column' and 'equals'")
+
     seen_index = set()
     seen_code = set()
     declared_codes = {c.get("indicator_code") for c in columns}
@@ -658,6 +675,47 @@ def compute_value(formula: str, row_values: dict) -> float | None:
 # MAIN PARSER FUNCTION
 # =====================================================
 
+def resolve_period_row_filter(config: dict, period_type: str, period_value) -> dict | None:
+    """Auto-derive a row filter condition for period-stacked-as-rows sheets.
+
+    Some source workbooks stack every period as row-blocks within a single
+    tab instead of one tab per period (e.g. Family Planning, Oral Health).
+    period_filter_column/period_labels let a config declare which column
+    carries the period label; sheet_map still resolves to one physical tab,
+    but reads get scoped to just that period's rows via the filter this
+    returns (or None when the config doesn't opt into this).
+    """
+    period_filter_column = config.get("period_filter_column")
+    period_labels = config.get("period_labels") or {}
+    if (
+        period_filter_column is not None
+        and period_type in ("quarterly", "monthly")
+        and period_value is not None
+        and str(period_value) in period_labels
+    ):
+        return {
+            "column": period_filter_column,
+            "equals": period_labels[str(period_value)],
+        }
+    return None
+
+
+def apply_row_filter(df: "pd.DataFrame", row_filter: list) -> "pd.DataFrame":
+    """Keep only rows matching every {column, equals} condition.
+
+    Returns df unchanged (same index) when row_filter is empty — callers
+    use that to tell whether a fresh 0-based data_start applies (filtered)
+    or the config's own data_start_row still governs (unfiltered).
+    """
+    if not row_filter:
+        return df
+    mask = pd.Series(True, index=df.index)
+    for condition in row_filter:
+        col_values = df.iloc[:, condition["column"]].astype(str).str.strip()
+        mask &= col_values == str(condition["equals"]).strip()
+    return df[mask].reset_index(drop=True)
+
+
 def parse_file(
     file_path: str,
     template_id: str,
@@ -701,16 +759,22 @@ def parse_file(
     period_type = period_info["period_type"]
     period_value = period_info["period_value"]
 
+    auto_period_filter = resolve_period_row_filter(config, period_type, period_value)
+
     sheet_specs = [{
         "sheet_name": sheet_name,
         "columns": config["columns"],
         "dqc_rules": config.get("dqc_rules", []),
+        "row_filter": (config.get("row_filter") or [])
+        + ([auto_period_filter] if auto_period_filter else []),
     }]
     for extra in config.get("extra_sheets", []):
         sheet_specs.append({
             "sheet_name": extra["sheet_name"],
             "columns": extra["columns"],
             "dqc_rules": extra.get("dqc_rules", config.get("dqc_rules", [])),
+            "row_filter": (extra.get("row_filter") or [])
+            + ([auto_period_filter] if auto_period_filter else []),
         })
 
     # --- Connect to database ---
@@ -760,6 +824,10 @@ def parse_file(
             col_defs = sheet_spec["columns"]
             dqc_rules = sheet_spec["dqc_rules"]
 
+            row_filter = sheet_spec.get("row_filter") or []
+            df = apply_row_filter(df, row_filter)
+            sheet_data_start = 0 if row_filter else data_start
+
             # --- Process each row ---
             # Blank-PSGC rows can appear MID-SHEET (province summary/total rows,
             # visual separators between regions, etc.). We skip them individually
@@ -769,7 +837,7 @@ def parse_file(
             MAX_CONSECUTIVE_BLANKS = 15
             consecutive_blanks = 0
 
-            for row_idx in range(data_start, len(df)):
+            for row_idx in range(sheet_data_start, len(df)):
                 row = df.iloc[row_idx]
                 psgc_raw = row.iloc[psgc_col]
                 location_id, resolved_psgc = resolve_location_row(cur, config, row, psgc_raw)
